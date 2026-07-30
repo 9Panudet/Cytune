@@ -1,0 +1,6 @@
+before-dlopen MXCSR=0x1f80 FTZ=0 DAZ=0
+before-dlopen subnormal 5e-324*2 = 9.8813129168249309e-324 (preserved: IEEE gradual underflow)
+after-dlopen  MXCSR=0x1f82 FTZ=0 DAZ=0
+after-dlopen  subnormal 5e-324*2 = 9.8813129168249309e-324 (preserved: IEEE gradual underflow)
+kernel(0.1,0.2,0.3) = 0.32000000000000001
+after-call    MXCSR=0x1fa2 FTZ=0 DAZ=0

@@ -1,0 +1,470 @@
+# STEP 0.3.2 — bitwise comparator (bytes + dtype + shape + exception identity), TDD red->green->refactor
+
+Grounding: roadmap §3.1 (correctness-critical = bitwise incl. raised-exception type),
+§3.5 (wrong/missing exception => infeasible). Exception identity = canonical
+module.QualName equality (fresh-subprocess boundary, §3.2(2)); subclasses never match.
+
+## RED (vacuous always-match stub — proves negative tests are non-vacuous)
+Invocation: podman run --rm -v ./src:/src:ro,Z -w /src -e PYTHONDONTWRITEBYTECODE=1 -e PYTHONPATH=/src localhost/motifbo-env:phase0 python -m pytest -q -p no:cacheprovider tests/test_oracle_bitwise.py
+
+.FFFF.FFFFFFFFFFF.FFFF.FFF.F.F                                           [100%]
+=================================== FAILURES ===================================
+___________________ test_negative_zero_vs_zero_is_a_mismatch ___________________
+
+    def test_negative_zero_vs_zero_is_a_mismatch():
+        g = np.array([-0.0])
+        c = np.array([0.0])
+>       assert_mismatch(compare_bitwise(g, c), "bytes")
+
+tests/test_oracle_bitwise.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('bytes',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+__________________ test_nan_payload_difference_is_a_mismatch ___________________
+
+    def test_nan_payload_difference_is_a_mismatch():
+        g = np.array([nan_with_payload(0x7FF8000000000000)])
+        c = np.array([nan_with_payload(0x7FF8000000000001)])
+>       assert_mismatch(compare_bitwise(g, c), "bytes")
+
+tests/test_oracle_bitwise.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('bytes',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+________________ test_same_values_different_dtype_is_a_mismatch ________________
+
+    def test_same_values_different_dtype_is_a_mismatch():
+        g = np.arange(4, dtype=np.int64)
+        c = np.arange(4, dtype=np.int32)
+>       assert_mismatch(compare_bitwise(g, c), "dtype")
+
+tests/test_oracle_bitwise.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('dtype',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+________________ test_same_bytes_different_shape_is_a_mismatch _________________
+
+    def test_same_bytes_different_shape_is_a_mismatch():
+        g = np.arange(6, dtype=np.float64).reshape(2, 3)
+        c = np.arange(6, dtype=np.float64).reshape(3, 2)  # identical tobytes()
+>       assert_mismatch(compare_bitwise(g, c), "shape")
+
+tests/test_oracle_bitwise.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('shape',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+________ test_single_element_difference_is_a_mismatch_with_byte_offset _________
+
+    def test_single_element_difference_is_a_mismatch_with_byte_offset():
+        g = np.zeros(64, dtype=np.float64)
+        c = g.copy()
+        c[17] = 1.0
+        reason = compare_bitwise(g, c)
+>       assert_mismatch(reason, "bytes", str(17 * 8))  # first differing byte offset
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_oracle_bitwise.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('bytes', '136'), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_______________ test_empty_arrays_match_but_dtype_still_checked ________________
+
+    def test_empty_arrays_match_but_dtype_still_checked():
+        assert compare_bitwise(np.empty(0, np.float64), np.empty(0, np.float64)) is None
+>       assert_mismatch(
+            compare_bitwise(np.empty(0, np.float64), np.empty(0, np.float32)), "dtype")
+
+tests/test_oracle_bitwise.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('dtype',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+____________________ test_array_vs_list_is_a_type_mismatch _____________________
+
+    def test_array_vs_list_is_a_type_mismatch():
+>       assert_mismatch(compare_bitwise(np.array([1, 2]), [1, 2]), "type")
+
+tests/test_oracle_bitwise.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('type',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_________________ test_object_dtype_arrays_are_rejected_loudly _________________
+
+    def test_object_dtype_arrays_are_rejected_loudly():
+        arr = np.array([object()], dtype=object)
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE <class 'TypeError'>
+
+tests/test_oracle_bitwise.py:83: Failed
+_______________________ test_int_equality_and_inequality _______________________
+
+    def test_int_equality_and_inequality():
+        assert compare_bitwise(2**80, 2**80) is None
+>       assert_mismatch(compare_bitwise(7, 8), "7", "8")
+
+tests/test_oracle_bitwise.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('7', '8'), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_____________________________ test_bool_is_not_int _____________________________
+
+    def test_bool_is_not_int():
+        assert compare_bitwise(True, True) is None
+>       assert_mismatch(compare_bitwise(True, 1), "type")
+
+tests/test_oracle_bitwise.py:96: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('type',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+________________________ test_float_bit_pattern_scalars ________________________
+
+    def test_float_bit_pattern_scalars():
+        assert compare_bitwise(1.5, 1.5) is None
+        assert compare_bitwise(float("nan"), float("nan")) is None  # same CPython bits
+>       assert_mismatch(compare_bitwise(0.0, -0.0), "bit")
+
+tests/test_oracle_bitwise.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('bit',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+___________________________ test_complex_bit_pattern ___________________________
+
+    def test_complex_bit_pattern():
+        assert compare_bitwise(complex(1.0, 2.0), complex(1.0, 2.0)) is None
+>       assert_mismatch(compare_bitwise(complex(0.0, 0.0), complex(0.0, -0.0)), "bit")
+
+tests/test_oracle_bitwise.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('bit',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_________________ test_numpy_scalars_compare_by_dtype_and_bits _________________
+
+    def test_numpy_scalars_compare_by_dtype_and_bits():
+        assert compare_bitwise(np.float64(1.5), np.float64(1.5)) is None
+>       assert_mismatch(compare_bitwise(np.float64(1.5), np.float32(1.5)), "type")
+
+tests/test_oracle_bitwise.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('type',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_____________________________ test_str_bytes_none ______________________________
+
+    def test_str_bytes_none():
+        assert compare_bitwise("abc", "abc") is None
+>       assert_mismatch(compare_bitwise("abc", "abd"), "abd")
+
+tests/test_oracle_bitwise.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('abd',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_________________________ test_unsupported_type_raises _________________________
+
+    def test_unsupported_type_raises():
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE <class 'TypeError'>
+
+tests/test_oracle_bitwise.py:129: Failed
+___________________ test_list_vs_tuple_is_a_layout_mismatch ____________________
+
+    def test_list_vs_tuple_is_a_layout_mismatch():
+>       assert_mismatch(compare_bitwise([1, 2], (1, 2)), "type")
+
+tests/test_oracle_bitwise.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('type',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_____________________________ test_length_mismatch _____________________________
+
+    def test_length_mismatch():
+>       assert_mismatch(compare_bitwise([1, 2], [1, 2, 3]), "length")
+
+tests/test_oracle_bitwise.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('length',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+______________________ test_nested_mismatch_reports_path _______________________
+
+    def test_nested_mismatch_reports_path():
+        g = {"pred": [0, 1, 2]}
+        c = {"pred": [0, 9, 2]}
+        reason = compare_bitwise(g, c)
+>       assert_mismatch(reason, "pred", "[1]")
+
+tests/test_oracle_bitwise.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('pred', '[1]'), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+__________________________ test_dict_key_set_mismatch __________________________
+
+    def test_dict_key_set_mismatch():
+        reason = compare_bitwise({"a": 1, "b": 2}, {"a": 1, "z": 2})
+>       assert_mismatch(reason, "key", "b", "z")
+
+tests/test_oracle_bitwise.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('key', 'b', 'z'), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+___________________ test_value_outcomes_delegate_to_bitwise ____________________
+
+    def test_value_outcomes_delegate_to_bitwise():
+        assert compare_outcomes(Outcome.value(7), Outcome.value(7)) is None
+>       assert_mismatch(compare_outcomes(Outcome.value(0.0), Outcome.value(-0.0)),
+                        "bit")
+
+tests/test_oracle_bitwise.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('bit',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_______________ test_cdivision_style_missing_exception_is_caught _______________
+
+    def test_cdivision_style_missing_exception_is_caught():
+        # Golden (Python semantics) raises ZeroDivisionError; a cdivision=True
+        # candidate silently returns a value instead — must be infeasible (§3.5).
+        g = Outcome.exception(ZeroDivisionError("integer division by zero"))
+        c = Outcome.value(0)
+>       assert_mismatch(compare_outcomes(g, c), "missing exception",
+                        "ZeroDivisionError")
+
+tests/test_oracle_bitwise.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('missing exception', 'ZeroDivisionError')
+@py_assert2 = None, @py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+_____________________ test_unexpected_exception_is_caught ______________________
+
+    def test_unexpected_exception_is_caught():
+        g = Outcome.value(1.0)
+        c = Outcome.exception(MemoryError())
+>       assert_mismatch(compare_outcomes(g, c), "unexpected exception", "MemoryError")
+
+tests/test_oracle_bitwise.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('unexpected exception', 'MemoryError')
+@py_assert2 = None, @py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+______________ test_subclass_does_not_satisfy_exception_identity _______________
+
+    def test_subclass_does_not_satisfy_exception_identity():
+        # ZeroDivisionError IS-A ArithmeticError; identity must still reject it —
+        # an isinstance-based comparator would wrongly pass this.
+        g = Outcome.exception(ArithmeticError())
+        c = Outcome.exception(ZeroDivisionError())
+>       assert_mismatch(compare_outcomes(g, c), "ArithmeticError", "ZeroDivisionError")
+
+tests/test_oracle_bitwise.py:199: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('ArithmeticError', 'ZeroDivisionError')
+@py_assert2 = None, @py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_bitwise.py:22: AssertionError
+________________ test_outcome_exception_rejects_non_exceptions _________________
+
+    def test_outcome_exception_rejects_non_exceptions():
+        for bad in (7, int, "not.an identifier!"):
+>           with pytest.raises(TypeError):
+E           Failed: DID NOT RAISE <class 'TypeError'>
+
+tests/test_oracle_bitwise.py:213: Failed
+=========================== short test summary info ============================
+FAILED tests/test_oracle_bitwise.py::test_negative_zero_vs_zero_is_a_mismatch
+FAILED tests/test_oracle_bitwise.py::test_nan_payload_difference_is_a_mismatch
+FAILED tests/test_oracle_bitwise.py::test_same_values_different_dtype_is_a_mismatch
+FAILED tests/test_oracle_bitwise.py::test_same_bytes_different_shape_is_a_mismatch
+FAILED tests/test_oracle_bitwise.py::test_single_element_difference_is_a_mismatch_with_byte_offset
+FAILED tests/test_oracle_bitwise.py::test_empty_arrays_match_but_dtype_still_checked
+FAILED tests/test_oracle_bitwise.py::test_array_vs_list_is_a_type_mismatch - ...
+FAILED tests/test_oracle_bitwise.py::test_object_dtype_arrays_are_rejected_loudly
+FAILED tests/test_oracle_bitwise.py::test_int_equality_and_inequality - Asser...
+FAILED tests/test_oracle_bitwise.py::test_bool_is_not_int - AssertionError: e...
+FAILED tests/test_oracle_bitwise.py::test_float_bit_pattern_scalars - Asserti...
+FAILED tests/test_oracle_bitwise.py::test_complex_bit_pattern - AssertionErro...
+FAILED tests/test_oracle_bitwise.py::test_numpy_scalars_compare_by_dtype_and_bits
+FAILED tests/test_oracle_bitwise.py::test_str_bytes_none - AssertionError: ex...
+FAILED tests/test_oracle_bitwise.py::test_unsupported_type_raises - Failed: D...
+FAILED tests/test_oracle_bitwise.py::test_list_vs_tuple_is_a_layout_mismatch
+FAILED tests/test_oracle_bitwise.py::test_length_mismatch - AssertionError: e...
+FAILED tests/test_oracle_bitwise.py::test_nested_mismatch_reports_path - Asse...
+FAILED tests/test_oracle_bitwise.py::test_dict_key_set_mismatch - AssertionEr...
+FAILED tests/test_oracle_bitwise.py::test_value_outcomes_delegate_to_bitwise
+FAILED tests/test_oracle_bitwise.py::test_cdivision_style_missing_exception_is_caught
+FAILED tests/test_oracle_bitwise.py::test_unexpected_exception_is_caught - As...
+FAILED tests/test_oracle_bitwise.py::test_subclass_does_not_satisfy_exception_identity
+FAILED tests/test_oracle_bitwise.py::test_outcome_exception_rejects_non_exceptions
+24 failed, 6 passed in 0.59s
+
+## GREEN (real comparator; one test expectation corrected en route:
+## the byte-offset test assumed the first differing byte = element start (17*8=136),
+## but little-endian 1.0 vs 0.0 first differs at intra-element byte 6 (offset 142).
+## Test now asserts the design requirement: derived element index 17.)
+
+..............................                                           [100%]
+30 passed in 0.28s
+
+## REFACTOR (merged bool/None branch into the int/str/bytes equality branch — no behavior change) + FULL SUITE
+
+........................................................................ [ 87%]
+..........                                                               [100%]
+82 passed in 5.47s

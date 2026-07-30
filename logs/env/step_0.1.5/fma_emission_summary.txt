@@ -1,0 +1,4 @@
+fma_default        fmadd_count=1
+fma_c17            fmadd_count=0
+fma_contract_off   fmadd_count=0
+fma_contract_fast  fmadd_count=1

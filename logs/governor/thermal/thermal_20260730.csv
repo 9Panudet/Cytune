@@ -1,0 +1,3 @@
+ts_epoch,ts_iso,pkg_mC,core0_mC,core1_mC,core2_mC,core3_mC,core3_throttle,pkg_throttle,cpu3_freq_khz,no_turbo,gov_cpu3
+1785372772,2026-07-30T00:52:52Z,46000,46000,46000,45000,NA,0,0,3600000,1,performance
+1785380689,2026-07-30T03:04:49Z,45000,43000,45000,41000,NA,0,0,3600000,1,performance

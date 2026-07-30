@@ -1,0 +1,9 @@
+# Keep the build context minimal: nothing is COPY'd at Step 0.1.1, and the
+# corpus under data/ must never be shipped to the builder. Files needed by later
+# build steps (e.g. requirements.lock at Step 0.1.3) get explicit un-ignores here.
+*
+# Step 0.1.2: apt pin file COPY'd into the image
+!data/env/apt-pin-gcc13.pref
+# Step 0.1.3: python pin + hash-pinned lockfile COPY'd into the image
+!data/env/apt-pin-python312.pref
+!data/env/requirements.lock

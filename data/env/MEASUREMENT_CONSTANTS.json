@@ -1,0 +1,25 @@
+{
+ "schema": "motifbo-measurement-constants-v1",
+ "set_at_step": "0.2.4",
+ "K_final": 30,
+ "K_final_validated": true,
+ "K_pilot": 30,
+ "warmup": 5,
+ "K_search_range": [
+  5,
+  10
+ ],
+ "thermal_discard_mC": 62000,
+ "thermal_basis": "package",
+ "throttle_discard_rule": "any rep window with throttle_delta > 0 is discarded",
+ "divergence_rel_threshold": 0.05,
+ "expected_ghz": 3.6,
+ "bootstrap": {
+  "B": 10000,
+  "seed": 12648430,
+  "ci": [
+   2.5,
+   97.5
+  ]
+ }
+}

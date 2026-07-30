@@ -1,0 +1,10 @@
+# Characterization-ONLY sidecar image: the pinned measurement image :phase1 + valgrind.
+# Used solely for the criterion-3 NATIVE-SYMBOL cross-validation (callgrind gives exact,
+# deterministic per-symbol instruction attribution — the perf substitute, since perf is
+# absent from :phase1 and the host, and host perf_event_paranoid=2). NEVER used for timing,
+# golden, or correctness measurements — those use the pristine :phase1 unchanged. callgrind
+# characterizes the SAME pinned-toolchain-built .so, so the symbol attribution is faithful.
+FROM localhost/motifbo-env:phase1
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends valgrind \
+ && rm -rf /var/lib/apt/lists/*

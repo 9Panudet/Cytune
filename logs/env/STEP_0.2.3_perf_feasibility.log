@@ -1,0 +1,79 @@
+# Step 0.2.3 evidence — perf cycle-count feasibility (debug-mantra ledger)
+# Date: 2026-06-11 (UTC). Goal: per-rep CPU_CYCLES via perf_event_open(2) directly
+# (ctypes, counting events, self-process) — same kernel ABI `perf stat` wraps; avoids
+# Ubuntu linux-tools whose /usr/bin/perf dispatches on uname -r (Fedora kernel in an
+# Ubuntu container would break it). Mechanism precedent: sysfs-over-tool (0.2.1).
+
+## Repro (deterministic)
+perf_event_open(HW CPU_CYCLES, self) in rootless container: EPERM (errno 1), every run.
+
+## Knob ledger (one knob per run; all falsified except the last)
+| Knob | Result | Inference |
+|---|---|---|
+| --cap-add PERFMON                  | EPERM  | default seccomp ERRNO groups spare only CAP_SYS_ADMIN/CAP_BPF (verified in profile JSON) |
+| --security-opt seccomp=unconfined  | EACCES | seccomp was layer 1; a deeper layer denies |
+| --security-opt label=disable alone | EPERM  | label change cannot bypass seccomp (expected) |
+| host probe (sandboxed shell)       | EACCES | not container-specific |
+| host probe, harness sandbox OFF    | EACCES | not the Claude harness sandbox (H3 falsified); Seccomp:0 NoNewPrivs:0 confirmed |
+| H1 probe-attr bug: sample_period=1 (intended disabled=1) + 120-byte buffer | fixed; still EACCES | real probe bugs, NOT the root cause (falsified) |
+| SW task-clock (always-allowed class) | EACCES | not PMU/paranoid-specific |
+| reference C probe, linux/perf_event.h, in container, seccomp=unconfined | EACCES | probe correctness falsified as cause (H8 dead) |
+| lockdown=[none]; unconfined_t; paranoid=2; LSM list lockdown,capability,yama,selinux,bpf,landlock,ipe,ima,evm | — | candidates narrowed to LSM |
+
+## Root cause (kernel evidence)
+journalctl AVC, 4 hits, all container_t:
+  avc: denied { open } pid=9217 comm="p" scontext=system_u:system_r:container_t:s0:...
+       tcontext=...container_t... tclass=perf_event permissive=0
+Fedora 44 SELinux policy denies the perf_event class to container_t. Two independent
+deny layers total: (1) podman default seccomp (EPERM; its CAP_PERFMON allow group is
+overridden by ERRNO groups sparing only SYS_ADMIN/BPF); (2) SELinux container_t
+perf_event denial (EACCES).
+
+UNATTRIBUTED (recorded, non-load-bearing): host-side unconfined_t probes also EACCES
+with NO AVC emitted (dontaudit or bpf-LSM suspected). Production measurements run only
+in-container, so the host denial is irrelevant to the pipeline.
+
+## Fix (two narrow layers; nothing disabled globally)
+1. data/env/seccomp-perf-events.json — committed copy of the host default profile
+   (/usr/share/containers/seccomp.json) with perf_event_open moved to the
+   unconditional allow group and stripped from the ERRNO groups. VERIFIED: with this
+   profile the container denial changes EPERM -> EACCES (seccomp layer open; only
+   SELinux remains) — layering confirmed empirically.
+2. data/env/selinux/motifbo_perf.te — scoped allow: container_t self perf_event
+   { open cpu kernel read write }. Installed by the human via
+   scripts/host_perf_prep.sh (sudo; persists across reboots; SELinux stays
+   Enforcing; removable: semodule -r motifbo_perf).
+
+## APPENDIX — resolution after human installed the SELinux module (B-0.2.3-a closed)
+
+### Layer 3 (the silent one) — root-caused and fixed in the attr, not the host
+After the module install, EACCES persisted with NO AVC — same signature as the host
+denial. Cause: the probe attrs had exclude_kernel=0 (kernel+user counting), which
+perf_event_paranoid=2 forbids for unprivileged users (silent EACCES, no LSM involved).
+With exclude_kernel=1: container probe OK (329,203,311 cycles) AND host probe OK —
+the earlier "unattributed host denial" is now FULLY attributed to the same cause.
+Recorded semantics: cycle counts are USER-SPACE cycles of the timed region.
+
+### Final verification matrix
+| custom profile + exclude_kernel=1 (container) | SW + HW counts OK |
+| host + exclude_kernel=1                       | SW + HW counts OK |
+| DEFAULT profile + working attr                | DENIED EPERM — candidate containment intact |
+
+### TDD (red 33153ae -> green)
+Suite: 14 passed in 5.20s (6 placement tests from 0.2.2 + 8 new) under
+  podman run --security-opt seccomp=./data/env/seccomp-perf-events.json -v ./src:/src:ro,Z ...
+New: perf_cycles.PerfCycleCounter (ctypes counting event, disabled|exclude_kernel|
+exclude_hv); _child.py per-rep cycles nested INSIDE the wall brackets (both regions
+contain exactly the kernel call; read-syscall pair ~us lands in wall samples only on
+subsample runs — negligible vs 50-500ms kernels); divergence.build_divergence_report
+(schema motifbo-divergence-v1; eff_ghz=cycles/wall_ns; flag rel_dev>0.05 — recorded
+constant, pilot 0.2.4 may revise pre-registered); should_sample_cycles (idx%10==0).
+Tests: collection on request only; busy eff_ghz in [0.5,6.0]; sleep cycles < 20% of
+busy (counter discrimination); report format/flags/error cases; selector determinism.
+
+### End-to-end on the held measurement core (measure_wrap + MOTIFBO_CYCLES=1)
+busy_kernel 200ms x 10 reps on core 3 @ held 3.6 GHz:
+  median_eff_ghz=3.5335, rel_dev=0.0185, divergent=false
+  -> logs/env/step_0.2.3/end_to_end_cycles.json
+Frequency hold (0.2.1) x wall-clock (0.2.2) x cycles (0.2.3) mutually consistent.
+measure_wrap.sh gained the MOTIFBO_CYCLES=1 knob (perf profile on subsample runs only).

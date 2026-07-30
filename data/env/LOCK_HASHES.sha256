@@ -1,0 +1,9 @@
+# Committed lockfile hashes — asserted by scripts/check_python_env.sh and at every
+# preflight (§6.6 item 1). Regenerate ONLY at a deliberate, recorded re-pin.
+# Format: standard sha256sum lines (paths relative to repo root).
+# RE-PIN at Step 0.4.2->0.4.3 boundary (user request): added hypothesis>=6,<7 ->
+# hypothesis==6.155.2; whole lock regenerated in-image with pip-tools 7.5.3 (prior
+# lock present so pins preserved). Only hypothesis added; zero cascade (no existing
+# version changed). Evidence: logs/env/STEP_0.4.2b_hypothesis_pin.log.
+414fbd3bb821c88f9a27d6d149f5cd00d094aa7515746fe8469ff9bd268a18d9  data/env/requirements.lock
+a5cb33ef2c64e05a92ca7106498e58acac8ed1c0ee9963eb7b69dfb06cd9bd8d  data/env/requirements.in

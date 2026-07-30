@@ -1,0 +1,17 @@
+total 456
+lrwxrwxrwx. 1 root root     28 Dec 18 20:59 gcc-13.1.gz -> x86_64-linux-gnu-gcc-13.1.gz
+lrwxrwxrwx. 1 root root     31 Dec 18 20:59 gcc-ar-13.1.gz -> x86_64-linux-gnu-gcc-ar-13.1.gz
+lrwxrwxrwx. 1 root root     31 Dec 18 20:59 gcc-nm-13.1.gz -> x86_64-linux-gnu-gcc-nm-13.1.gz
+lrwxrwxrwx. 1 root root     35 Dec 18 20:59 gcc-ranlib-13.1.gz -> x86_64-linux-gnu-gcc-ranlib-13.1.gz
+lrwxrwxrwx. 1 root root     29 Dec 18 20:59 gcov-13.1.gz -> x86_64-linux-gnu-gcov-13.1.gz
+lrwxrwxrwx. 1 root root     34 Dec 18 20:59 gcov-dump-13.1.gz -> x86_64-linux-gnu-gcov-dump-13.1.gz
+lrwxrwxrwx. 1 root root     34 Dec 18 20:59 gcov-tool-13.1.gz -> x86_64-linux-gnu-gcov-tool-13.1.gz
+lrwxrwxrwx. 1 root root     33 Dec 18 20:59 lto-dump-13.1.gz -> x86_64-linux-gnu-lto-dump-13.1.gz
+-rw-r--r--. 1 root root 392376 Dec 18 20:59 x86_64-linux-gnu-gcc-13.1.gz
+-rw-r--r--. 1 root root    270 Dec 18 20:59 x86_64-linux-gnu-gcc-ar-13.1.gz
+-rw-r--r--. 1 root root    269 Dec 18 20:59 x86_64-linux-gnu-gcc-nm-13.1.gz
+-rw-r--r--. 1 root root    275 Dec 18 20:59 x86_64-linux-gnu-gcc-ranlib-13.1.gz
+-rw-r--r--. 1 root root  11282 Dec 18 20:59 x86_64-linux-gnu-gcov-13.1.gz
+-rw-r--r--. 1 root root   2600 Dec 18 20:59 x86_64-linux-gnu-gcov-dump-13.1.gz
+-rw-r--r--. 1 root root   4428 Dec 18 20:59 x86_64-linux-gnu-gcov-tool-13.1.gz
+-rw-r--r--. 1 root root   2768 Dec 18 20:59 x86_64-linux-gnu-lto-dump-13.1.gz

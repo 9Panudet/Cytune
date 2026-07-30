@@ -1,0 +1,31 @@
+# Step 0.P preflight item 2 — memory profile (host commands, recompute record)
+# Host: Fedora 44, podman 5.8.2 rootless, crun, cgroups v2. Date 2026-06-15 (UTC).
+# All under the EXACT §3.4 containment caps. Candidate peak = cgroup memory.peak;
+# orchestrator peak = /usr/bin/time -v Maximum resident set size of the podman client.
+
+## 1. Worst-candidate (gcc -O3 -march=native build of csr_scale)
+/usr/bin/time -v podman run --rm --memory=4g --memory-swap=4g \
+  --tmpfs /sandbox:size=2g \
+  -v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/memprof:/build:Z \
+  -e MOTIFBO_I1_KERNELS="csr_scale" -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 \
+  localhost/motifbo-env:phase0 \
+  bash -c 'python /probe/build_i1.py && cat /sys/fs/cgroup/memory.peak'
+=> BUILD_OK ; container_memory_peak_bytes=232259584 (221.5 MiB) ; memory.max=4294967296
+=> orchestrator Maximum resident set size = 49760 KiB (48.6 MiB)
+
+## 2. Candidate run (load .so + 4M-nnz CSR working set + K=35 reps, perf cycles on)
+/usr/bin/time -v podman run --rm --memory=4g --memory-swap=4g \
+  --security-opt seccomp=./data/env/seccomp-perf-events.json \
+  --tmpfs /sandbox:size=2g \
+  -v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/memprof:/build:ro,Z \
+  -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 \
+  localhost/motifbo-env:phase0 \
+  bash -c 'python /probe/i1_measure.py csr_scale good /tmp/m.json && cat /sys/fs/cgroup/memory.peak'
+=> RUN_OK ; container_memory_peak_bytes=59240448 (56.5 MiB)
+=> orchestrator Maximum resident set size = 50092 KiB (48.9 MiB)
+# (First attempt without the perf seccomp profile failed at PerfCycleCounter init —
+#  PermissionError perf_event_open denied; expected, cycle counter is mandatory.)
+
+## Conclusion
+worst candidate measured = 221.5 MiB (build) ; orchestrator = 48.9 MiB.
+Enforced-hard-cap worst case = 4 GiB + 2 GiB + 0.05 GiB = 6.05 GiB < 12 GiB ceiling. PASS.

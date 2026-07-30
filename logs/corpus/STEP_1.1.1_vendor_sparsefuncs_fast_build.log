@@ -1,0 +1,32 @@
+# Step 1.1.1 — sparsefuncs_fast VENDORED-CLOSURE build-confirm (raw)
+# image: localhost/motifbo-env:phase1 (X', d45e33b0)
+# command: podman run --rm -v <unit>:/unit:ro,Z localhost/motifbo-env:phase1 bash /unit/build_from_closure.sh
+# captured: 2026-06-20T18:17:53Z (host wall clock)
+# ---------------------------------------------------------------------------
+tools: Python 3.12.3 | gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 | Cython 3.2.5 | numpy 2.4.6
+installed sklearn (must be IRRELEVANT to this build): Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+AttributeError: module 'sklearn' has no attribute '__version__'
+
+=== (1) POSITIVE: build from the complete vendored closure ===
+--- cythonize (positive) ---
+so-bytes: 790064
+--- import-smoke (bare loader; OMP_NUM_THREADS=1) ---
+IMPORT OK; exported callables: ['_csc_mean_variance_axis0', '_csr_mean_variance_axis0', '_incr_mean_variance_axis0', '_inplace_csr_row_normalize_l1', '_inplace_csr_row_normalize_l2', '_sqeuclidean_row_norms_sparse', 'assign_rows_csr', 'csc_mean_variance_axis0', 'csr_mean_variance_axis0', 'csr_row_norms', 'incr_mean_variance_axis0', 'inplace_csr_row_normalize_l1', 'inplace_csr_row_normalize_l2', 'np']
+
+=== (2) NEGATIVE CONTROL: hide the vendored _typedefs.pxd -> build MUST fail ===
+    (proves the compile resolves the cimport from the VENDORED closure, not installed sklearn 1.8.0)
+--- cythonize (negative-control) ---
+Compiler crash traceback from this point on:
+  File "/opt/venv/lib/python3.12/site-packages/Cython/Compiler/ExprNodes.py", line 12875, in compute_c_result_type
+    widest_type = PyrexTypes.widest_numeric_type(type1, PyrexTypes.c_double_type)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/Cython/Compiler/PyrexTypes.py", line 5464, in widest_numeric_type
+    elif type1.rank < type2.rank:
+         ^^^^^^^^^^
+AttributeError: 'ErrorType' object has no attribute 'rank'
+[negative-control] CYTHONIZE FAILED (no .c emitted)
+NEGATIVE CONTROL PASSED: build fails without the vendored _typedefs.pxd (closure is the real source).
+
+=== VENDORED-CLOSURE BUILD-CONFIRM: PASS (positive build+import OK; negative control fails as required) ===
+# EXIT=0

@@ -1,0 +1,809 @@
+# STEP 0.3.1 — oracle.json manifest schema + validator (TDD red->green)
+
+Grounding read before code: roadmap §3.1 (output classes, tolerances, exception
+types), §0.3 (gate I-3), §7 step row 0.3.1. Validator is hand-rolled (jsonschema
+not in the hash-pinned requirements.lock; no dep added). Schema id motifbo-oracle-v1.
+
+## RED (vacuous always-accept stub — proves negative tests are non-vacuous)
+Invocation: podman run --rm -v ./src:/src:ro,Z -w /src -e PYTHONDONTWRITEBYTECODE=1 -e PYTHONPATH=/src localhost/motifbo-env:phase0 python -m pytest -q -p no:cacheprovider tests/test_oracle_manifest.py
+
+...FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.FF                                   [100%]
+=================================== FAILURES ===================================
+_______________________ test_rejects_non_object_document _______________________
+
+    def test_rejects_non_object_document():
+        for bad in ([], "oracle", None, 7):
+            errors = validate_manifest(bad)
+>           assert errors, f"accepted non-object document {bad!r}"
+E           AssertionError: accepted non-object document []
+E           assert []
+
+tests/test_oracle_manifest.py:73: AssertionError
+_______________________ test_rejects_wrong_schema_string _______________________
+
+    def test_rejects_wrong_schema_string():
+        errors = validate_manifest(doc(schema="motifbo-oracle-v2"))
+>       assert_error(errors, "schema")
+
+tests/test_oracle_manifest.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'schema'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'schema', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ecc930>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_____________________ test_rejects_missing_required_fields _____________________
+
+    def test_rejects_missing_required_fields():
+        for field in ("schema", "unit", "outputs"):
+            d = doc()
+            del d[field]
+>           assert_error(validate_manifest(d), field)
+
+tests/test_oracle_manifest.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'schema'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'schema', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ecc110>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+______________________ test_rejects_unknown_top_level_key ______________________
+
+    def test_rejects_unknown_top_level_key():
+        errors = validate_manifest(doc(tolerances=[]))
+>       assert_error(errors, "unknown key")
+
+tests/test_oracle_manifest.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'unknown key'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'unknown key', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5eccad0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+____________________ test_rejects_empty_or_non_list_outputs ____________________
+
+    def test_rejects_empty_or_non_list_outputs():
+>       assert_error(validate_manifest(doc(outputs=[])), "outputs")
+
+tests/test_oracle_manifest.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'outputs'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'outputs', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ecd700>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+___________________________ test_rejects_blank_unit ____________________________
+
+    def test_rejects_blank_unit():
+>       assert_error(validate_manifest(doc(unit="")), "unit")
+
+tests/test_oracle_manifest.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'unit'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'unit', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ece810>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_____________________ test_rejects_duplicate_output_names ______________________
+
+    def test_rejects_duplicate_output_names():
+        d = doc()
+        d["outputs"].append({"name": "indptr", "class": "correctness-critical"})
+>       assert_error(validate_manifest(d), "duplicate")
+
+tests/test_oracle_manifest.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'duplicate'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'duplicate', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ecf030>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+______________________ test_rejects_unknown_output_class _______________________
+
+    def test_rejects_unknown_output_class():
+        d = doc()
+        d["outputs"][0]["class"] = "approximate"
+        errors = validate_manifest(d)
+>       assert_error(errors, "outputs[0].class")
+
+tests/test_oracle_manifest.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'outputs[0].class'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'outputs[0].class', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ecfb90>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_____________________ test_rejects_unknown_output_key_typo _____________________
+
+    def test_rejects_unknown_output_key_typo():
+        d = doc()
+        out = d["outputs"][1]
+        out["tolerence"] = out.pop("tolerance")  # the §6.1 failure mode: silent typo
+        errors = validate_manifest(d)
+>       assert_error(errors, "unknown key")
+
+tests/test_oracle_manifest.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'unknown key'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'unknown key', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ecfd30>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_____________________ test_rejects_non_object_output_entry _____________________
+
+    def test_rejects_non_object_output_entry():
+        d = doc()
+        d["outputs"][0] = "indptr"
+>       assert_error(validate_manifest(d), "outputs[0]")
+
+tests/test_oracle_manifest.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'outputs[0]'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'outputs[0]', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ecf850>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________ test_rejects_tolerance_on_correctness_critical ________________
+
+    def test_rejects_tolerance_on_correctness_critical():
+        d = doc()
+        d["outputs"][0]["tolerance"] = {"mode": "ulp", "max_ulp": 1}
+        errors = validate_manifest(d)
+>       assert_error(errors, "correctness-critical")
+
+tests/test_oracle_manifest.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'correctness-critical'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'correctness-critical', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f7f370>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________ test_rejects_missing_tolerance_on_approximate _________________
+
+    def test_rejects_missing_tolerance_on_approximate():
+        d = doc()
+        del d["outputs"][1]["tolerance"]
+>       assert_error(validate_manifest(d), "outputs[1].tolerance")
+
+tests/test_oracle_manifest.py:150: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'outputs[1].tolerance'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'outputs[1].tolerance', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f7db10>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________ test_rejects_bad_atol_rtol_values[atol--1e-12] ________________
+
+field = 'atol', value = -1e-12
+
+    @pytest.mark.parametrize("field,value", [
+        ("atol", -1e-12), ("rtol", -1.0),
+        ("atol", float("nan")), ("rtol", float("inf")),
+        ("atol", "1e-12"), ("rtol", True),
+    ])
+    def test_rejects_bad_atol_rtol_values(field, value):
+        d = doc()
+        d["outputs"][1]["tolerance"][field] = value
+>       assert_error(validate_manifest(d), f"tolerance.{field}")
+
+tests/test_oracle_manifest.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'tolerance.atol'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'tolerance.atol', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f7f780>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________ test_rejects_bad_atol_rtol_values[rtol--1.0] _________________
+
+field = 'rtol', value = -1.0
+
+    @pytest.mark.parametrize("field,value", [
+        ("atol", -1e-12), ("rtol", -1.0),
+        ("atol", float("nan")), ("rtol", float("inf")),
+        ("atol", "1e-12"), ("rtol", True),
+    ])
+    def test_rejects_bad_atol_rtol_values(field, value):
+        d = doc()
+        d["outputs"][1]["tolerance"][field] = value
+>       assert_error(validate_manifest(d), f"tolerance.{field}")
+
+tests/test_oracle_manifest.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'tolerance.rtol'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'tolerance.rtol', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5e9e5a0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________ test_rejects_bad_atol_rtol_values[atol-nan] __________________
+
+field = 'atol', value = nan
+
+    @pytest.mark.parametrize("field,value", [
+        ("atol", -1e-12), ("rtol", -1.0),
+        ("atol", float("nan")), ("rtol", float("inf")),
+        ("atol", "1e-12"), ("rtol", True),
+    ])
+    def test_rejects_bad_atol_rtol_values(field, value):
+        d = doc()
+        d["outputs"][1]["tolerance"][field] = value
+>       assert_error(validate_manifest(d), f"tolerance.{field}")
+
+tests/test_oracle_manifest.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'tolerance.atol'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'tolerance.atol', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5e9e4d0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________ test_rejects_bad_atol_rtol_values[rtol-inf] __________________
+
+field = 'rtol', value = inf
+
+    @pytest.mark.parametrize("field,value", [
+        ("atol", -1e-12), ("rtol", -1.0),
+        ("atol", float("nan")), ("rtol", float("inf")),
+        ("atol", "1e-12"), ("rtol", True),
+    ])
+    def test_rejects_bad_atol_rtol_values(field, value):
+        d = doc()
+        d["outputs"][1]["tolerance"][field] = value
+>       assert_error(validate_manifest(d), f"tolerance.{field}")
+
+tests/test_oracle_manifest.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'tolerance.rtol'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'tolerance.rtol', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5e9d630>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________ test_rejects_bad_atol_rtol_values[atol-1e-12] _________________
+
+field = 'atol', value = '1e-12'
+
+    @pytest.mark.parametrize("field,value", [
+        ("atol", -1e-12), ("rtol", -1.0),
+        ("atol", float("nan")), ("rtol", float("inf")),
+        ("atol", "1e-12"), ("rtol", True),
+    ])
+    def test_rejects_bad_atol_rtol_values(field, value):
+        d = doc()
+        d["outputs"][1]["tolerance"][field] = value
+>       assert_error(validate_manifest(d), f"tolerance.{field}")
+
+tests/test_oracle_manifest.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'tolerance.atol'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'tolerance.atol', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5e9d7d0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________ test_rejects_bad_atol_rtol_values[rtol-True] _________________
+
+field = 'rtol', value = True
+
+    @pytest.mark.parametrize("field,value", [
+        ("atol", -1e-12), ("rtol", -1.0),
+        ("atol", float("nan")), ("rtol", float("inf")),
+        ("atol", "1e-12"), ("rtol", True),
+    ])
+    def test_rejects_bad_atol_rtol_values(field, value):
+        d = doc()
+        d["outputs"][1]["tolerance"][field] = value
+>       assert_error(validate_manifest(d), f"tolerance.{field}")
+
+tests/test_oracle_manifest.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'tolerance.rtol'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'tolerance.rtol', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5e9c1e0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+___________ test_rejects_both_zero_atol_rtol_as_bitwise_in_disguise ____________
+
+    def test_rejects_both_zero_atol_rtol_as_bitwise_in_disguise():
+        d = doc()
+        d["outputs"][1]["tolerance"].update(atol=0.0, rtol=0.0)
+>       assert_error(validate_manifest(d), "correctness-critical")
+
+tests/test_oracle_manifest.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'correctness-critical'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'correctness-critical', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5e9f030>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+__________________________ test_rejects_missing_rtol ___________________________
+
+    def test_rejects_missing_rtol():
+        d = doc()
+        del d["outputs"][1]["tolerance"]["rtol"]
+>       assert_error(validate_manifest(d), "rtol")
+
+tests/test_oracle_manifest.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'rtol'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'rtol', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5e9f510>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________________ test_rejects_bad_max_ulp[0] __________________________
+
+value = 0
+
+    @pytest.mark.parametrize("value", [0, -3, 2.5, True, "4", None])
+    def test_rejects_bad_max_ulp(value):
+        d = doc()
+        d["outputs"][2]["tolerance"]["max_ulp"] = value
+>       assert_error(validate_manifest(d), "max_ulp")
+
+tests/test_oracle_manifest.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'max_ulp'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'max_ulp', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f360c0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________________ test_rejects_bad_max_ulp[-3] _________________________
+
+value = -3
+
+    @pytest.mark.parametrize("value", [0, -3, 2.5, True, "4", None])
+    def test_rejects_bad_max_ulp(value):
+        d = doc()
+        d["outputs"][2]["tolerance"]["max_ulp"] = value
+>       assert_error(validate_manifest(d), "max_ulp")
+
+tests/test_oracle_manifest.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'max_ulp'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'max_ulp', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f35ff0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________________ test_rejects_bad_max_ulp[2.5] _________________________
+
+value = 2.5
+
+    @pytest.mark.parametrize("value", [0, -3, 2.5, True, "4", None])
+    def test_rejects_bad_max_ulp(value):
+        d = doc()
+        d["outputs"][2]["tolerance"]["max_ulp"] = value
+>       assert_error(validate_manifest(d), "max_ulp")
+
+tests/test_oracle_manifest.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'max_ulp'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'max_ulp', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f35220>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________________ test_rejects_bad_max_ulp[True] ________________________
+
+value = True
+
+    @pytest.mark.parametrize("value", [0, -3, 2.5, True, "4", None])
+    def test_rejects_bad_max_ulp(value):
+        d = doc()
+        d["outputs"][2]["tolerance"]["max_ulp"] = value
+>       assert_error(validate_manifest(d), "max_ulp")
+
+tests/test_oracle_manifest.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'max_ulp'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'max_ulp', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f36670>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________________ test_rejects_bad_max_ulp[4] __________________________
+
+value = '4'
+
+    @pytest.mark.parametrize("value", [0, -3, 2.5, True, "4", None])
+    def test_rejects_bad_max_ulp(value):
+        d = doc()
+        d["outputs"][2]["tolerance"]["max_ulp"] = value
+>       assert_error(validate_manifest(d), "max_ulp")
+
+tests/test_oracle_manifest.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'max_ulp'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'max_ulp', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5f35b10>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________________ test_rejects_bad_max_ulp[None] ________________________
+
+value = None
+
+    @pytest.mark.parametrize("value", [0, -3, 2.5, True, "4", None])
+    def test_rejects_bad_max_ulp(value):
+        d = doc()
+        d["outputs"][2]["tolerance"]["max_ulp"] = value
+>       assert_error(validate_manifest(d), "max_ulp")
+
+tests/test_oracle_manifest.py:184: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'max_ulp'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'max_ulp', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5edde50>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________________ test_rejects_cross_mode_keys _________________________
+
+    def test_rejects_cross_mode_keys():
+        d = doc()
+        d["outputs"][2]["tolerance"]["atol"] = 1e-12  # atol in ulp mode = confusion
+        errors = validate_manifest(d)
+>       assert_error(errors, "unknown key")
+
+tests/test_oracle_manifest.py:191: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'unknown key'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'unknown key', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5ede0c0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_____________________ test_rejects_unknown_tolerance_mode ______________________
+
+    def test_rejects_unknown_tolerance_mode():
+        d = doc()
+        d["outputs"][2]["tolerance"] = {"mode": "relative", "max_ulp": 4}
+        errors = validate_manifest(d)
+>       assert_error(errors, "mode")
+
+tests/test_oracle_manifest.py:199: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'mode'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'mode', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5edea80>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+____________ test_rejects_bare_name_that_is_not_a_builtin_exception ____________
+
+    def test_rejects_bare_name_that_is_not_a_builtin_exception():
+        for bad in ("ZeroDivisonError",  # typo: would never match at runtime
+                    "len"):              # resolves in builtins, but not an exception
+            d = doc()
+            d["expected_exceptions"][0]["type"] = bad
+            errors = validate_manifest(d)
+>           assert_error(errors, bad)
+
+tests/test_oracle_manifest.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'ZeroDivisonError'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'ZeroDivisonError', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5edef60>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+_________________ test_rejects_malformed_exception_type_string _________________
+
+    def test_rejects_malformed_exception_type_string():
+        for bad in ("", "not an identifier!", "trailing.dot.", "1numpy.Error"):
+            d = doc()
+            d["expected_exceptions"][1]["type"] = bad
+>           assert_error(validate_manifest(d), "expected_exceptions[1].type")
+
+tests/test_oracle_manifest.py:219: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'expected_exceptions[1].type'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'expected_exceptions[1].type', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5edee90>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+______________________ test_rejects_duplicate_case_names _______________________
+
+    def test_rejects_duplicate_case_names():
+        d = doc()
+        d["expected_exceptions"].append(
+            {"case": "zero_divisor", "type": "OverflowError"})
+>       assert_error(validate_manifest(d), "duplicate")
+
+tests/test_oracle_manifest.py:226: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'duplicate'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'duplicate', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5edfed0>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+________________ test_rejects_blank_case_and_unknown_entry_key _________________
+
+    def test_rejects_blank_case_and_unknown_entry_key():
+        d = doc()
+        d["expected_exceptions"][0] = {"case": "", "type": "ValueError", "when": "x"}
+        errors = validate_manifest(d)
+>       assert_error(errors, "expected_exceptions[0].case")
+
+tests/test_oracle_manifest.py:233: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+errors = [], fragment = 'expected_exceptions[0].case'
+
+    def assert_error(errors, fragment):
+>       assert any(fragment in e for e in errors), (
+            f"expected an error containing {fragment!r}, got {errors!r}")
+E       AssertionError: expected an error containing 'expected_exceptions[0].case', got []
+E       assert False
+E        +  where False = any(<generator object assert_error.<locals>.<genexpr> at 0x7fdbc5edd700>)
+
+tests/test_oracle_manifest.py:48: AssertionError
+__________________ test_load_manifest_raises_with_all_errors ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_load_manifest_raises_with0')
+
+    def test_load_manifest_raises_with_all_errors(tmp_path):
+        d = doc()
+        d["outputs"][0]["tolerance"] = {"mode": "ulp", "max_ulp": 1}  # contradiction
+        d["outputs"][1]["tolerance"]["atol"] = -1.0                   # bad value
+        p = tmp_path / "oracle.json"
+        p.write_text(json.dumps(d))
+>       with pytest.raises(ManifestError) as exc:
+E       Failed: DID NOT RAISE <class 'motifbo.oracle.manifest.ManifestError'>
+
+tests/test_oracle_manifest.py:251: Failed
+_________________ test_load_manifest_rejects_unparseable_json __________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_load_manifest_rejects_unp0')
+
+    def test_load_manifest_rejects_unparseable_json(tmp_path):
+        p = tmp_path / "oracle.json"
+        p.write_text("{not json")
+        with pytest.raises(ManifestError) as exc:
+>           load_manifest(p)
+
+tests/test_oracle_manifest.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+motifbo/oracle/manifest.py:23: in load_manifest
+    return json.loads(Path(path).read_text())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.decoder.JSONDecoder object at 0x7fdbc6539e20>, s = '{not json'
+idx = 0
+
+    def raw_decode(self, s, idx=0):
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
+        representation and the index in ``s`` where the document ended.
+    
+        This can be used to decode a JSON document from a string that may
+        have extraneous data at the end.
+    
+        """
+        try:
+>           obj, end = self.scan_once(s, idx)
+                       ^^^^^^^^^^^^^^^^^^^^^^
+E           json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+
+/usr/lib/python3.12/json/decoder.py:353: JSONDecodeError
+=========================== short test summary info ============================
+FAILED tests/test_oracle_manifest.py::test_rejects_non_object_document - Asse...
+FAILED tests/test_oracle_manifest.py::test_rejects_wrong_schema_string - Asse...
+FAILED tests/test_oracle_manifest.py::test_rejects_missing_required_fields - ...
+FAILED tests/test_oracle_manifest.py::test_rejects_unknown_top_level_key - As...
+FAILED tests/test_oracle_manifest.py::test_rejects_empty_or_non_list_outputs
+FAILED tests/test_oracle_manifest.py::test_rejects_blank_unit - AssertionErro...
+FAILED tests/test_oracle_manifest.py::test_rejects_duplicate_output_names - A...
+FAILED tests/test_oracle_manifest.py::test_rejects_unknown_output_class - Ass...
+FAILED tests/test_oracle_manifest.py::test_rejects_unknown_output_key_typo - ...
+FAILED tests/test_oracle_manifest.py::test_rejects_non_object_output_entry - ...
+FAILED tests/test_oracle_manifest.py::test_rejects_tolerance_on_correctness_critical
+FAILED tests/test_oracle_manifest.py::test_rejects_missing_tolerance_on_approximate
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_atol_rtol_values[atol--1e-12]
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_atol_rtol_values[rtol--1.0]
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_atol_rtol_values[atol-nan]
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_atol_rtol_values[rtol-inf]
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_atol_rtol_values[atol-1e-12]
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_atol_rtol_values[rtol-True]
+FAILED tests/test_oracle_manifest.py::test_rejects_both_zero_atol_rtol_as_bitwise_in_disguise
+FAILED tests/test_oracle_manifest.py::test_rejects_missing_rtol - AssertionEr...
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_max_ulp[0] - Assertion...
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_max_ulp[-3] - Assertio...
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_max_ulp[2.5] - Asserti...
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_max_ulp[True] - Assert...
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_max_ulp[4] - Assertion...
+FAILED tests/test_oracle_manifest.py::test_rejects_bad_max_ulp[None] - Assert...
+FAILED tests/test_oracle_manifest.py::test_rejects_cross_mode_keys - Assertio...
+FAILED tests/test_oracle_manifest.py::test_rejects_unknown_tolerance_mode - A...
+FAILED tests/test_oracle_manifest.py::test_rejects_bare_name_that_is_not_a_builtin_exception
+FAILED tests/test_oracle_manifest.py::test_rejects_malformed_exception_type_string
+FAILED tests/test_oracle_manifest.py::test_rejects_duplicate_case_names - Ass...
+FAILED tests/test_oracle_manifest.py::test_rejects_blank_case_and_unknown_entry_key
+FAILED tests/test_oracle_manifest.py::test_load_manifest_raises_with_all_errors
+FAILED tests/test_oracle_manifest.py::test_load_manifest_rejects_unparseable_json
+34 failed, 4 passed in 0.27s
+
+## GREEN (real validator)
+
+......................................                                   [100%]
+38 passed in 0.05s
+
+## FULL SUITE (established invocation incl. seccomp profile for perf tests)
+
+....................................................                     [100%]
+52 passed in 5.22s
