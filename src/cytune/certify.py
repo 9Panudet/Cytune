@@ -39,6 +39,18 @@ ATTESTATION = {
                         "depending on the size of the claim. It does NOT catch a large real gain "
                         "being inflated further, and it cannot catch a driver that genuinely does "
                         "different work for different configurations."),
+    # The ARTIFACT half of the same boundary. The clock limit above was stated from the first
+    # version of this block; this one was recorded in the JSON provenance note and never printed,
+    # so a reader of the rendered certificate — which is the copy that gets forwarded — did not see
+    # it. Named by the focused adversarial re-run as the undemonstrated escape from the Attack B
+    # fix, and the tag condition is explicit that every remaining limit belongs HERE.
+    "does_not_attest_artifact": (
+        "that the binary the measurement imported is the one hashed above. The hashes bind the "
+        "FILE cytune built and pointed the endpoint tier at, checked before and after the "
+        "measurement and against a read-only artifact tree. They do not bind against a driver "
+        "that hijacks its own interpreter's module loader — it is loaded first, so it can import "
+        "something else while the file on disk is untouched. No hash reaches that; it is the same "
+        "trust boundary as the clock."),
     "audience": ("this is evidence to whoever controls the driver. It is NOT evidence to a third "
                  "party who does not trust that driver."),
 }
@@ -1355,6 +1367,9 @@ def render(cert):
         add("")
         para(f"IT DOES NOT ATTEST {att['does_not_attest']}")
         add("")
+        if att.get("does_not_attest_artifact"):
+            para(f"IT DOES NOT ATTEST {att['does_not_attest_artifact']}")
+            add("")
         para(att["audience"])
         add("")
 

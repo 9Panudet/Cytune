@@ -250,3 +250,28 @@ def test_the_attestation_block_states_what_it_does_not_attest():
 def test_the_attestation_is_present_on_every_outcome():
     for cert in _outcomes():
         assert "IT DOES NOT ATTEST" in certify.render(cert)
+
+
+def test_every_stated_limit_reaches_the_RENDERED_certificate():
+    """The tag condition says every remaining limit must be stated in the CERTIFICATE, not only in
+    SECURITY.md — and `certificate.txt` is the copy that gets forwarded.
+
+    FAILURE PATH of a real gap: the artifact-binding limit was recorded in the JSON provenance note
+    and never printed, so a reader of the rendered document saw the clock limit and not the loader
+    one. A limit that exists only in a field a human does not read is stated in the same sense the
+    pre-1.0 documentation was.
+    """
+    text = _flat(certify.render(_cert()))
+    for key, phrase in (("does_not_attest", "as trustworthy as that driver"),
+                        ("does_not_attest_artifact", "hijacks its own interpreter's module loader"),
+                        ("audience", "NOT evidence to a third party")):
+        assert certify.ATTESTATION[key], key
+        assert phrase in text, f"{key} is in the document but never rendered"
+
+
+def test_the_attestation_covers_both_halves_of_the_trust_boundary():
+    """The driver owns the clock AND is loaded before the artifact. Two limits, one boundary; a
+    certificate that named only the first would understate what it cannot vouch for."""
+    att = certify.ATTESTATION
+    assert "owns the clock" in att["does_not_attest"] or "clock" in att["does_not_attest"]
+    assert "module loader" in att["does_not_attest_artifact"]
