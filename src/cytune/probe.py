@@ -11,7 +11,7 @@ three features cannot express that question.
 from __future__ import annotations
 import math
 
-from ._phasep import theta
+from ._vendor import theta
 import classify  # container-side only (imports numpy at module scope)
 
 IF_NA = None  # §9.2: NA is its own feature value — never imputed, never silently treated as 0
@@ -20,7 +20,7 @@ IF_NA = None  # §9.2: NA is its own feature value — never imputed, never sile
 def probe_config_ids():
     """The pre-registered 16-point D-optimal design + the reference config."""
     import json
-    from ._phasep import designs_path
+    from ._vendor import designs_path
     d = json.load(open(designs_path()))
     return sorted(set(d["designs"]["probe_16"]["config_ids"] + [theta.REFERENCE_ID]))
 

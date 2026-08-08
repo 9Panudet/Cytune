@@ -46,3 +46,36 @@ def test_intact_manifest_is_left_completely_alone(tmp_path):
 
 def test_missing_manifest_is_not_an_error(tmp_path):
     assert _drop_stale_manifest_rows(str(tmp_path)) == 0
+
+
+# ------------------------------------------------------ H1: a child cannot report time that
+#                                                             did not elapse
+def test_a_child_claiming_more_time_than_elapsed_is_flagged():
+    """H1 (partial). The driver shares the interpreter that times it, so it can choose the numbers
+    the host is handed. The parent, however, times the WHOLE child — so `K * median` exceeding the
+    wall clock is time that did not happen, and no honest measurement can produce it."""
+    from cytune.worker import implausible_timings
+    rows = {5: {"screen": {"median_ns": 65e6, "K": 5, "wall_ns": 100e6}}}   # claims 325ms in 100ms
+    bad = implausible_timings(rows)
+    assert len(bad) == 1 and bad[0]["config_id"] == 5
+    assert bad[0]["ratio"] > 3
+
+
+def test_an_honest_measurement_is_never_flagged():
+    """Control. Spawn, import and build overhead only ever make the wall LARGER, so an honest row
+    always has K*median < wall. Flagging one would make the check useless."""
+    from cytune.worker import implausible_timings
+    rows = {
+        1: {"screen": {"median_ns": 65e6, "K": 5, "wall_ns": 2_800_000_000}},  # big spawn overhead
+        2: {"screen": {"median_ns": 10e6, "K": 30, "wall_ns": 305e6}},         # tight
+        3: {"screen": {"median_ns": 10e6, "K": 30, "wall_ns": 300e6}},         # exactly equal
+        4: {"screen": None},
+        5: {},
+    }
+    assert implausible_timings(rows) == []
+
+
+def test_the_check_tolerates_clock_granularity_but_not_a_real_overclaim():
+    from cytune.worker import implausible_timings
+    assert implausible_timings({1: {"screen": {"median_ns": 101e6, "K": 1, "wall_ns": 100e6}}}) == []
+    assert implausible_timings({1: {"screen": {"median_ns": 150e6, "K": 1, "wall_ns": 100e6}}})

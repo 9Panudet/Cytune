@@ -125,8 +125,12 @@ def test_every_route_carries_the_provenance_label_including_its_limit():
               feat(delta=2.0, if_probe=0.1, ref=False), feat(delta=1.3, if_probe=0.5)):
         assert routing.route(f)["label"] == routing.LABEL
         lab = routing.route(f)["label"]
-        # The label must carry BOTH halves. "P3-VALIDATED" alone would overclaim — the study ran
-        # on a synthetic benchmark and RQ-P2 acceptance on real code has not run. A user reading
-        # only the first half would think the routing was validated for their code.
-        assert "P3-VALIDATED" in lab
-        assert "NOT validated on real code" in lab
+        # The label must carry BOTH halves: what the study DOES support (DOE over BO) and what it
+        # does NOT (a per-cell router). The old wording said "P3-VALIDATED", which a user read as
+        # "the routing was validated", while the README simultaneously called the same policy
+        # "interim" — cold-user finding F14. It also claimed "RQ-P2 acceptance has not run" after
+        # RQP2_ACCEPTANCE.json existed (F15). One sentence now, and it is the honest one.
+        assert "engineering default" in lab
+        assert "NOT a validated per-cell router" in lab
+        assert "P3-VALIDATED" not in lab, "the overclaiming wording must not come back"
+        assert "has not run" not in lab, "RQ-P2 acceptance DID run; the stale clause must not return"

@@ -10,12 +10,20 @@ import os
 import pytest
 
 from cytune import plan
-from cytune._phasep import theta
+from cytune._vendor import theta
 
-import algorithms  # noqa: E402  (container-side; imports numpy)
-import replay  # noqa: E402
+from conftest import REPO, STUDY, load_study_module
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+# Loaded BY PATH, not by `import algorithms`. cytune/_vendor ships files with the same top-level
+# names and owns the front of sys.path, so a plain import here resolves to cytune's own copy — and
+# this test would then assert that cytune agrees with cytune. See tests/conftest.py.
+algorithms = load_study_module("algorithms")
+replay = load_study_module("replay")
+
+if algorithms is None or replay is None:
+    pytest.skip("study tree absent — equivalence cannot be checked here",
+                allow_module_level=True)
+
 PILOT = os.path.join(REPO, "results", "pilot")
 DEV_TABLES = ["pilot_A_01", "pilot_B_01", "pilot_C_01"]
 
@@ -49,8 +57,18 @@ class Recorder:
     queried_ids = property(lambda self: self._s.queried_ids)
 
 
-def _plan_trajectory(tbl, budget, allow_fast_math=True):
-    """Run the host-driven round structure against a frozen table."""
+PERMISSIVE = plan.EmissionPolicy(allow_fast_math=True, allow_fp_contract=True,
+                                 portable_flags=False)
+
+
+def _plan_trajectory(tbl, budget, policy=PERMISSIVE):
+    """Run the host-driven round structure against a frozen table.
+
+    The equivalence claim is "given the same observations AND an emission policy that excludes
+    nothing, the batched plan queries exactly what algorithms.doe queries". The study's DOE arm
+    has no emission policy at all, so every exclusion cytune applies (fast-math since v0, FMA
+    contraction since F19, non-baseline -march under --portable-flags) is a deliberate divergence
+    and must be switched off to compare like with like."""
     ref = theta.REFERENCE_ID
     sp = plan.screen_plan(budget)
     feas, queried = {}, {ref}
@@ -62,7 +80,7 @@ def _plan_trajectory(tbl, budget, allow_fast_math=True):
         f, m, _r = tbl[cid]
         if f and m is not None:
             feas[cid] = m
-    wp = plan.walk_plan(feas, queried, budget - len(sp["ids"]), allow_fast_math=allow_fast_math)
+    wp = plan.walk_plan(feas, queried, budget - len(sp["ids"]), policy=policy)
     return sp["ids"] + wp["ids"], wp, sp["ids"], wp["ids"]
 
 
@@ -77,7 +95,7 @@ def test_walk_plan_reproduces_algorithms_doe_trajectory(kid, budget):
     tbl, _opt = _table(kid)
     rec = Recorder(replay.SealedTable(tbl))
     algorithms.doe(rec, budget, seed=0)
-    mine, _wp, _s, _w = _plan_trajectory(tbl, budget, allow_fast_math=True)
+    mine, _wp, _s, _w = _plan_trajectory(tbl, budget, policy=PERMISSIVE)
     assert mine == rec.order, (
         f"{kid} B={budget}: batched plan diverged from algorithms.doe\n"
         f"  doe : {rec.order}\n  plan: {mine}")
@@ -110,8 +128,9 @@ def test_walk_excludes_fast_math_unless_opted_in(kid):
     trajectories would therefore always show fast-math present and prove nothing.
     """
     tbl, _ = _table(kid)
-    _all_in, _wp_in, _s_in, walk_in = _plan_trajectory(tbl, 32, allow_fast_math=True)
-    _all_ex, wp_ex, _s_ex, walk_ex = _plan_trajectory(tbl, 32, allow_fast_math=False)
+    _all_in, _wp_in, _s_in, walk_in = _plan_trajectory(tbl, 32, policy=PERMISSIVE)
+    _all_ex, wp_ex, _s_ex, walk_ex = _plan_trajectory(
+        tbl, 32, policy=plan.EmissionPolicy(allow_fast_math=False, allow_fp_contract=True))
     assert not any(plan.is_fast_math(c) for c in walk_ex), \
         "a fast-math config entered the adaptive walk without --allow-fast-math"
     if any(plan.is_fast_math(c) for c in walk_in):
@@ -170,3 +189,24 @@ def test_confirm_winner_rejects_when_the_endpoint_is_missing_entirely():
 def test_confirm_winner_rejects_a_feasible_row_with_no_timing():
     final, rej = plan.confirm_winner(5, 288, {"5": {"feasible": True, "endpoint_ns": None}})
     assert final == 288 and rej is not None
+
+
+def test_the_study_modules_are_not_the_vendored_ones():
+    """The check that keeps this whole file from being vacuous.
+
+    `cytune/_vendor/` ships `algorithms.py` and puts itself at sys.path[0], so `import algorithms`
+    in this directory returns CYTUNE'S copy. Every equivalence assertion above would then be
+    comparing cytune against itself and would pass no matter how far the two drifted. This asserts
+    the modules under test really came out of scripts/phasep.
+    """
+    for mod in (algorithms, replay):
+        assert os.path.dirname(os.path.abspath(mod.__file__)) == STUDY, (
+            f"{mod.__name__} was loaded from {mod.__file__}, not from the study tree — the "
+            f"equivalence test is comparing cytune against itself")
+    assert hasattr(algorithms, "doe"), \
+        "the study's algorithms.doe is missing; the vendored trim must not have reached it"
+
+    import cytune._vendor.algorithms as vendored
+    assert os.path.abspath(vendored.__file__) != os.path.abspath(algorithms.__file__)
+    assert not hasattr(vendored, "doe"), \
+        "the vendored copy should be trimmed to what the product reaches (A3)"

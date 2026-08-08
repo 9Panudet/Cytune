@@ -2,7 +2,7 @@
 import pytest
 
 from cytune import certify, routing
-from cytune._phasep import theta
+from cytune._vendor import theta
 
 ORACLE = {"output_class": "float", "tolerance": {"rtol": 1e-9, "atol": 1e-12},
           "deterministic": True, "n_det_reps": 5, "golden_sha256": "abc"}
@@ -17,17 +17,37 @@ def _route(kind=routing.DOE, rule="R4"):
             "why": "because", "fallback_note": None, "feasibility_note": None}
 
 
-def _cert(winner, endpoint, route=None, allow_fm=False):
+def _cert(winner, endpoint, route=None, allow_fm=False, **kw):
     return certify.build_certificate(
         name="demo", winner_id=winner, reference_id=REF, endpoint=endpoint, oracle=ORACLE,
         feasibility=FEAS, route=route or _route(), rig_mode="quiesced",
         rig_detail="quiesced — verified", budget={"probe": 17, "tuning": 16},
-        sources=SOURCES, allow_fast_math=allow_fm)
+        sources=SOURCES, allow_fast_math=allow_fm, **kw)
 
 
 def _ep(cid, ns, feasible=True, subs=None):
     return {str(cid): {"feasible": feasible, "endpoint_ns": ns,
                        "subs_ns": subs if subs is not None else [ns], "cv": 0.001}}
+
+
+def _refused(cid, ep):
+    """The emit decision for `cid`, plus the certificate that results from refusing it.
+
+    The decision moved into `certify.assess` so the CLI can settle what it will emit BEFORE the
+    §1.4 gate runs on it (P2's fix). `build_certificate` now REFUSES a non-clearing candidate
+    outright rather than assembling a document whose EMIT block claims the reference above the
+    candidate's directives, so these tests go through the same two steps the CLI does: assess,
+    then certify the demoted result.
+    """
+    a = certify.assess(ep.get(str(cid)), ep.get(str(REF)))
+    assert not a["clears"], f"fixture must NOT clear the bar, but assess says it does: {a}"
+    with pytest.raises(AssertionError, match="demoted to the reference"):
+        _cert(cid, ep)
+    cert = _cert(REF, ep, flat_observation={
+        "config_id": cid, "endpoint_ratio_vs_reference": a["speedup"],
+        "note": "measured but NOT recommended: " + a["why"]})
+    assert cert["verdict"] == "honest-flat"
+    return a, cert
 
 
 # ------------------------------------------------------------------ verdicts
@@ -42,9 +62,33 @@ def test_real_speedup_is_certified_as_an_improvement():
 def test_marginal_gain_is_reported_as_flat_not_as_a_speedup():
     """1.5% over the reference is inside noise; calling it a win would be the product lying."""
     ep = {**_ep(REF, 100e6), **_ep(5, 98.5e6)}
-    c = _cert(5, ep)
-    assert c["verdict"] == "honest-flat"
+    a, c = _refused(5, ep)
+    assert a["speedup"] == pytest.approx(100 / 98.5)
+    assert "does not exceed" in a["why"]
     assert "reference" in c["summary"]
+    assert c["emitted_config"]["config_id"] == REF, "a flat run must emit the user's own baseline"
+
+
+def test_a_rejected_winner_must_be_replaced_before_certification():
+    """I2.3 — FAILURE PATH.
+
+    When the endpoint tier or the sanitizer refuses the winner, the CLI falls back to the reference
+    BEFORE certifying. If some future path forgets, the certificate would carry a `winner_rejection`
+    describing config N while emitting config N — recording the refusal and then handing over the
+    refused configuration anyway. The assertion existed; nothing had ever fired it, which by this
+    project's own rule makes it a claim rather than a guarantee.
+    """
+    ep = {**_ep(REF, 100e6, subs=[100e6, 101e6, 99e6]),
+          **_ep(5, 50e6, subs=[50e6, 51e6, 49e6])}
+    rejection = {"rejected_config_id": 5, "reason": "oracle_mismatch",
+                 "action": "fell back to the reference config"}
+    with pytest.raises(AssertionError, match="replaced by the reference"):
+        _cert(5, ep, winner_rejection=rejection)
+
+    # The correct shape — demoted first — certifies as no-safe-improvement.
+    c = _cert(REF, ep, winner_rejection=rejection)
+    assert c["verdict"] == certify.NO_SAFE_IMPROVEMENT
+    assert c["emitted_config"]["config_id"] == REF
 
 
 # ------------------------------------------------- emit margin (D13/D15 generalised)
@@ -73,11 +117,10 @@ def test_borderline_gain_inside_a_noisy_margin_is_refused():
     """
     ep = {**_ep(REF, 100e6, subs=[100e6, 130e6, 70e6]),
           **_ep(5, 91e6, subs=[91e6, 118e6, 64e6])}
-    c = _cert(5, ep)
-    assert c["speedup"] > 1.02, "fixture must clear the OLD fixed floor to be meaningful"
-    assert c["verdict"] == "honest-flat"
-    assert c["measurement"]["emit_margin"]["margin"] > (c["speedup"] - 1.0)
-    assert "bar this run could actually resolve" in c["summary"]
+    a, c = _refused(5, ep)
+    assert a["speedup"] > 1.02, "fixture must clear the OLD fixed floor to be meaningful"
+    assert a["emit_margin"]["margin"] > (a["speedup"] - 1.0)
+    assert "does not exceed" in a["why"]
 
 
 def test_same_gain_on_clean_measurements_is_accepted():
@@ -102,11 +145,10 @@ def test_overlapping_endpoint_measurements_are_not_certified_as_a_speedup():
     OVERLAP the reference's must not be certified, even though it clears the 1.02 floor."""
     ep = {**_ep(REF, 100e6, subs=[100e6, 88e6, 105e6]),
           **_ep(5, 91e6, subs=[91e6, 86e6, 99e6])}
-    c = _cert(5, ep)
-    assert c["speedup"] > 1.0 + certify.TAU, "fixture must clear the old fixed floor to be meaningful"
-    assert c["verdict"] == "honest-flat"
-    assert c["measurement"]["endpoint_separation"]["separated"] is False
-    assert c["measurement"]["emit_margin"]["margin"] > (c["speedup"] - 1.0)
+    a, _c = _refused(5, ep)
+    assert a["speedup"] > 1.0 + certify.TAU, "fixture must clear the old fixed floor to be meaningful"
+    assert a["separation"]["separated"] is False
+    assert a["emit_margin"]["margin"] > (a["speedup"] - 1.0)
 
 
 def test_separation_function_distinguishes_separated_from_overlapping():
@@ -204,8 +246,10 @@ def test_certificate_always_carries_the_routing_provenance_and_its_limit():
     for c in (_cert(None, {}), _cert(5, {**_ep(REF, 100e6), **_ep(5, 50e6)})):
         assert c["routing_label"] == routing.LABEL
         rendered = certify.render(c)
-        assert "P3-VALIDATED" in rendered
-        assert "NOT validated on real code" in rendered
+        # ONE routing sentence, and it must state the limit as well as the support (F14/F15).
+        assert "engineering default" in rendered
+        assert "NOT a validated per-cell router" in rendered
+        assert "P3-VALIDATED" not in rendered
 
 
 def test_certificate_reports_what_was_rejected_as_incorrect():
@@ -246,8 +290,53 @@ def test_no_contraction_disclosure_when_contraction_is_off():
     assert "FLOATING-POINT SEMANTICS" not in certify.render(c)
 
 
-def test_fast_math_status_is_always_disclosed():
+def test_fp_consent_status_is_always_disclosed():
+    """Every certificate states the floating-point consent status, in both directions.
+
+    Since F19 this covers BOTH semantics-changing axes, not just -ffast-math: the default is
+    strict and the certificate says so, and an opt-in names the flag that produced it."""
     off = certify.render(_cert(None, {}))
-    assert "FAST-MATH" in off and "not opted in" in off
+    assert "FLOATING-POINT CONSENT: strict (default)" in off
+    assert "neither -ffast-math nor FMA contraction" in off
     on = certify.render(_cert(None, {}, allow_fm=True))
-    assert "opted in" in on
+    assert "FLOATING-POINT CONSENT: opted in via --allow-fast-math" in on
+
+
+# ------------------------------------------------- U3/U4: state the magnitude, admit the cap
+def test_separation_reports_how_thin_it_is():
+    """U3. A 74 microsecond gap — 0.2%, a tenth of tau — read exactly like a 40% one, because
+    separation was a bare yes/no."""
+    thin = certify.endpoint_separation({"subs_ns": [99.9e6, 99.8e6, 99.7e6]},
+                                       {"subs_ns": [100e6, 101e6, 102e6]})
+    assert thin["separated"] is True
+    assert thin["thin"] is True
+    assert "THIN" in thin["reason"]
+    assert thin["gap_relative"] < certify.TAU
+
+    wide = certify.endpoint_separation({"subs_ns": [50e6, 50.1e6, 49.9e6]},
+                                       {"subs_ns": [100e6, 101e6, 99e6]})
+    assert wide["separated"] is True and wide["thin"] is False
+    assert "THIN" not in wide["reason"] and "%" in wide["reason"]
+
+
+def test_escalation_admits_when_it_ran_out_of_sub_measures():
+    """U4. The protocol escalates while CV > 0.05 to at most 5, so it can END above target — and
+    a run whose reference finished at CV 0.1097 printed the protocol sentence unchanged."""
+    noisy = {"subs_ns": [36.8e6, 49.0e6, 49.2e6, 49.2e6, 42.5e6]}
+    clean = {"subs_ns": [50e6, 50.1e6, 49.9e6]}
+    st = certify.escalation_status(clean, noisy)
+    assert st["target_met"] is False
+    assert any(c["which"] == "reference" for c in st["capped"])
+    assert "did NOT reach its noise target" in st["warning"]
+    assert st["cv"]["reference"] > certify.CV_TARGET
+
+    ok = certify.escalation_status(clean, clean)
+    assert ok["target_met"] is True and ok["capped"] == [] and "warning" not in ok
+
+
+def test_a_capped_escalation_is_printed_on_the_certificate():
+    ep = {**_ep(REF, 100e6, subs=[36.8e6, 49.0e6, 49.2e6, 49.2e6, 42.5e6]),
+          **_ep(5, 20e6, subs=[20e6, 20.1e6, 19.9e6])}
+    r = certify.render(_cert(5, ep))
+    assert "above the 0.05 target" in r
+    assert "did NOT reach its noise target" in r

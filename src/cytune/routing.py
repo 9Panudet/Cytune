@@ -10,8 +10,29 @@ RQ-P2, which has not run. Hence the label on every output.
 """
 from __future__ import annotations
 
-LABEL = ("routing: P3-VALIDATED on the Phase-P synthetic benchmark (20-seed prefix, amendment "
-         "A-10) — NOT validated on real code; RQ-P2 acceptance has not run")
+# THE ONE ROUTING SENTENCE. Every place that describes the routing policy — CLI banner,
+# certificate header, certificate ROUTING block, README, USER_GUIDE — uses THIS string or points
+# at it. Findings F14/F15 of the cold-user acceptance test: the README called the policy "interim"
+# while every certificate called it "P3-VALIDATED", and the label also claimed "RQ-P2 acceptance
+# has not run" after RQP2_ACCEPTANCE.json existed. Two contradictions a user could not resolve.
+# The honest statement is neither of the old ones: the study RAN, and what it measured is that
+# per-cell routing does NOT beat always-DOE (PHASEP_REPORT §5). So the engine choice is an
+# engineering default the study supports, not a validated router.
+LABEL = ("routing: engineering default grounded in the Phase-P study (DOE beat BO in 18 of 20 "
+         "cells); NOT a validated per-cell router — RQ-P2 measured that routing does not beat "
+         "always-DOE on held-out kernels")
+
+# Longer form for documentation; the CLI prints LABEL, docs quote PROVENANCE.
+PROVENANCE = (
+    "The engine cytune runs is DOE, always. The Phase-P study compared four algorithms on a "
+    "149-kernel benchmark and found (a) DOE is the best product-runnable arm in 18 of 20 "
+    "(cell x budget) families, (b) BO is worse than random search on flat landscapes, and (c) "
+    "routing per-kernel-type does not beat always-DOE on held-out kernels — it tied at four of "
+    "five budgets and was worse at the fifth. So the 'routing' rules below choose a BUDGET and "
+    "decide whether to search at all; they do not meaningfully choose between algorithms. "
+    "Three of four kernel categories are underpowered (achieved power 0.708/0.776/0.708 against "
+    "a 0.80 target) and the study ran 20 of a planned 200 repetitions. "
+    "See results/PHASEP_REPORT.md §5 and results/study/RQP2_ACCEPTANCE.json.")
 
 # ---------------------------------------------------------------------------------------------
 # P3 RESULT, and why the engine choice barely moved.

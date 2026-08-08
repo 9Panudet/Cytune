@@ -1,0 +1,259 @@
+# Known issues
+
+Two lists: what is still open, and what was fixed in the productisation pass with the test that
+proves each. Nothing is deleted from the record.
+
+Finding IDs are from
+[`../results/usertest/USER_TEST_REPORT.md`](../results/usertest/USER_TEST_REPORT.md); the fixes and
+their evidence are in
+[`../results/usertest/PRODUCTIZATION_REPORT.md`](../results/usertest/PRODUCTIZATION_REPORT.md).
+
+---
+
+## Open
+
+### Limitations that will not be "fixed" — they are the honest shape of the product
+
+**The routing policy is an engineering default, not a validated router.** Measured, not
+speculative: RQ-P2 found routing does not beat always-DOE on held-out kernels. cytune ships one
+algorithm and says so in one sentence everywhere. `../results/PHASEP_REPORT.md` §5.
+
+**Three of four kernel categories are underpowered** (achieved power 0.708 / 0.776 / 0.708 against
+a 0.80 target) and the study ran 20 of a planned 200 repetitions. Non-significant study findings
+are underpowered nulls, not "no difference".
+
+**Single hardware.** One i3-10100F, one pinned image. Nothing transfers. `-march=native` can be
+emitted; cytune warns, and `--portable-flags` gives a fleet-safe alternative.
+
+**The statistical auditor's independent recompute has never run** against the corrected data — it
+was killed twice by service limits. Every number is traceable to raw measurements, but not
+independently recomputed.
+
+### Real, open, and not yet worth the fix
+
+**K1 — the FP-work heuristic can under-warn.** The `FLOATING-POINT SEMANTICS` block is suppressed
+when the oracle's output class is integral *and* no `float`/`double`/`complex` token appears in the
+module source. A kernel that computes in double and returns an int reads as "no FP work". *Why not
+fixed:* the honest alternatives are parsing Cython's AST or always warning; the first is a large
+dependency for a warning, the second is what F21 was about. The heuristic is biased toward
+over-warning, is labelled as a heuristic in the certificate, and only ever affects a **warning** —
+never what is emitted.
+
+**K2 — `.cytune.toml` on Python < 3.11 without `tomli`** falls back to a minimal parser that
+handles only `[section]` and `key = value` with string/number/bool values. It refuses anything else
+rather than guessing. *Why not fixed:* the alternative is a hard runtime dependency on a host that
+currently needs none. `pip install tomli` for full TOML.
+
+**K3 — `--target-ms 0` (calibration disabled) is untested.** The code path exists and is
+documented; no run has exercised it.
+
+**K10 — your driver owns the clock, and cytune certifies what it reports.** `measure_child` loads
+your driver into the very process that times it. A driver that replaces `time.perf_counter_ns`
+produced a certified `5.0000x` on a kernel where nothing is faster than anything else. *Why not
+fixed:* the driver IS the thing being timed; moving the clock out of its process means a different
+measurement architecture, not a patch.
+
+*Narrowed in 1.0.0, and by exactly how much.* Over-claims were already flagged. Under-claims — the
+direction a speedup is actually manufactured from — are now attacked too: the winner and the
+reference share driver, `K`, inputs and image, so their non-timed remainders (`wall − K × median`,
+measured by the PARENT) must differ by exactly `warmup × (t_win − t_ref)`. When the residual exceeds
+its budget the speedup is **withheld** and the verdict becomes `no-safe-improvement`.
+
+The power is not "catches lying drivers"; it is a curve, and the curve is pinned by test rather than
+described. A claimed `r_claim` is caught whenever the TRUE speedup is below `1.24x` (for a 1.5x
+claim) rising to `2.30x` (for a 100x claim) — so any claim at all about a kernel that is really flat
+is caught, which is the demonstrated H1 attack, while **a genuine 2.5x reported as 5x is not**. See
+GUARANTEES N8 for the table and `test_cytune_binding.py` for the pins.
+
+*What is left, and it is not closable by timing.* A driver can see which module it was handed, so
+one that does genuinely **more work** for the reference burns real wall clock — every relation above
+holds and the certificate is a true statement about a rigged comparison. For the real use case, you
+tuning your own code, this is self-deception rather than an attack. **Do not treat a certificate as
+attesting a speedup to someone who does not trust the driver** — since 1.0.0 the certificate says
+this itself, in its `attestation` block. Full statement in [`../SECURITY.md`](../SECURITY.md) and
+GUARANTEES N8.
+
+**K11 — CLOSED in 1.0.0.** It read: *"nothing verifies the config id against the artifact that was
+actually built"*, and concluded *"there is no general fix"*. That conclusion was wrong. The fix is
+not to hash the `.so` against the directives it should have been built with — the toolchain does not
+expose that — but to stop reasoning from the id at all: hash the artifact at build, hash it again at
+the moment it is timed, and refuse to emit unless they are the same file, on both sides of the
+ratio. That is I4.1, and I4.2/I4.3/I4.4 do the same for the generated code, the gate and the rig.
+See [GUARANTEES.md](GUARANTEES.md) G8 and `src/cytune/binding.py`.
+
+**K12 — `# pragma GCC optimize` / `#pragma GCC target` inside the module are not inspected.** The
+certificate's flag string is ground truth for what cytune **passed** to the compiler, and invariant
+I1.3 checks that rigorously. It is not ground truth for what gcc **applied**: a module can steer the
+compiler from inside via `cdef extern from *` blocks. *Partially covered since 1.0.0:* if such a
+pragma neutralises a GCC factor, the artifacts stop differing and `binding.degeneracy` counts fewer
+distinct binaries than configurations, which appears in the certificate's PROVENANCE line. That is a
+signal, not a refusal — the degeneracy refusal covers the five *directive* factors, not the four GCC
+ones.
+
+**K15 — a decorator or `with` block that pins a tuned directive is REPORTED, not refused.**
+`@cython.boundscheck(False)` and `with cython.cdivision(True):` override the `-X` flags for the code
+they cover, exactly as a file header does for a module. cytune names the file, the line and the
+directive on the certificate and tunes the rest of the module normally. *Why not refused:* a header
+neutralises a directive for the WHOLE module — every combination compiles identically and nothing
+the certificate says about directives is true — while a decorator covers one function and the rest
+still varies. Refusing on decorators would have blocked **three of the nine** real
+scipy/scikit-learn anchors this product was validated against (`_ppoly`, `_shortest_path`,
+`_traversal`), all three of which still produce 21 distinct generated sources from 21 directive
+combinations. *What is still true:* for the functions those decorators cover, the emitted header —
+including the reference's "Cython's safe defaults" — does not apply. Found by the focused
+adversarial re-run.
+
+**K16 — wall-clock corroboration reports NOT CHECKED when the claim is small relative to process
+noise.** The largest discrepancy any misreport of a gain `g` can produce is `(1 + warmup/K) × g`. On
+a kernel with a large fixed per-process cost and a small claimed gain, the measured noise floor
+exceeds that, so nothing could fail the check and passing it would mean only "the arithmetic was
+performed". It reports unavailable instead, on the same rule as a sanitizer gate that could not run.
+The emit margin and the separation test still gate small gains. Found by the focused adversarial
+re-run, which observed that C1 had no lower cutoff.
+
+**K14 — the driver still shares the process with the measurement, and that is the root of two
+separate findings.** K10 is the timing half. The focused adversarial re-run found the artifact half:
+`measure_child` loads the driver *before* the `.so`, so a driver's import-time code ran between
+I4.1's hash and the binary being loaded. Both are instances of one fact — the driver is inside the
+trust boundary — and each needed its own fix, because binding the artifact does not bind the clock
+and corroborating the clock does not bind the artifact. The artifact half is now closed structurally
+(`_so/` is mounted read-only during measure phases; nothing in a measure phase writes there) — but
+only against a FILE SWAP. The adversary's own follow-up names the escape it did not demonstrate: the
+driver is loaded first, so it can hijack its own interpreter's module loader — monkeypatching
+`importlib.util.spec_from_file_location`, or setting `KERNEL_MODULE`/`PKG_MODULE` — and have the
+child import a different binary while the honest `.so` on disk is never touched. I4.1 would match
+and C1 would corroborate. No hash can reach that; it is the same trust boundary as the clock, and
+the certificate's provenance note now says "the FILE the endpoint tier was pointed at" rather than
+"the binary that ran". The timing half cannot be closed either. *What this means:* expect further
+instances of this shape rather than treating any of these fixes as having closed "the driver
+problem".
+
+**K13 — the generic degeneracy check refuses only TOTAL collapse, and that is weaker than it
+sounds.** `binding.degeneracy` hashes the generated C per directive combination; I4.2 refuses when
+every combination produces identical C. Measured against the actual H12 header
+(`# cython: boundscheck=False, wraparound=False`) on a real kernel, **it does not fire** — the other
+three directives still change the C, so the partition has several classes. What it does do is report
+`boundscheck` and `wraparound` as *inert*, by name, without knowing the mechanism. The refusal for
+that case comes from `check_pinned_directives_tree`, which is exact but is a blacklist of one
+mechanism (a `# cython:` header, now searched across the whole module tree rather than only the
+named file). *Why not fixed:* refusing on any single inert directive would refuse every kernel that
+simply does no division or has no `None`-able arguments, which is most of them. Verified end to end
+in `test_cytune_binding.py`.
+
+**K7 — the vendored rig is pinned to the study source, so it cannot be edited in place.** Product
+fixes to `_vendor/campaign.py`, `_vendor/build.py`, `theta`, `seeds`, `measure_child`, `san_child`
+or `profiles` fail `test_cytune_vendor.py` until the same change lands in `scripts/phasep/`. *Why
+this is the design, not a defect:* the alternative is a fork that drifts silently from the code
+every number in `results/` was measured on, which would also invalidate the ground-truth dogfood.
+The procedure is in [CONTRIBUTING.md](CONTRIBUTING.md#adding-an-oracle-class).
+
+**K8 — the emitted `march` is not checked against the machine that will run the binary.** cytune
+warns when it emits `-march=native` and offers `--portable-flags`, but it cannot know where your
+artifact will run. Nothing enforces the warning.
+
+**K9 — `cytune audit` costs one container build+run per risk-set entry** (8 entries, ~4 minutes
+total on the acceptance fixtures). It is not free and is not run as part of `tune`; `tune` points
+at it when a run ends `no-safe-improvement`.
+
+**K4 — the sanitizer gate checks one config out of 1,728, on the inputs your driver generates.**
+A clean gate is evidence, not proof. This is a property of sanitizers, not a bug, but it is the
+single most over-readable line in the certificate, so it is repeated here.
+
+**K5 — no repeatability guarantee is claimed.** One fixture was run twice and the verdict was
+stable (proof 22), which is one observation, not a distribution.
+
+**K6 — `tune`'s sanitizer gate is a non-emission guarantee, not a detection guarantee. NOW
+ADDRESSED, and the limitation restated precisely.** `cytune tune` gates two configs out of 1,728:
+the search's best candidate and the config it emits. Whether a latent memory bug is *found*
+therefore depends on where the DOE walk lands, which varies between runs — measured at **3 of 5**
+on the same out-of-bounds fixture, with the emitted reference gated CLEAN every time, so nothing
+unsafe was ever emitted.
+
+*What changed in 1.0.0:* `cytune audit` turns detection into a deterministic capability. It gates a
+pre-registered risk set — including the boundscheck+wraparound **pair**, which is the only
+combination that exposes D23 and is not derivable from the per-directive singles — and measured
+**6 of 6** on the same fixture, with a byte-identical verdict structure across all six runs.
+
+*What remains true:* `tune` still gates two configs, and `audit` still checks eight of 1,728 on the
+inputs your driver generates. Neither is a proof of memory safety (K4). The honest statement is now
+split across [GUARANTEES.md](GUARANTEES.md) G2 (non-emission) and G2b (deterministic detection over
+a stated risk set).
+
+---
+
+## Fixed in this pass
+
+Every fix ships with a test that drives its **failure** path. Run them with
+`pip install -e ".[test]" && pytest -q src/cytune`.
+
+### Entry (T1)
+
+| # | was | now | proof |
+|---|---|---|---|
+| **F1** | `cytune doctor` — the README's first command — did not exist. No packaging, no `PYTHONPATH` note. Four guesses to start the CLI. | `pyproject.toml` with a `cytune` console script; `pip install -e .` then `cytune doctor`. `python3 -m cytune` still works. `doctor` has an **entry point** check that names the fix. | live install + `test_doctor_json_is_machine_readable` |
+| **F2** | `docs/` did not exist. | Five documents, written from what a cold tester actually needed. | this directory |
+| **F3** | The pinned image is BLOCKING and nothing said how to get it. | `doctor` prints `podman build -f Containerfile -t localhost/motifbo-env:phase1 .` and the expected image ID, and flags a mismatch. The README carries the same command. | `test_doctor_names_the_image_build_command` |
+
+### Truth (T2)
+
+| # | was | now | proof |
+|---|---|---|---|
+| **F4** | A kernel whose entire 1.74× headroom was refused as unsafe was reported `HONEST-FLAT` — "your kernel has no headroom" when the truth was "all of it is unsafe". | Distinct `NO-SAFE-IMPROVEMENT` verdict (exit 3) and a `!!!` **MEMORY-SAFETY DEFECT** block above the recommendation, with the config id, how much faster it looked, the ASan summary, and the path to the full report. | `test_f4_rejected_winner_is_never_reported_as_honest_flat`, `..._memory_safety_finding_is_loud_...`, and `test_f4_a_genuinely_flat_run_is_still_honest_flat` (G3 not weakened) |
+| **F5** | After a fallback, `sanitizer_gate` described the **rejected** config; the emitted config's own status was never stated. G2 held with an asterisk. | The gate runs on whatever is emitted, **including the reference fallback**. A skipped gate says `emitted config not gated: <reason>`. | `test_f5_sanitizer_gate_field_always_describes_the_emitted_config`, `test_f5_missing_gate_is_recorded_as_not_run_and_never_as_a_pass` |
+| **F6** | A `.pyx` that failed to compile produced `built 0/17` and `cythonize_fail` — no compiler diagnostic, no log path, and the run continued to the next stage. | Aborts immediately with the compiler's own words and the path to the full build log. A *partial* failure still continues. | `test_f6_total_build_failure_aborts_with_the_compilers_own_words` |
+| **F7** | Three version strings: `1.0.0-rc0+research-preview`, `cytune v0`, `cytune-certificate/v0`. | One, from `cytune.__version__`, used by the banner, `doctor`, and the certificate schema. | `test_f7_one_version_string_everywhere` |
+| **F8** | `delta_probe = 2.65` and `MEASURED SPEEDUP: 1.27x` with nothing connecting them. | A `WHY THE PROBE NUMBER AND THE SPEEDUP DIFFER` section, plus a one-line caveat at probe time. | `test_f8_certificate_reconciles_delta_probe_with_the_measured_speedup` |
+| **F9** | `not found: <path>` for either argument — a user who mistyped one of two could not tell which. | Both paths validated up front; each problem names its argument; swapped arguments are diagnosed. | `test_f9_path_errors_name_which_argument_was_wrong`, `..._both_bad_paths_...`, `..._swapped_arguments_...` |
+| **F10** | `doctor` spliced raw multi-line subprocess stderr into a formatted field. | Flattened and truncated. | `test_doctor_flattens_multiline_subprocess_output` |
+| **F11** | Failed runs left `.cytune/<name>/` behind; a bad `--driver` had already vendored `kernel.pyx`. | The workspace is created only when there is something to put in it, and the driver contract is checked before anything is copied. | `test_f11_a_failed_run_leaves_no_workspace_behind`, `..._a_bad_driver_does_not_leave_a_vendored_kernel` |
+| **F12** | An unrecognised `tune` flag printed the **top-level** usage, so `--allow-fast-math` was not visible. | `tune`'s own usage, plus a pointer to `cytune tune --help`. | `test_f12_unknown_tune_flag_shows_the_tune_usage_not_the_top_level_one` |
+| **F13** | `--rig quiesced` was invalid; the quiesced value was spelled `auto`. | `quiesced` is a real choice and **requires** the quiesced rig, refusing rather than silently degrading. | `test_f13_rig_quiesced_is_a_valid_choice` |
+| **F14** | README said the routing policy was "interim"; every certificate said "P3-VALIDATED". | One sentence, in `routing.LABEL`, used verbatim everywhere. | `test_every_route_carries_the_provenance_label_including_its_limit` — asserts the overclaiming wording **cannot come back** |
+| **F15** | The label claimed "RQ-P2 acceptance has not run" after `RQP2_ACCEPTANCE.json` existed. | Gone with F14; the same test asserts the stale clause cannot return. | as F14 |
+| **F16** | Certificates used `rule R2`, `PREREG §9.2`, `IF_probe`, `tau`, `§301` with no glossary. | A `GLOSSARY` section inside the certificate defining every term it uses. | `test_f16_certificate_defines_its_own_insider_terms` |
+| **F17** | On a fallback, `endpoint_separation` compared the reference against **itself** and reported "the sub-measures OVERLAP". | Reported as `not_applicable` with the reason, and still computed for real comparisons. | `test_f17_no_vacuous_separation_claim_when_the_winner_is_the_reference`, `..._is_still_computed_...` |
+| **F18** | `n_candidates: 17, n_excluded_fast_math: 12` — no denominator, no sum. | `emittable candidates : 10 of 29 feasible (19 excluded by policy: fast_math=12, fp_contract=7)`, with the denominator stated in the JSON. | `test_f18_selection_counts_name_their_denominator_and_sum` |
+| **F19** | FMA contraction was emitted **by default** while `-ffast-math` needed a flag. Two FP-semantics changes, two consent models. | Both opt-in: `--allow-fast-math`, `--allow-fp-contract`. Default is FP-strict and the certificate says so. | `test_f19_fp_contract_is_excluded_from_emission_by_default` (a 5×-faster forbidden config), `..._fast_math_optin_does_not_silently_grant_contraction`, `test_strict_default_admits_no_fp_semantics_change_at_all` |
+| **F20** | `-march=native` emitted with no portability warning. | A `PORTABILITY WARNING` block, and `--portable-flags` to restrict *selection* to `-march=x86-64`. | `test_f20_march_native_carries_a_portability_warning`, `test_f20_portable_flags_excludes_native_from_selection` |
+| **F21** | The FP-semantics block fired on a pure-integer kernel. | Fires only when the emitted config changes FP semantics **and** the kernel plausibly has FP work; otherwise a one-line qualifier. See **K1** for the heuristic's limit. | `test_f21_fp_block_is_muted_when_the_kernel_has_no_floating_point_work`, `..._still_fires_when_there_is_fp_work` |
+
+### Found during this pass, by running the fixes
+
+| # | what | proof |
+|---|---|---|
+| **P1** | With the gate extended to the fallback (F5), a kernel whose **reference** reported made cytune emit a reporting config under the words "the best safe choice". Now: `EMIT: NOTHING` and a `NO SAFE RECOMMENDATION` verdict. | `test_g2_a_reporting_emitted_config_is_never_called_safe`, `test_g2_both_a_rejected_candidate_and_a_dirty_baseline_are_reported` |
+| **P2** | On a run where the search's winner did not clear the emit margin, the certificate said `EMIT: the reference configuration (unchanged)` and printed `boundscheck=False, wraparound=False`. **The words and the directives disagreed.** The emit decision is now settled *before* gating, and an invariant refuses to build a certificate that emits a rejected winner. | `test_a_non_improvement_certificate_always_emits_the_reference_itself`, `test_certificate_refuses_to_be_built_with_a_rejected_winner_still_emitted`, `test_assess_*` |
+| **P3** | Argparse's usage errors exited **2**, colliding with the documented `2 = HONEST-FLAT`. | `test_usage_errors_do_not_collide_with_the_honest_flat_exit_code` |
+| **P4** | A `NOT RUN` gate left the verdict line unqualified, so a reader (or a script) stopping at the summary saw a plain "improvement" for a recommendation nobody memory-checked. | `test_a_not_run_gate_degrades_the_verdict_line_itself` |
+
+### Found by the FRESH-TESTER re-test — a second cold reader, docs-only
+
+A new tester with no memory of the work, allowed only `README.md`, `docs/` and the CLI, ran the
+whole acceptance again and returned **"a stranger would succeed"** — plus 13 more findings. All 13
+are fixed; four of them were honesty defects.
+
+| # | was | now | proof |
+|---|---|---|---|
+| **R1** | the "full sanitizer report" the certificate points at was the shadow-byte legend, cut off mid-token: no `ERROR:` line, no faulting address, no stack trace, no source location. The tool told you your kernel had a memory bug and then handed you nothing to act on. | The excerpt anchors on the first `ERROR:`/`runtime error:` marker and takes forward; the report file carries the full output. It now opens with `ERROR: AddressSanitizer: heap-buffer-overflow`, `READ of size 8 at 0x…`, and the stack frame in your kernel. | `test_r1_sanitizer_excerpt_keeps_the_actionable_head_not_the_shadow_map`, `test_r1_report_file_carries_the_full_output`; live at `prod_runs/retest_fixes/sanitizer_report_1392.log` |
+| **R2** | `--allow-fast-math` alone emitted `-ffp-contract=fast` while both the certificate and `fp_semantics.fma_contraction_permitted` said contraction was **not** permitted. A user scripting on that field would compile with contraction. | The emitted flag string is the ground truth: `fma_contraction_permitted` is true whenever the flags permit it, with `fma_contraction_implied_by_fast_math` distinguishing how, and the certificate explains the subsumption. | `test_r2_fast_math_certificate_does_not_deny_the_contraction_it_emits` |
+| **R3** | `--dry-run` borrowed verdict exit codes (0 for a flat kernel, 2 for a tunable one — so the documented `case $?` recipe took the "verified speedup, safe to use" branch on a memory-unsafe kernel), and `--dry-run --json` printed nothing at all. | A dry run has no verdict, so it has its own code (`EXIT_DRY_RUN`) and emits a `cytune-dry-run/1.0` JSON object. | `test_r3_dry_run_has_its_own_exit_code_and_never_borrows_a_verdicts`; live in `prod_runs/retest_fixes/verify_console.log` |
+| **R4** | cached probe rows were reused across a changed `--target-ms`, so a 40 ms run reported a **byte-identical** `delta_probe` to the 65 ms run that actually measured it. A screening number attributed to a workload it was never measured on. | The calibration is part of the cache key; stale rows are archived, counted and announced, and the probe re-measures. Builds are still reused, so a repeat run stays fast. | `test_r4_a_changed_calibration_discards_stale_measurements`, `test_r4_builds_survive_a_calibration_change`; live: `calibration CHANGED … discarding 17 cached measurement rows` |
+| **R5** | the "ready-to-paste `setup.py` fragment" had no newline after its banner comment, so the first import was swallowed and the snippet raised `NameError`. | Fixed; the test `compile()`s the snippet. | `test_r5_build_snippet_is_syntactically_valid_python`, `..._with_the_march_native_warning` |
+| **R6** | the live narration called the candidate "the EMITTED config" *before* it was rejected. | It is "the search's best candidate" until it survives the gate. | live: `§1.4 sanitizer gate on the search's best candidate (config 1392, ASan+UBSan)` |
+| **R7** | `--rig portable` on an already-quiesced host printed "The host was not quiesced" — a false statement of fact about the user's machine. | "Measurement was forced to portable by `--rig portable`, so the host's quiesced state (whatever it is) was not used or verified." | `test_r7_forced_portable_does_not_claim_the_host_was_unquiesced` |
+| **R8** | `12 crash`, with no diagnostic, on the run where the diagnosis mattered most — those 12 were exactly the configs where Cython caught the same off-by-one the memory block was about. | The certificate reports the factor levels every rejected config shares: `all 12 share: boundscheck=True, wraparound=False`, with a line telling you to look at your indexing. | `test_r8_rejections_report_the_factor_levels_they_all_share`, `..._no_pattern_claimed_when_there_is_none`, `..._reaches_the_rendered_certificate` |
+| **R9** | the exit-code table still documented argparse's `2` for usage errors and told scripters to disambiguate a collision that had already been fixed. | Corrected to `1`, with the dry-run row added. | `docs/USER_GUIDE.md` §8 |
+| **R10** | the `0.0808` portable emit margin read as a property of the *flag*; forcing portable on a quiesced host gives `0.0200`. | Labelled as a property of an unquiesced **host**, with the distinction spelled out. | `docs/USER_GUIDE.md` §5 |
+| **R11** | `PYTHONPATH=src` is relative and resolves only from the repo root — which is the one directory the user's kernel is not in. The one guess the fresh tester had to make. | The absolute form is shown in both the README and TROUBLESHOOTING. | `README.md`, `docs/TROUBLESHOOTING.md` |
+| **R12** | `doctor` leaked `[Errno 2] No such file or directory: 'bash'` into a user-facing field — the same class as F10, on a path F10 did not cover. | "bash was not found on PATH". | `test_r12_rig_reports_a_missing_bash_in_english` |
+| **R13** | ~60 s of total silence at `[1/6]`, the first thing a new user sees, while TROUBLESHOOTING claimed every stage prints elapsed time. | The stage says what it is doing and why it is the slow one. | `cli.py` ingest line |
+
+### Newly proven paths (T4)
+
+Previously untested, now exercised end-to-end — evidence in the productisation report:
+
+- the sanitizer **NOT-RUN** path (`"ran": false, "clean": null`), the largest open gap and the same
+  class as D23;
+- `--allow-fast-math` opt-in;
+- `OUTPUT_CLASS = "float"` and the tolerance oracle;
+- verdict repeatability across two runs of the same fixture.

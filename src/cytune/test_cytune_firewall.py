@@ -47,8 +47,16 @@ def scan_source(src):
 
 
 def _product_sources():
-    return [p for p in glob.glob(os.path.join(HERE, "*.py"))
-            if not os.path.basename(p).startswith("test_")]
+    """Every shipped .py in the package, INCLUDING `_vendor/`.
+
+    This used to glob `HERE/*.py` only. That was correct while the measurement rig was imported
+    from `scripts/phasep` at runtime, and became a hole the moment the rig was vendored into the
+    package: `_vendor/campaign.py` and friends are product code now, they came from the study
+    tree, and they are exactly the files most likely to carry a stray study path. A firewall that
+    does not scan the newest half of the package is not a firewall.
+    """
+    return sorted(p for p in glob.glob(os.path.join(HERE, "**", "*.py"), recursive=True)
+                  if not os.path.basename(p).startswith("test_"))
 
 
 @pytest.mark.parametrize("path", _product_sources(), ids=os.path.basename)

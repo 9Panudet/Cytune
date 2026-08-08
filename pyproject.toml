@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cytune"
+# Read from cytune.__version__ rather than repeated here. A literal in this file was a SECOND
+# version source and drifted from the package's within one release (`1.0.0rc1` here against
+# `1.0.0` there) -- finding F7 reappearing at the packaging layer, which is exactly why the rule
+# is "one constant", not "keep them in step".
+dynamic = ["version"]
+description = "Cython-directive x GCC-flag autotuner with a correctness certificate"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Proprietary" }
+authors = [{ name = "Motif+BO" }]
+keywords = ["cython", "autotuning", "compiler-flags", "sanitizer"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Compilers",
+]
+
+# NOTE: no runtime dependencies on purpose. The host side of cytune is pure-stdlib
+# orchestration -- it spawns containers and parses one JSON line back. numpy, Cython and
+# GCC all live inside the pinned image, which is where the user's code is allowed to run.
+# Adding them here would imply the host toolchain matters, and it does not.
+dependencies = []
+
+[project.optional-dependencies]
+# numpy is NOT a runtime dependency -- it lives in the pinned image. It is needed only to run
+# the container-side modules (worker/plan) under pytest on the host.
+test = ["pytest>=7", "numpy>=1.24"]
+
+[project.scripts]
+cytune = "cytune.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.dynamic]
+version = { attr = "cytune.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["cytune*"]
+
+[tool.setuptools.package-data]
+# The vendored DOE/probe design is a frozen INPUT to the search, and the example kernel + driver
+# are what the quickstart points at. Both must survive a wheel build.
+cytune = ["_vendor/data/*.json", "examples/*"]
+
+[tool.pytest.ini_options]
+# `tests/` holds the study-equivalence checks, which may import scripts/phasep; `src/cytune` must
+# pass with no study tree present at all. See docs/ARCHITECTURE.md.
+testpaths = ["src/cytune", "tests"]
+python_files = ["test_*.py"]

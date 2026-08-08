@@ -1,131 +1,235 @@
-# cytune — v1.0.0-rc0, **research preview**
+# cytune — v1.0.0, **research preview**
 
-Tunes Cython directives and GCC flags for one module, measures the result on a controlled rig, and
-emits a certificate saying exactly what it did and what it refused to do.
+cytune takes one Cython module and searches 1,728 combinations of Cython directives and GCC flags
+for a faster one. Every candidate is compiled and timed inside a pinned container image and checked
+against a golden output; the configuration it is about to hand you is then rebuilt under
+AddressSanitizer + UndefinedBehaviorSanitizer, and if that reports, the recommendation is withdrawn.
+It emits a certificate stating what it tried, what it refused and why, what it measured, and what
+it will not promise.
 
-**Read this before using it.** The label "research preview" is load-bearing, not modesty:
-
-- **The algorithm study did not complete.** The routing policy shipped here is the **interim** one,
-  not a measured routing matrix. See `results/PHASEP_REPORT.md` §5–§6.
-- **On most real code the honest answer is "no improvement."** The tool is built to say that rather
-  than manufacture a win, and on the nine real-code anchors in our benchmark that is usually what
-  it says.
-- **One of four kernel categories reached the pre-registered statistical power floor.** The other
-  three are reported with their exact achieved power and are never described as passed.
-
-What *is* solid is what the tool **refuses** to do. Those refusals are measured and tested.
+**It runs from a checkout, not from PyPI.** You need podman and a pinned image. That is a real
+limitation and this page does not hide it.
 
 ---
 
-## Install prerequisites — honestly
+## Install (5 minutes)
 
-cytune does not measure on your machine directly. Every build and every timed run happens inside a
-**pinned container image**, because an unpinned toolchain makes results incomparable between runs.
+```bash
+git clone <this repo> && cd Motif+BO
 
-You need:
+# 1. the toolchain image — BLOCKING prerequisite, takes a few minutes
+podman build -f Containerfile -t localhost/motifbo-env:phase1 .
 
-| requirement | why |
-|---|---|
-| `podman` (rootless is fine) | runs the pinned image |
-| the pinned image `localhost/motifbo-env:phase1` | the toolchain; without it nothing runs |
-| Python ≥ 3.9 on the host | the CLI itself is host-side orchestration only |
-| **optional:** a quiesced rig (`scripts/host_prep.sh`, needs sudo) | without it, measurements are best-effort and small speedups are indistinguishable from noise |
+# 2. the CLI
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e .
 
-Check all of it in one command:
-
-```
+# 3. check it
 cytune doctor
 ```
 
-It prints a line per check and, for anything failing, what to do about it. Failures are split into
-**BLOCKING** (cytune cannot run) and **DEGRADED** (it runs, but a specific guarantee is weaker and
-the certificate will say so). Nothing degrades silently.
+`cytune doctor` prints one line per check and, for anything failing, **what to do about it**.
+Failures are split into **BLOCKING** (cytune cannot run) and **DEGRADED** (it runs, but a specific
+guarantee is weaker and the certificate will say so). Nothing degrades silently.
+
+<details>
+<summary>No venv? No pip?</summary>
+
+`python3 -m cytune ...` works without installing anything, as long as `src/` is importable:
+
+```bash
+PYTHONPATH=src python3 -m cytune doctor                              # from the repo root
+PYTHONPATH=/path/to/Motif+BO/src python3 -m cytune tune k.pyx --driver d.py   # from anywhere
+```
+
+`PYTHONPATH=src` is relative and resolves only from the repository root; your own kernel lives
+elsewhere, so use the absolute form there. Both invocation styles behave identically.
+</details>
+
+| requirement | why | if missing |
+|---|---|---|
+| `podman` (rootless is fine) | runs the pinned image | **BLOCKING** |
+| `localhost/motifbo-env:phase1` | the toolchain: Cython, GCC 13.x, ASan/UBSan | **BLOCKING** |
+| Python ≥ 3.9 on the host | the CLI is host-side orchestration only, no runtime deps | **BLOCKING** |
+| a quiesced rig (`sudo scripts/host_prep.sh`) | pins the governor, disables turbo, isolates a core | **DEGRADED** — timings become indicative |
+
+The image is pinned by digest in `Containerfile`. The reference image ID starts `d45e33b08bad`; a
+different ID means your toolchain differs from the one every number in `results/` was measured on.
+
+**Is a different ID fatal?** No — cytune runs, and every correctness guarantee (G1, G2, G4) holds,
+because they are properties of what it refuses rather than of which compiler build it used. What you
+lose is comparability: your timings are no longer measured on the toolchain behind `results/`, so
+this project's published numbers are not a baseline for yours. `doctor` prints both IDs and flags
+the mismatch rather than failing.
 
 ---
 
 ## Quickstart
 
-You need two files: the `.pyx` module you want tuned, and a small **driver** that tells cytune how
-to call it and what "correct" means.
+### Run the shipped example first (no files to write)
+
+A working kernel + driver pair ships inside the package, so you can confirm the whole pipeline
+before writing anything of your own:
+
+```bash
+cytune tune --dry-run "$(python3 -c 'import cytune,os;print(os.path.dirname(cytune.__file__))')/examples/running_max.pyx" \
+            --driver  "$(python3 -c 'import cytune,os;print(os.path.dirname(cytune.__file__))')/examples/running_max_driver.py"
+```
+
+`examples/running_max_driver.py` is also the shortest complete driver to copy from.
+
+### Then your own module — `cytune init` writes the driver
+
+You need two files: the `.pyx` you want tuned, and a small **driver** that says how to call it and
+what "correct" means. cytune will write the driver for you by reading your kernel's signature:
+
+```bash
+cytune init mykernel.pyx        # writes driver.py + .cytune.toml, then checks the contract
+```
+
+It fills in `make_inputs` for every typed argument it can read (`double[::1]`, `long[:, ::1]`,
+`Py_ssize_t`) and leaves a loud `TODO` for anything it cannot — an untyped or `object` parameter.
+It deliberately does not guess: an input it invented would become the workload your oracle is
+derived from, and every number after that would be about a run you never asked for.
+
+The rest of this section is what that driver contains, so you can write or edit one by hand.
+
+```cython
+# kernel.pyx  — an ordinary Cython module. Nothing cytune-specific in it.
+def run(long long[::1] a, int reps):
+    cdef Py_ssize_t n = a.shape[0]
+    cdef Py_ssize_t i, r
+    cdef long long acc = 0
+    for r in range(reps):
+        for i in range(n):
+            acc += a[i]
+    return acc
+```
 
 ```python
 # driver.py
 import numpy as np
 
 N = 100_000
-REPS = 50                      # cytune calibrates this so the reference run lands near 65 ms
-OUTPUT_CLASS = "float"         # "float" -> compared with a tolerance; "int"/"bool" -> bit-exact
+REPS = 50                      # cytune rewrites this so the reference run lands near --target-ms
+OUTPUT_CLASS = "int"           # "float" -> tolerance;  "int"/"bool" -> bit-exact
 
 def make_inputs(seed):
     rng = np.random.default_rng(seed)
-    return (rng.standard_normal(N), REPS)
+    return (rng.integers(0, 1000, size=N, dtype=np.int64), REPS)
 
 def call(mod, inputs):
     return mod.run(*inputs)
 
 def canon(result):
-    return np.asarray(result, dtype=np.float64).reshape(-1)
+    return np.asarray([result], dtype=np.int64)
 ```
 
-Then:
-
-```
-cytune tune path/to/kernel.pyx --driver path/to/driver.py
-```
-
-It runs six stages — ingest → probe → route → tune → verify → certify — and writes a certificate.
-
-Useful flags:
-
-```
---workspace DIR        where raw measurements land (default .cytune)
---rig portable         skip the quiesced-rig requirement; measurements become best-effort
---target-ms 65         calibrate the driver's REPS/SCALE knob so the reference lands here
---allow-fast-math      let fast-math configs be SELECTED (they are still oracle-checked)
+```bash
+cytune tune --dry-run kernel.pyx --driver driver.py   # is tuning worth it? ~90s, no budget spent
+cytune tune           kernel.pyx --driver driver.py   # the real thing, ~3 min
+cytune tune --explain kernel.pyx --driver driver.py   # ...and say why it answered that
+cytune audit          kernel.pyx --driver driver.py   # which directives are safe to disable here?
 ```
 
-**`--allow-fast-math` is off by default and should usually stay off.** Fast-math permits the
-compiler to reorder floating-point arithmetic, so results can differ from what your code specifies.
-cytune holds those configs to the same correctness check as everything else, but "passes our oracle
-on our inputs" is not "safe for your numerics."
+Don't put `# cython: boundscheck=False` in your `.pyx` — that pins a factor cytune is varying.
+
+`--preset quick|standard|thorough` buys less or more search. Real library code is rarely one file:
+point cytune at a directory holding `kernel_meta.json` + `closure/` to tune a module that `cimport`s
+its siblings ([USER_GUIDE §2.1](docs/USER_GUIDE.md)).
+
+### The four answers
+
+| verdict | exit | means |
+|---|---|---|
+| `IMPROVEMENT` | 0 | a measured, endpoint-verified, sanitizer-clean speedup. Paste the emitted header, or use `--apply`. |
+| `HONEST-FLAT` | 2 | no speedup worth acting on. **The common case on real code**, and a real answer. |
+| `NO-SAFE-IMPROVEMENT` | 3 | a faster config existed and was **refused** — by the oracle or the sanitizer. Read the reason. |
+| *(error)* | 1 | cytune could not answer. |
 
 ---
 
-## What the certificate guarantees
+## It finds memory bugs your tests cannot
 
-- **It will not recommend a config that produces wrong output.** Every candidate is re-measured at
-  the endpoint tier and re-checked against a golden result; a config that passes the fast screen
-  and fails here is never emitted.
-- **It will not recommend a config that reads memory it does not own.** Before certification the
-  emitted config is rebuilt under ASan+UBSan and run. If it reports, the recommendation is
-  withdrawn and cytune falls back to the reference. (This exists because our own study found 1,296
-  configs that read out of bounds while passing an output check — see `logs/defects/D23.md`.)
-- **It will say "no improvement found" rather than invent one.** On a flat landscape it declines to
-  tune and reports the fastest probe config as an *observation, explicitly not a recommendation* —
-  because the minimum of a small sample is biased low when nothing really differs.
-- **`-ffp-contract` is always explicit** in the emitted flags. GCC's default is `fast`, which can
-  silently fuse operations and change results.
+The most useful thing cytune does is not the speedup. Disabling `boundscheck`/`wraparound` is the
+single biggest lever in this search space, and it is also how a latent out-of-bounds read becomes a
+live one. An **output** check cannot see that: a min/max reduction absorbs one garbage element
+without changing the answer, so the result is right while the read is illegal.
 
-## What it does not guarantee
+So cytune rebuilds the config it is about to recommend under ASan+UBSan and runs it:
 
-- **A clean sanitizer check is not proof of memory safety.** It means no error was detected on the
-  inputs tested.
-- **The recommendation is not optimal** — it is the best found within the budget.
-- **There may be no speedup at all.** That is a legitimate result and the tool reports it as one.
-- **Without the pinned image the sanitizer gate cannot run.** The certificate then records it as
-  **not-run**, which is not the same as passed. That distinction is the main lesson of this phase.
+```
+!! cytune found a MEMORY-SAFETY DEFECT in your kernel.
+   config 1326 was 1.045x faster and was REFUSED by the sanitizer:
+     AddressSanitizer, SUMMARY: AddressSanitizer, buffer-overflow
+
+   This is a latent bug in YOUR kernel, not a cytune limitation. It only manifests when
+   boundscheck/wraparound are disabled, and the output check could not see it...
+```
+
+This is not hypothetical: it is the exact defect (D23) that invalidated 1,296 configurations of
+this project's own study, found by an output oracle that passed them all.
+
+**`cytune audit` makes that deterministic.** `tune` gates the configuration it is about to
+recommend — two out of 1,728 — so *whether* it finds a latent bug depends on where the search
+lands: measured at 3 of 5 runs on the same fixture. `audit` does not tune at all; it gates a
+pre-registered risk set and found the same defect **6 of 6**, with an identical verdict every time.
 
 ---
 
-## Where the evidence lives
+## Does it actually find good configurations?
 
-| what | where |
+Measured against ground truth, on real library code. The nine Dataset-R anchors are modules from
+scipy and scikit-learn whose full 1,728-configuration tables were measured exhaustively. cytune was
+run on all nine and its answer compared with the frozen tables:
+
+| | |
 |---|---|
-| Full phase report | `results/PHASEP_REPORT.md` |
-| One-page plain-language summary | `results/DEFENSE_SUMMARY.md` |
-| Every deviation from the plan | `results/fleet/DEVIATIONS_REGISTER.md` |
-| Defect records | `logs/defects/D*.md` |
-| Auditor verdicts, verbatim | `results/fleet/AUDIT_VERDICTS.json` |
-| Raw measurements | `results/fleet/<kernel>/table.jsonl` |
+| configurations measured | 33–49 of 1,728 (~2%) |
+| **median regret vs the known optimum** | **+1.41%** |
+| worst | +5.41% |
+| best | found the exact optimum (`csr`, rank 1 of 1,152) |
+| every emitted config | sanitizer-CLEAN |
 
-Every number in those documents carries a raw pointer and a recompute command.
+Method, caveats and the full table: [`results/release/V1_RELEASE_REPORT.md`](results/release/V1_RELEASE_REPORT.md).
+
+---
+
+## Read before you trust a number
+
+The "research preview" label is load-bearing:
+
+- **The routing policy is an engineering default, not a validated router.** The study measured
+  that per-kernel routing does *not* beat always-DOE on held-out kernels. cytune ships one
+  algorithm. `results/PHASEP_REPORT.md` §5.
+- **Three of four kernel categories are underpowered** (achieved power 0.708/0.776/0.708 against a
+  0.80 target), and the study ran 20 of a planned 200 repetitions.
+- **On most real code the honest answer is "no improvement."**
+- **One machine.** Every number in `results/` was measured on one i3-10100F. Nothing transfers.
+
+What *is* solid is what the tool **refuses** to do, and those refusals are exercised by tests that
+drive their failure paths. See [docs/GUARANTEES.md](docs/GUARANTEES.md).
+
+---
+
+## Documentation
+
+| | |
+|---|---|
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | pipeline, every flag, `.cytune.toml`, the certificate field by field |
+| [docs/GUARANTEES.md](docs/GUARANTEES.md) | what is promised and what is not, each with its evidence |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | failures actually hit, with fixes |
+| [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | open findings, and what was fixed |
+| [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) | the frozen 1.x API: schemas, exit codes, what may change |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | module map, the one-way dependency rule, the invariants |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | how to extend it, and the obligations that come with each kind of change |
+| [SECURITY.md](SECURITY.md) | threat model: what cytune defends, and the one class it cannot |
+| [CHANGELOG.md](CHANGELOG.md) | what changed, and what a user must know about |
+| `results/PHASEP_REPORT.md` | the full study report |
+| `results/DEFENSE_SUMMARY.md` | one page, plain language |
+| `results/usertest/` | the cold-user acceptance tests, verbatim |
+
+Run the test suite with `pip install -e ".[test]" && pytest -q` — that covers both `src/cytune`
+(the product, which must pass with no `scripts/` and no `results/` present) and `tests/` (the
+study-equivalence checks, which skip cleanly without them).
