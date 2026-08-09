@@ -5,6 +5,79 @@ All notable changes to cytune. The compatibility promise is in
 
 ---
 
+## Unreleased — four defects found in the search, three fixed, and an engine change that did not earn its way in
+
+The DOE engine was replayed against the project's own 149 frozen kernel tables under a
+pre-registered protocol (`results/prereg/PREREG_DOE_V2.md`). **The engine did not change.** What
+follows is what was found, what ships, and what did not.
+
+### Defects fixed
+
+**The adaptive walk was starved at every budget in [17, 24].** `N_d = min(24, B−1)` reserves a
+point for the walk; the fallback to the 24-point design plus a cap at `budget` spent it. Measured
+on the frozen fleet, one additional configuration moved median regret **3.95 % → 1.46 %** and
+worst-case **516 % → 46 %**, with 75 kernels worse and none better. It reached 58 of 149 fleet
+kernels and **none of the nine real anchors** — which is why the 1.0.0 live dogfood could not have
+caught it. Fixed; all nine anchors remain bit-identical.
+
+**A certificate could carry a sanitizer verdict about a different configuration.** When wall-clock
+corroboration (C1) refused a candidate's speedup, the reference was emitted while the candidate's
+`§1.4` verdict stayed attached. Invariant **I4.3 refused to certify** — the binding layer doing
+exactly what 1.0.0 built it for — but the run aborted where it should have produced an honest
+`no-safe-improvement`. Found by a live run, not by the 674-test suite: `corroborate_ratio` was
+tested exhaustively as a pure function while the composition that uses it was never exercised.
+Fixed, and the outcome-space sweep now mirrors all three demotion paths with fixtures that can
+actually reach them.
+
+**The certificate recomputed C1 without the run's own overhead samples.** The gate used the
+measured noise floor; the document recomputed with a smaller budget and reported "measured over 0
+screened configs" when the run had measured 33–49. No verdict changed on any anchor — half the
+claimed gain dominated 3σ every time — so this was a **reporting** defect with a latent
+contradiction risk, now closed.
+
+### What did NOT change, and why
+
+**The screen design still spends most of its budget on configurations a default run cannot emit.**
+Under the FP-strict default the emittable space is 576 configurations with 11 parameters, but the
+frozen designs cover 1,728 with 13 — so 86 % / 73 % / 67 % of the screen budget (`doe_7/15/24`)
+buys numbers the certificate must then refuse to act on. That is a real defect and
+`docs/CONTRIBUTING.md` states the rule it breaks.
+
+**Its obvious fix makes real code worse.** Policy-matched designs, D-optimal augmentation of the
+probe, Bayesian-D with a measured fleet prior, orthogonal-polynomial coding, measured-dead axis
+pinning and sequential augmentation were all built. Every one **failed the pre-registered ship
+rule on the nine real anchors** — four of them improved the median while widening the worst case
+past the registered bound. Artifact-equivalence candidates were not built: the only direct
+measurement available puts the opportunity at zero. A model-assisted tier was not built: its gate
+required real-code median regret to stay above 1.0 % and it fell below.
+
+### New: `--probe-as-screen` (experimental, off by default)
+
+Skips the second D-optimal screen entirely and spends the whole tuning budget on the
+predicted-best walk — the 17-configuration probe is already a D-optimal screen. It measured better
+almost everywhere (training median regret 1.87 % → 0.14 %; live nine-anchor median 1.41 % → 0.94 %
+and worst case 5.41 % → 2.17 %, at an identical measured-configuration count).
+
+**It is off by default because it failed its pre-registered ship rule**: one anchor worsened by
+1.37 pp against a 1.00 pp bound. Three further reasons are recorded in the report — the bound turns
+out to be tighter than the instrument's own run-to-run reproducibility (3.60 pp on one anchor
+between two runs of an unchanged engine), the offline replay agrees with the live run on only 4 of
+9 emitted configurations, and the advantage reverses at the higher routed budgets.
+
+### Also
+
+- **`search`** — a new optional certificate block naming the engine, the design key, whether a
+  second screen ran, and what prior informed the design. Two releases can legitimately emit
+  different configurations for the same module; a reader must be able to tell which search ran.
+- **Guarantees unchanged.** G1 (oracle), G2 (sanitizer), G3 (honest-flat) and every I1/I2/I3/I4
+  invariant behave identically. A search may change which configurations are measured, never what
+  may be emitted.
+
+Full evidence, including the failures, three refuted predictions and three corrections an
+independent audit made to the report itself: `results/release/DOE_V2_REPORT.md`.
+
+---
+
 ## 1.0.0 — API freeze, and artifact binding
 
 The first release with a frozen public interface. Two structural changes: the product now ships

@@ -97,6 +97,14 @@ walk over the fitted main effects. The walk only visits configs this run could a
 spending budget on a config the policy forbids emitting would buy a number the certificate must
 then refuse to act on.
 
+`--probe-as-screen` (**experimental, off by default**) skips the screen design and spends the whole
+budget on the walk, on the grounds that the 17-config probe is already a D-optimal screen. It
+measured better on the frozen kernel tables and on real code, and it did **not** clear its
+pre-registered acceptance rule — one anchor regressed past the bound, and that bound turned out to
+be tighter than the measurement's own run-to-run spread. The full evidence, including why it is not
+the default, is in `results/release/DOE_V2_REPORT.md`. The certificate's `search` block always
+records which of the two ran.
+
 ### `[5/6] verify`
 
 The gate. Three independent checks on the candidate:

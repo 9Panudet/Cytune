@@ -83,9 +83,9 @@ to the driver-contract check too.
 There is a seam and you should use it. `plan.py` exposes three functions the CLI drives:
 
 ```
-screen_plan(budget)                     -> {"ids": [...], "design_key": ...}
-walk_plan(medians, queried, remaining)  -> {"ids": [...], "fit": {...}}
-select_winner(feasible_medians, policy) -> (config_id, detail)
+screen_plan(budget, second_screen=False) -> {"ids": [...], "design_key": ...}
+walk_plan(medians, queried, remaining)   -> {"ids": [...], "fit": {...}}
+select_winner(feasible_medians, policy)  -> (config_id, detail)
 ```
 
 An engine is those three. `routing.py` decides whether yours is ever chosen — and note what the
@@ -100,6 +100,37 @@ Two hard requirements:
   checks it over the outcome space.
 - **Spend budget only on configs this run could actually emit.** Measuring a config the policy
   forbids burns measurement to produce a number the certificate must then refuse to act on.
+
+### The bar: how an engine change is evidenced
+
+`results/prereg/PREREG_DOE_V2.md` and `results/release/DOE_V2_REPORT.md` are the worked example.
+The protocol is not optional decoration — it is what stopped six plausible improvements from
+shipping and what caught two defects nobody was looking for.
+
+1. **Pre-register before you measure.** Variants, metric, budgets, the split, and the ship rule,
+   written down before any variant exists. Later variants get numbered amendments; a variant found
+   post-hoc is marked **exploratory** and may not ship on offline evidence alone.
+2. **Replay offline against the frozen tables** through `scripts/doe_v2/` — sealed ask-tell,
+   freeze-hash verified, §1.4 sanitizer overlay applied. Never against live measurement.
+3. **The harness is an instrument, so control it first.** A planted lever must be found; a flat
+   table must read flat; a 1.0× "lever" must *not* be claimed; the table must be unreachable
+   through the sealed object. `control_dogfood.py` additionally requires the harness to reproduce
+   the live nine-anchor dogfood, and `control_builder.py` requires a new design builder to
+   reproduce the study's committed designs byte-for-byte.
+4. **Report holdout-H and R separately, never pooled.** The class distributions differ (INT: 41
+   synthetic, 0 of 9 real). A variant that wins on H and not on R does not ship.
+5. **The ship rule, applied as written.** On the R-anchors: median must not increase, max must not
+   increase, no anchor may worsen by more than 1.0 pp, and `configs_measured` must not increase.
+   With n=9 nothing reaches significance, so the rule is a bound and not a p-value — decide that
+   before you see the numbers, not after.
+6. **Confirm live.** Offline replay cannot see the endpoint tier. Re-run the nine-anchor dogfood
+   and the live smoke gate before anything ships.
+7. **Record which engine ran** in the certificate's `search` block. Two releases emitting different
+   configs for the same module is expected; a reader unable to tell which search produced their
+   answer is not.
+
+"Nothing beat the current engine" is a valid and publishable outcome. It was the outcome for six
+of the eight variants tried.
 
 ---
 

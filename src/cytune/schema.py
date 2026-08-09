@@ -126,6 +126,16 @@ CERTIFICATE = {
         "does_not_attest": "str",
         "audience": "str",
     },
+    # ---- 1.1 addition. OPTIONAL for the same reason the 1.0.0 block above is: every certificate
+    # already under results/ was written before it existed, and
+    # `test_cytune_api.py::test_every_archived_certificate_validates` checks them all on every run.
+    "search": {
+        "__optional__": True, "__nullable__": True,
+        "engine": "str",
+        "design_key": MAYBE_STR,
+        "second_screen": "bool",
+        "prior": "str",
+    },
 }
 
 DRY_RUN = {

@@ -116,19 +116,65 @@ def _policy(policy, allow_fast_math):
 
 
 def _design(budget):
-    """N_d = min(24, B-1); committed designs cover N_d in {7,15,24} (PREREG §8.2 / §12-D2)."""
+    """N_d = min(24, B-1); committed designs cover N_d in {7,15,24} (PREREG §8.2 / §12-D2).
+
+    Retained for `--second-screen` and for the tests that pin the pre-1.1 trajectory. Note the
+    fallback: when N_d is not one of the three committed sizes this returns the 24-point design,
+    which is what defect D-2 was made of — see `screen_plan`.
+    """
     designs = json.load(open(designs_path()))["designs"]
     nd = min(24, budget - 1)
     key = f"doe_{nd}" if f"doe_{nd}" in designs else "doe_24"
     return key, designs[key]["config_ids"]
 
 
-def screen_plan(budget):
-    """Batch 1: the pre-registered screen design, in order, up to budget (reference is free)."""
+# THE SECOND SCREEN STAYS ON BY DEFAULT, and the reason is a measurement, not an omission.
+#
+# The product runs a 17-point D-optimal probe BEFORE routing and then buys a SECOND D-optimal
+# screen out of the tuning budget. `--probe-as-screen` skips that second buy and spends the whole
+# tuning budget on the predicted-best walk. Offline on all 149 frozen tables it looks strongly
+# better (training median regret 1.87% -> 0.14%, 97 kernels better and 9 worse, at an identical
+# measured-config count), and live on the nine real anchors it improved the median (1.41% ->
+# 0.94%) and the worst case (5.41% -> 2.17%).
+#
+# It is NOT the default anyway, because the pre-registered ship rule failed:
+#   * one anchor (`_ppoly`) worsened by 1.37pp against a bound of 1.00pp (PREREG_DOE_V2 §5.1c);
+#   * two live runs of the UNCHANGED 1.0.0 engine differ by 3.60pp on `_predictor`, so that bound
+#     is tighter than the instrument at one live run per anchor and neither the pass nor the fail
+#     is resolvable;
+#   * the offline replay that motivated the change agrees with the live run on only 4 of 9 emitted
+#     configs, so it is not predictive on the set the rule acts on;
+#   * and the advantage is budget-dependent — it wins at B in {8,16,24} and is neutral-to-worse at
+#     B in {32,40}, where the screen's information starts to pay for itself.
+#
+# Any one of those is enough to keep the default where it is. Shipping it anyway would be
+# renegotiating a rule after seeing the data, which §5 forbids in those words.
+#
+# Evidence: results/release/DOE_V2_REPORT.md; pre-registration results/prereg/PREREG_DOE_V2.md.
+SECOND_SCREEN = True
+
+
+def screen_plan(budget, second_screen=None):
+    """Batch 1: the pre-registered screen design, in order, up to N_d (the reference is free).
+
+    With `second_screen=False` (CLI `--probe-as-screen`) no second design is bought and the whole
+    tuning budget goes to the predicted-best walk. That path is measured, tested and NOT the
+    default — see the block above for the four reasons.
+    """
+    if not (SECOND_SCREEN if second_screen is None else second_screen):
+        return {"design_key": "probe-as-screen", "ids": [],
+                "reference_id": theta.REFERENCE_ID,
+                "why": ("the 17-point probe is the D-optimal screen and is already measured; the "
+                        "whole tuning budget goes to the predicted-best walk")}
     key, design = _design(budget)
     ids, seen = [], {theta.REFERENCE_ID}
+    # Cap at N_d, not at `budget`. Capping at `budget` was defect D-2: for every budget in [17,24]
+    # the fallback 24-point design consumed the entire budget and the adaptive walk — which the
+    # `B-1` in N_d exists to reserve — got nothing. Measured cost of that one line: median regret
+    # 3.95% vs 1.46%, worst 516% vs 46%, on 58 of 149 frozen kernels.
+    cap = min(budget, min(24, budget - 1))
     for cid in design:
-        if len(ids) >= budget:
+        if len(ids) >= cap:
             break
         if cid in seen:
             continue

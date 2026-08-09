@@ -889,3 +889,143 @@ def test_c1_still_decides_when_the_claim_is_large_enough_to_be_checkable():
     modest = [3.0e8 + (i % 5) * 1e6 for i in range(30)]
     out = certify.corroborate_ratio(win, ref, screen_overheads=modest)
     assert out["corroborated"] is False
+
+
+# ===================================================================== D-3 (live dogfood, 1.1)
+#
+# THE DEFECT. `cli.tune` gates the search's BEST CANDIDATE before deciding what to emit — on
+# purpose, because the gate is a bug finder and not only an emission filter. It stores that verdict
+# in `san_emitted`, the variable meaning "the gate on the config being emitted". THREE paths can
+# then demote the candidate to the reference:
+#
+#     sanitizer reports   -> san_emitted was never assigned (the else-branch is skipped)  OK
+#     emit margin missed  -> `san_emitted = None`, and the reference is re-gated            OK
+#     C1 not corroborated -> nothing clears it                                              BUG
+#
+# On the third path the reference is emitted while `san_emitted` still describes the candidate, so
+# I4.3 refuses to certify: "the sanitizer gate reports config 966 but the emitted config is 288".
+#
+# Found by the live nine-anchor dogfood on `fleet_R_08_elkan` (exit 1). The unit tests could not
+# find it: `corroborate_ratio` is tested thoroughly as a pure FUNCTION, and the outcome-space sweep
+# in test_cytune_coherence.py mirrors the CLI's composition of the OTHER two demotion paths and
+# omits this one. A gate tested in isolation and a composition that never composes it.
+#
+# I4.3 did exactly what the binding layer exists to do: refuse rather than emit a document about a
+# run that did not happen.
+
+_SAN_TREE = "b" * 64
+
+
+def _gate_record(config_id, clean=True):
+    """The shape `sanitize_gate.gate()` returns for a config that ran and came back clean."""
+    return {"config_id": config_id, "ran": True, "clean": clean, "verdict": "clean",
+            "tokens": [], "source_tree_sha256": _SAN_TREE}
+
+
+def _demote(path, candidate, reference):
+    """Mirror cli.tune's demotion composition for one path. Returns (emitted_id, san_emitted).
+
+    Deliberately a mirror of the real ORDER rather than a call into `tune`, which needs containers.
+    The three branches below are transcribed from cli.py's verify stage; if that order changes,
+    this stops being a mirror and the test that depends on it should be updated with it.
+    """
+    san_emitted, winner = None, candidate
+    gate = _gate_record(candidate, clean=(path != "sanitizer"))
+    if path == "sanitizer":                       # cli.py: rejects(san_cand) -> never assigned
+        winner = reference
+    else:
+        san_emitted = gate                        # cli.py line ~479: `san_emitted = san_cand`
+        if path == "c1":                          # cli.py: corroborated is False
+            winner = reference
+            san_emitted = None                    # <- THE FIX
+        elif path == "margin":                    # cli.py: not assess(...)["clears"]
+            winner = reference
+            san_emitted = None
+    if san_emitted is None and winner is not None:
+        san_emitted = _gate_record(winner)        # cli.py: `if san_emitted is None: _gate_emitted`
+    return winner, san_emitted
+
+
+@pytest.mark.parametrize("path", ["sanitizer", "c1", "margin"])
+def test_i4_3_every_demotion_path_leaves_the_gate_describing_what_is_emitted(path):
+    """D-3. All three demotion paths, not the two that happened to be mirrored before.
+
+    Before the fix, `c1` left the CANDIDATE's verdict attached to a certificate emitting the
+    REFERENCE, and I4.3 refused — correctly, and only at run time on a real anchor.
+    """
+    emitted, san = _demote(path, candidate=966, reference=theta.REFERENCE_ID)
+    assert emitted == theta.REFERENCE_ID
+    binding.assert_gate_bound(config_id=emitted, gate=san,
+                              source_tree_sha256=_SAN_TREE,
+                              pinned_image_digest=rig.PINNED_IMAGE_DIGEST)
+    assert san["config_id"] == emitted, (
+        f"{path}: the gate describes config {san['config_id']} but {emitted} is being emitted")
+
+
+def test_i4_3_still_fires_when_a_demotion_path_forgets_to_reset_the_gate():
+    """THE CONTROL. Without it the three tests above would pass for an `assert_gate_bound` that
+    checked nothing, and the regression they exist to catch would be invisible.
+
+    This is the exact state the live dogfood produced on fleet_R_08_elkan.
+    """
+    with pytest.raises(binding.BindingViolation) as e:
+        binding.assert_gate_bound(config_id=theta.REFERENCE_ID,
+                                  gate=_gate_record(966),
+                                  source_tree_sha256=_SAN_TREE,
+                                  pinned_image_digest=rig.PINNED_IMAGE_DIGEST)
+    assert e.value.invariant == "I4.3"
+    assert "966" in str(e.value) and str(theta.REFERENCE_ID) in str(e.value)
+
+
+# ===================================================== D-4 (found while investigating D-3)
+def test_d4_the_certificate_records_the_same_corroboration_the_gate_decided_on():
+    """D-4. `build_certificate` took `screen_overheads` and did not forward them to
+    `corroborate_ratio`, so the CLI gated on one budget and the document reported another.
+
+    C1's budget is the LARGER of half the claimed gain and 3 sigma of the per-process overhead
+    spread the run measured. Dropping the samples can only SHRINK it, so the certificate could say
+    `corroborated: false` about a run whose gate had passed — a document contradicting the decision
+    that produced it, which is D-3's defect one layer up.
+
+    The fixture sits in the window where the two budgets disagree:
+        0.5 * claimed_gain  <  residual  <=  3 sigma  <  (1 + warmup/K) * claimed_gain
+    the last term being C1's own no-power cutoff, which must not fire or the check returns None
+    and proves nothing.
+    """
+    K, warmup = 30, certify.ENDPOINT_WARMUP
+    wm, rm = 90e6, 100e6                              # 10 ms per rep -> 300 ms claimed gain at K=30
+    oh_ref, oh_win = 700e6, 850e6                     # observed delta +150 ms vs predicted -50 ms
+    win = {"endpoint_ns": wm, "subs_ns": [wm] * 3, "n_sub": 3, "K": K,
+           "wall_ns": [K * wm + oh_win] * 3}
+    ref = {"endpoint_ns": rm, "subs_ns": [rm] * 3, "n_sub": 3, "K": K,
+           "wall_ns": [K * rm + oh_ref] * 3}
+    noisy = [700e6 + i * 9e6 for i in range(30)]      # a genuinely wide measured spread
+
+    tight = certify.corroborate_ratio(win, ref)
+    wide = certify.corroborate_ratio(win, ref, screen_overheads=noisy)
+    # the window itself, asserted so a future change to the constants fails loudly here rather
+    # than quietly turning this into a test of nothing
+    assert tight["corroborated"] is False, tight
+    assert wide["corroborated"] is True, wide
+    assert wide["n_overhead_samples"] == 30 and tight["n_overhead_samples"] == 0
+
+    c = certify.build_certificate(
+        name="d4", winner_id=FAST_ID, reference_id=REF,
+        endpoint={str(FAST_ID): win, str(REF): ref}, oracle=_D4_ORACLE, feasibility=_D4_FEAS,
+        route=_D4_ROUTE, rig_mode="quiesced", rig_detail="quiesced — verified",
+        budget={"probe": 17, "tuning": 16}, sources={"table": "/w/t.jsonl", "workspace": "/w"},
+        allow_fast_math=False, screen_overheads=noisy)
+    got = c["measurement"]["timing_corroboration"]
+    assert got["corroborated"] is True, (
+        "the certificate recomputed C1 without the run's own overhead samples; it reports "
+        f"{got['corroborated']} where the gate decided True")
+    assert got["n_overhead_samples"] == len(noisy), (
+        f"the certificate says the noise floor came from {got['n_overhead_samples']} samples, "
+        f"but the run measured {len(noisy)}")
+
+
+FAST_ID = theta.id_of((False, False, True, False, False, "-O3", "native", "on", ("off", "off")))
+_D4_ORACLE = {"output_class": "int", "tolerance": {"rtol": 0.0, "atol": 0.0},
+              "deterministic": True, "n_det_reps": 5, "golden_sha256": "abc"}
+_D4_FEAS = {"n_measured": 20, "n_infeasible": 0, "infeasible_fraction": 0.0, "reasons": {}}
+_D4_ROUTE = {"rule": "R4", "route": "tune", "engine": "DOE", "budget": 16, "why": "lever"}

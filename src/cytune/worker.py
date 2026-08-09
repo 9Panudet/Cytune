@@ -659,8 +659,8 @@ def cmd_features(kdir, out):
            "probe_ids": ids})
 
 
-def cmd_screen(kdir, out, budget):
-    _emit({"ok": True, **plan.screen_plan(budget)})
+def cmd_screen(kdir, out, budget, second_screen=False):
+    _emit({"ok": True, **plan.screen_plan(budget, second_screen=second_screen)})
 
 
 def cmd_walk(kdir, out, budget, policy):
@@ -696,7 +696,7 @@ def main(argv=None):
     elif cmd == "features":
         cmd_features(kdir, out)
     elif cmd == "screen":
-        cmd_screen(kdir, out, int(rest[0]))
+        cmd_screen(kdir, out, int(rest[0]), second_screen="--second-screen" in rest)
     elif cmd == "walk":
         cmd_walk(kdir, out, int(rest[0]), policy)
     else:

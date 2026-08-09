@@ -25,9 +25,30 @@ FASTMATH = theta.id_of((True, True, False, True, False, "-O2", "x86-64", "omit",
 CLEAN_GATE = {"ran": True, "clean": True, "verdict": "CLEAN", "config_id": REF}
 
 
-def _endpoint(win_ns, ref_ns, win_id, ref_id=REF):
-    return {str(win_id): {"endpoint_ns": win_ns, "subs_ns": [win_ns] * 3, "n_sub": 3},
-            str(ref_id): {"endpoint_ns": ref_ns, "subs_ns": [ref_ns] * 3, "n_sub": 3}}
+_K = 30                              # campaign's K_final
+_SPAWN_NS = 700e6                    # a realistic per-process fixed cost
+
+
+def _rec(ns, corroborates=True):
+    """An endpoint record whose PARENT wall clock is consistent with its reported median.
+
+    C1 compares `oh = wall - K*median` between the two configs and expects them to differ by
+    exactly `warmup * (t_win - t_ref)`, because the two runs share spawn, imports, K and inputs and
+    differ only in the warmup reps. Building `wall` from that identity makes the fixture one C1
+    accepts; adding a large constant to it makes one C1 must refuse.
+
+    Before 1.1 these records carried no `wall_ns` at all, so `corroborate_ratio` returned
+    `corroborated: None` for every row of the outcome sweep and the C1 branch of the composition
+    below could never execute. A branch that cannot execute is not coverage.
+    """
+    oh = _SPAWN_NS + certify.ENDPOINT_WARMUP * ns + (0 if corroborates else 40 * _SPAWN_NS)
+    return {"endpoint_ns": ns, "subs_ns": [ns] * 3, "n_sub": 3, "K": _K,
+            "wall_ns": [_K * ns + oh] * 3}
+
+
+def _endpoint(win_ns, ref_ns, win_id, ref_id=REF, corroborates=True):
+    return {str(win_id): _rec(win_ns, corroborates),
+            str(ref_id): _rec(ref_ns)}
 
 
 ORACLE = {"output_class": "int", "tolerance": {"rtol": 0.0, "atol": 0.0},
@@ -298,14 +319,23 @@ def _outcomes():
 def _as_the_cli_would(winner, endpoint, gate, policy):
     """Reproduce the CLI's decision order, so the sweep exercises the real composition.
 
-    Two steps, in the order cli.tune does them and for the reasons it does them:
+    THREE steps, in the order cli.tune does them and for the reasons it does them:
       1. a candidate the SANITIZER reports on is refused and replaced by the reference (G2) —
          gated first, because the gate is a bug finder and not only an emission filter;
-      2. a candidate that survives but does not clear the emit margin is demoted (P2's fix), so
+      2. a candidate whose speedup the parent's wall clock cannot account for is refused and the
+         claim withheld (C1);
+      3. a candidate that survives but does not clear the emit margin is demoted (P2's fix), so
          the §1.4 gate and the EMIT block both describe the config actually emitted.
 
     A sweep that skipped these would test states the product cannot reach; one that ignored them
     would only re-find the two assertions in `build_certificate`.
+
+    STEP 2 WAS MISSING UNTIL 1.1, and its absence is why this sweep — whose entire purpose is to
+    exercise the real composition — could not find defect D-3, in which the C1 demotion left the
+    CANDIDATE's sanitizer verdict attached to a certificate emitting the REFERENCE. `corroborate_
+    ratio` was tested exhaustively as a pure function; the composition never composed it. The live
+    nine-anchor dogfood found it instead, on fleet_R_08_elkan. A demotion path added here in future
+    must be added to this mirror in the same commit.
     """
     ep, rejection = endpoint, None
     if winner != REF:
@@ -315,9 +345,23 @@ def _as_the_cli_would(winner, endpoint, gate, policy):
                          "action": "fell back to the reference config",
                          "gate": "roadmap §1.4 / PREREG §301", "observed_ratio": None}
             winner = REF
+        elif certify.corroborate_ratio(ep.get(str(winner)),
+                                       ep.get(str(REF))).get("corroborated") is False:
+            # C1 refused: the reference is emitted, no speedup is claimed, and the gate that
+            # follows must describe the REFERENCE rather than the candidate.
+            rejection = {"rejected_config_id": winner,
+                         "reason": "timing_not_corroborated",
+                         "action": "fell back to the reference config; no speedup is claimed",
+                         "gate": "C1 parent wall-clock corroboration", "observed_ratio": None}
+            winner = REF
         elif not certify.assess(ep.get(str(winner)), ep.get(str(REF)))["clears"]:
             winner = REF
-    return _cert(winner=winner, endpoint=ep, gate=copy.deepcopy(gate), policy=policy,
+    emitted_gate = copy.deepcopy(gate)
+    if winner == REF and (emitted_gate.get("config_id") not in (None, REF)):
+        # Whatever demoted the candidate, the emitted config gets its OWN gate (cli.tune's
+        # `if san_emitted is None: san_emitted = _gate_emitted(...)`).
+        emitted_gate["config_id"] = REF
+    return _cert(winner=winner, endpoint=ep, gate=emitted_gate, policy=policy,
                  winner_rejection=rejection)
 
 
@@ -406,3 +450,40 @@ def test_i1_3_allows_native_when_portable_flags_was_not_requested():
     NATIVE = theta.id_of((True, True, False, True, False, "-O2", "native", "omit", ("off", "off")))
     c = _cert(winner=NATIVE, endpoint=_endpoint(50e6, 100e6, NATIVE), policy=EmissionPolicy())
     assert _check(c) is True
+
+
+# ------------------------------------------------------- D-3: the C1 demotion, in the sweep
+def test_the_c1_branch_of_the_composition_actually_executes():
+    """THE ANTI-VACUITY CHECK for `_as_the_cli_would`'s C1 step.
+
+    Adding a branch to the mirror proves nothing if the fixtures can never enter it — and until
+    1.1 they could not, because `_endpoint` carried no parent wall clock and `corroborate_ratio`
+    answered `None` for every row. This asserts the fixture reaches both verdicts, so the branch
+    above is exercised rather than merely present.
+    """
+    good = _endpoint(80e6, 100e6, 5, corroborates=True)
+    bad = _endpoint(80e6, 100e6, 5, corroborates=False)
+    assert certify.corroborate_ratio(good["5"], good[str(REF)])["corroborated"] is True
+    assert certify.corroborate_ratio(bad["5"], bad[str(REF)])["corroborated"] is False
+
+
+def test_d3_a_timing_refusal_emits_the_reference_gated_as_the_reference():
+    """D-3, at the composition level. cli.tune's C1 demotion must reset the candidate's sanitizer
+    verdict, or the reference is emitted carrying a gate about a different config and I4.3 refuses
+    the whole certificate. That is what the live dogfood hit on fleet_R_08_elkan."""
+    from cytune.plan import EmissionPolicy
+    cand = next(c for c in range(theta.N_CONFIGS)
+                if c != REF and EmissionPolicy().excluded_reason(c) is None)
+    gate = dict(CLEAN_GATE, config_id=cand)
+    c = _as_the_cli_would(cand, _endpoint(80e6, 100e6, cand, corroborates=False),
+                          gate, EmissionPolicy())
+    emitted = (c.get("emitted_config") or {}).get("config_id")
+    assert emitted == REF, "a timing that cannot be corroborated must fall back to the reference"
+    assert c["sanitizer_gate"].get("config_id") in (None, REF), (
+        f"the certificate emits {emitted} but carries a gate about "
+        f"{c['sanitizer_gate'].get('config_id')} — I4.3 would refuse this document")
+    # The reference emitted against itself is a 1.0x self-comparison, which is honest. What must
+    # NOT survive is the CANDIDATE's 1.25x ratio, or an `improvement` verdict resting on it.
+    assert c["verdict"] != certify.IMPROVEMENT, "a withheld ratio cannot support an improvement"
+    assert c["speedup"] in (None, 1.0), f"the candidate's ratio leaked as {c['speedup']}"
+    assert (c["measurement"].get("timing_corroboration") or {}).get("corroborated") is not True

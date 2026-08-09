@@ -353,13 +353,30 @@ def tune(args):
     n_planned = 0 if route["route"] == routing.HONEST_FLAT else route["budget"]
     say(f"[4/6] tune{clock.eta(n_planned)}")
     tuned, wdetail = 0, {}
+    search_provenance = {
+        "engine": ("probe screen + predicted-best walk" if eff.get("probe_as_screen")
+                   else "probe + D-optimal screen + predicted-best walk"),
+        "design_key": None,
+        "second_screen": not bool(eff.get("probe_as_screen")),
+        "prior": "none (classical D-optimal probe design, PREREG_PHASEP §9.2)",
+        "note": ("--probe-as-screen skips the second D-optimal screen and spends the whole "
+                 "tuning budget on the walk. It is EXPERIMENTAL and off by default: it failed "
+                 "its pre-registered ship rule on one anchor. See DOE_V2_REPORT.md."),
+    }
     if route["route"] == routing.HONEST_FLAT:
         say("      skipped — the probe says this landscape is flat. Spending a tuning budget "
             "here would buy noise.")
     else:
-        sp = sess.screen_plan(route["budget"])
-        say(f"      {route['engine']} screen: design {sp['design_key']}, {len(sp['ids'])} configs"
-            f"{clock.eta(len(sp['ids']))}")
+        sp = sess.screen_plan(route["budget"],
+                              second_screen=not eff.get("probe_as_screen"))
+        search_provenance["design_key"] = sp["design_key"]
+        if sp["ids"]:
+            say(f"      {route['engine']} screen: design {sp['design_key']}, "
+                f"{len(sp['ids'])} configs{clock.eta(len(sp['ids']))}")
+        else:
+            say(f"      {route['engine']} screen: none — the 17-config probe already served as "
+                f"the D-optimal screen")
+            say(f"      so all {route['budget']} tuning configs go to the predicted-best walk")
         if sp["ids"]:
             sess.build(sp["ids"])
             sess.measure(sp["ids"])
@@ -484,8 +501,19 @@ def tune(args):
                     "gate": "C1 parent wall-clock corroboration",
                     "corroboration": cor,
                     "observed_ratio": None,
+                    # Keep the candidate's verdict where a reader can still see it: the config was
+                    # gated and came back clean, and only its TIMING is unaccounted for. Dropping
+                    # it on the floor would lose a real result about the user's code.
+                    "sanitizer": san_emitted,
                 }
                 winner = ref_id
+                # That gate described the CANDIDATE, not the emission — the same reset the
+                # emit-margin demotion below performs, and the one this path was missing. Without
+                # it the reference is emitted carrying the candidate's verdict, `_gate_emitted`
+                # below is skipped because `san_emitted` is not None, and I4.3 refuses the whole
+                # certificate. Found by the live dogfood on fleet_R_08_elkan; see D-3 in
+                # test_cytune_binding.py, which mirrors all three demotion paths rather than two.
+                san_emitted = None
 
         # NOW settle what is emitted. A candidate that survived the gate but does not clear the
         # emit margin and the separation test is not going to be recommended, so the REFERENCE is
@@ -568,7 +596,8 @@ def tune(args):
         winner_rejection=rejection, emitted_gate=san_emitted, selection=wdetail,
         probe_features=feat, policy=policy, has_fp_work=src.get("has_fp_work"),
         effective_config=args.effective, provenance=provenance, degeneracy=degeneracy,
-        screen_overheads=screen_overheads, scoped_directives=src.get("scoped_directives"))
+        screen_overheads=screen_overheads, scoped_directives=src.get("scoped_directives"),
+        search=search_provenance)
 
     if san_emitted and san_emitted.get("clean") is False:
         cert.setdefault("memory_safety_finding", {})
@@ -804,6 +833,11 @@ def main(argv=None):
     t.add_argument("--portable-flags", dest="portable_flags", action="store_true",
                    help="restrict the recommendation to -march=x86-64 so the emitted flags are "
                         "safe on machines other than this one (default: off)")
+    t.add_argument("--probe-as-screen", dest="probe_as_screen", action="store_true",
+                   help="EXPERIMENTAL, off by default. Skip the second D-optimal screen design "
+                        "and spend the whole tuning budget on the predicted-best walk — the "
+                        "17-config probe is already a D-optimal screen. It measured better but "
+                        "did not clear its pre-registered acceptance rule, so it is opt-in")
     t.add_argument("--dry-run", dest="dry_run", action="store_true",
                    help="ingest + probe only: print the landscape, what cytune would do, and an "
                         "estimated cost. Spends no tuning budget")
@@ -876,7 +910,8 @@ def main(argv=None):
         dest_by_flag = {"--workspace": "workspace", "--rig": "rig", "--target-ms": "target_ms",
                         "--allow-fast-math": "allow_fast_math",
                         "--allow-fp-contract": "allow_fp_contract",
-                        "--portable-flags": "portable_flags", "--preset": "preset"}
+                        "--portable-flags": "portable_flags", "--preset": "preset",
+                        "--probe-as-screen": "probe_as_screen"}
         try:
             file_values, file_path = ({}, None) if a.no_config else config.load(a.config)
         except config.ConfigError as e:

@@ -1,7 +1,7 @@
 """Certificate assembly + the honest-flat output as a first-class, tested path (roadmap §8.2)."""
 import pytest
 
-from cytune import certify, routing
+from cytune import certify, routing, schema
 from cytune._vendor import theta
 
 ORACLE = {"output_class": "float", "tolerance": {"rtol": 1e-9, "atol": 1e-12},
@@ -340,3 +340,26 @@ def test_a_capped_escalation_is_printed_on_the_certificate():
     r = certify.render(_cert(5, ep))
     assert "above the 0.05 target" in r
     assert "did NOT reach its noise target" in r
+
+
+# ------------------------------------------------ 1.1: which engine produced this answer
+def test_the_certificate_records_which_search_produced_the_answer():
+    """Two releases of cytune can emit different configs for the same module because the SEARCH
+    changed, not because the module did. A certificate that does not say which search ran leaves
+    the reader unable to reproduce or compare it — and 1.1 changed the search.
+    """
+    search = {"engine": "probe-screen + predicted-best walk", "design_key": "probe-as-screen",
+              "second_screen": False, "prior": "none (classical D-optimal probe design)"}
+    c = _cert(REF, _ep(REF, 1000.0), search=search)
+    assert c["search"]["design_key"] == "probe-as-screen"
+    assert c["search"]["second_screen"] is False
+    assert schema.validate(c) == []
+
+
+def test_a_certificate_without_search_provenance_still_validates():
+    """THE CONTROL, and a compatibility requirement. Every certificate archived under results/ was
+    written before this field existed; making it required would retroactively invalidate them, and
+    `test_every_archived_certificate_validates` would fail — correctly."""
+    c = _cert(REF, _ep(REF, 1000.0))
+    assert c["search"] is None
+    assert schema.validate(c) == []

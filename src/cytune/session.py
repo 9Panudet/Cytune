@@ -727,8 +727,9 @@ class Session:
     def features(self):
         return self._run(rig.compute_cmd(self.workspace, self.name, "features", []), "features")
 
-    def screen_plan(self, budget):
-        return self._run(rig.compute_cmd(self.workspace, self.name, "screen", [budget]), "screen")
+    def screen_plan(self, budget, second_screen=False):
+        args = [budget] + (["--second-screen"] if second_screen else [])
+        return self._run(rig.compute_cmd(self.workspace, self.name, "screen", args), "screen")
 
     def walk_plan(self, budget, policy=None):
         args = [budget]

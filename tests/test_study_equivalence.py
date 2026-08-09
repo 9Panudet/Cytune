@@ -61,7 +61,31 @@ PERMISSIVE = plan.EmissionPolicy(allow_fast_math=True, allow_fp_contract=True,
                                  portable_flags=False)
 
 
-def _plan_trajectory(tbl, budget, policy=PERMISSIVE):
+def _seed_observations(tbl, second_screen, budget):
+    """The rows the fit is conditioned on before the walk, for each engine shape.
+
+    `second_screen=True`  — the pre-1.1 shape: reference + the doe_{N_d} screen. This is the one
+                            that can be compared against `algorithms.doe`, because that is the
+                            observation set doe itself has.
+    `second_screen=False` — the shipped 1.1 shape: reference + the PROBE, which the product has
+                            already measured before routing. There is no second screen.
+    """
+    from cytune import probe as probemod
+    ref = theta.REFERENCE_ID
+    sp = plan.screen_plan(budget, second_screen=second_screen)
+    seed_ids = sp["ids"] if second_screen else [c for c in probemod.probe_config_ids() if c != ref]
+    feas, queried = {}, {ref}
+    if tbl[ref][0] and tbl[ref][1] is not None:
+        feas[ref] = tbl[ref][1]
+    for cid in seed_ids:
+        queried.add(cid)
+        f, m, _r = tbl[cid]
+        if f and m is not None:
+            feas[cid] = m
+    return sp, feas, queried
+
+
+def _plan_trajectory(tbl, budget, policy=PERMISSIVE, second_screen=True):
     """Run the host-driven round structure against a frozen table.
 
     The equivalence claim is "given the same observations AND an emission policy that excludes
@@ -69,17 +93,7 @@ def _plan_trajectory(tbl, budget, policy=PERMISSIVE):
     has no emission policy at all, so every exclusion cytune applies (fast-math since v0, FMA
     contraction since F19, non-baseline -march under --portable-flags) is a deliberate divergence
     and must be switched off to compare like with like."""
-    ref = theta.REFERENCE_ID
-    sp = plan.screen_plan(budget)
-    feas, queried = {}, {ref}
-    rfeas, rm = tbl[ref][0], tbl[ref][1]
-    if rfeas and rm is not None:
-        feas[ref] = rm
-    for cid in sp["ids"]:
-        queried.add(cid)
-        f, m, _r = tbl[cid]
-        if f and m is not None:
-            feas[cid] = m
+    sp, feas, queried = _seed_observations(tbl, second_screen, budget)
     wp = plan.walk_plan(feas, queried, budget - len(sp["ids"]), policy=policy)
     return sp["ids"] + wp["ids"], wp, sp["ids"], wp["ids"]
 
@@ -89,32 +103,87 @@ def _plan_trajectory(tbl, budget, policy=PERMISSIVE):
 def test_walk_plan_reproduces_algorithms_doe_trajectory(kid, budget):
     """Given the SAME observations, the batched plan queries exactly what algorithms.doe queries.
 
-    This is the claim plan.py's docstring makes, so it is pinned against the real algorithm rather
-    than against a reimplementation of it.
+    Driven with `second_screen=True`, which is the observation set `algorithms.doe` actually has.
+    This is the DEFAULT engine. `--probe-as-screen` skips the second screen and is exercised by
+    the tests below; it is experimental and off by default (DOE_V2_REPORT §10).
     """
     tbl, _opt = _table(kid)
     rec = Recorder(replay.SealedTable(tbl))
     algorithms.doe(rec, budget, seed=0)
-    mine, _wp, _s, _w = _plan_trajectory(tbl, budget, policy=PERMISSIVE)
+    mine, _wp, _s, _w = _plan_trajectory(tbl, budget, policy=PERMISSIVE, second_screen=True)
     assert mine == rec.order, (
         f"{kid} B={budget}: batched plan diverged from algorithms.doe\n"
         f"  doe : {rec.order}\n  plan: {mine}")
 
 
 @pytest.mark.parametrize("kid", DEV_TABLES)
+@pytest.mark.parametrize("budget", [8, 16, 32])
+def test_probe_as_screen_still_uses_the_studys_estimator_and_ranking(kid, budget):
+    """What `--probe-as-screen` IS, stated precisely and pinned against the study's own functions.
+
+    Dropping the second screen changes the DESIGN, not the METHOD. The fit is still
+    `algorithms._fit` and the ranking is still `algorithms._pred_rank` — loaded here from the
+    STUDY tree, not from cytune's vendored copy — so what the product does is the study's
+    estimator applied to the probe instead of to a second D-optimal design.
+
+    That is the honest form of the equivalence claim now, and asserting it here means the claim
+    cannot quietly become false the way the old one did.
+    """
+    import math
+    tbl, _opt = _table(kid)
+    _sp, feas, queried = _seed_observations(tbl, second_screen=False, budget=budget)
+    wp = plan.walk_plan(feas, queried, budget, policy=PERMISSIVE)
+
+    obs = sorted(feas)
+    beta, _ols = algorithms._fit(obs, [math.log(feas[c]) for c in obs])
+    ranking, _pred = algorithms._pred_rank(beta)
+    want = [c for c in ranking if c not in queried][:budget]
+    assert wp["ids"] == want, (
+        f"{kid} B={budget}: the walk is no longer the study's predicted-best ranking")
+
+
+@pytest.mark.parametrize("kid", DEV_TABLES)
+def test_probe_as_screen_buys_no_second_screen_and_spends_it_all_on_the_walk(kid):
+    """`--probe-as-screen`, as a test. Experimental and OFF by default, so this drives it
+    explicitly; `test_the_shipped_default_still_buys_a_screen` pins the default separately."""
+    tbl, _ = _table(kid)
+    sp = plan.screen_plan(16, second_screen=False)
+    assert sp["ids"] == [] and sp["design_key"] == "probe-as-screen"
+    _all_, _wp, screen, walk = _plan_trajectory(tbl, 16, second_screen=False)
+    assert screen == [] and len(walk) == 16, "the whole tuning budget must reach the walk"
+
+
+@pytest.mark.parametrize("kid", DEV_TABLES)
 def test_trajectory_is_deterministic(kid):
     tbl, _ = _table(kid)
-    a, *_ = _plan_trajectory(tbl, 16)
-    b, *_ = _plan_trajectory(tbl, 16)
-    assert a == b
+    for ss in (True, False):
+        a, *_ = _plan_trajectory(tbl, 16, second_screen=ss)
+        b, *_ = _plan_trajectory(tbl, 16, second_screen=ss)
+        assert a == b
 
 
-def test_screen_plan_respects_budget_and_skips_the_reference():
+@pytest.mark.parametrize("second_screen", [True, False])
+def test_screen_plan_respects_budget_and_skips_the_reference(second_screen):
     for budget in (4, 8, 16, 32):
-        sp = plan.screen_plan(budget)
+        sp = plan.screen_plan(budget, second_screen=second_screen)
         assert len(sp["ids"]) <= budget
         assert theta.REFERENCE_ID not in sp["ids"]
         assert len(set(sp["ids"])) == len(sp["ids"]), "no config is measured twice"
+
+
+@pytest.mark.parametrize("budget", [8, 16, 17, 20, 24, 25, 32, 40])
+def test_the_screen_never_starves_the_adaptive_walk(budget):
+    """DEFECT D-2, as a regression test.
+
+    `N_d = min(24, B-1)` reserves at least one point for the walk. Before 1.1 the fallback to the
+    24-point design plus a cap at `budget` spent that reserve, so EVERY budget in [17,24] ran with
+    walk = 0. Measured cost on the frozen fleet: median regret 3.95% against 1.46%, worst-case
+    516% against 46%, on 58 of 149 kernels — and zero of the nine real anchors, which is why the
+    live dogfood could not have caught it.
+    """
+    sp = plan.screen_plan(budget, second_screen=True)
+    assert len(sp["ids"]) <= budget - 1, (
+        f"budget {budget}: the screen took {len(sp['ids'])} of {budget} and left the walk nothing")
 
 
 # ------------------------------------------------------- fast-math is opt-in
@@ -210,3 +279,17 @@ def test_the_study_modules_are_not_the_vendored_ones():
     assert os.path.abspath(vendored.__file__) != os.path.abspath(algorithms.__file__)
     assert not hasattr(vendored, "doe"), \
         "the vendored copy should be trimmed to what the product reaches (A3)"
+
+
+def test_the_shipped_default_still_buys_a_screen():
+    """The default is the SECOND-SCREEN engine, and that is a decision, not an accident.
+
+    `--probe-as-screen` measured better offline and on the live anchors, and still failed its
+    pre-registered ship rule (PREREG_DOE_V2 §5.1c, one anchor +1.37pp against a 1.00pp bound).
+    Flipping this default is a shipping decision that needs the evidence in DOE_V2_REPORT §10, so
+    it gets a test rather than being left to whoever edits plan.py next.
+    """
+    assert plan.SECOND_SCREEN is True
+    sp = plan.screen_plan(16)
+    assert sp["ids"], "the default engine must still buy its D-optimal screen"
+    assert sp["design_key"] == "doe_15"

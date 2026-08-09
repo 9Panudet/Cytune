@@ -575,7 +575,7 @@ def build_certificate(*, name, winner_id, reference_id, endpoint, oracle, feasib
                       flat_observation=None, winner_rejection=None, emitted_gate=None,
                       selection=None, probe_features=None, policy=None, has_fp_work=None,
                       effective_config=None, provenance=None, degeneracy=None,
-                      screen_overheads=None, scoped_directives=None):
+                      screen_overheads=None, scoped_directives=None, search=None):
     """Assemble the certificate. `endpoint` holds the verify-tier re-measurements keyed by str(id)."""
     win = endpoint.get(str(winner_id)) if winner_id is not None else None
     ref = endpoint.get(str(reference_id))
@@ -654,6 +654,11 @@ def build_certificate(*, name, winner_id, reference_id, endpoint, oracle, feasib
             "reference_cv": (ref or {}).get("cv"),
         },
         "routing": route,
+        # WHICH ENGINE PRODUCED THIS ANSWER. Two releases of cytune can emit different configs for
+        # the same module because the search changed, and a certificate that does not say which
+        # search ran leaves the reader unable to reproduce or compare it. `design_key` names the
+        # screen design (or its absence), `prior` names what informed the design criterion.
+        "search": search,
         "budget": budget,
         "selection": selection,
         "effective_config": effective_config,
@@ -786,10 +791,17 @@ def build_certificate(*, name, winner_id, reference_id, endpoint, oracle, feasib
     mar = emit_margin(win, ref)
     cert["measurement"]["emit_margin"] = mar
     cert["measurement"]["escalation"] = escalation_status(win, ref)
+    # D-4. `screen_overheads` MUST be forwarded. The CLI gates on
+    # `corroborate_ratio(win, ref, screen_overheads=...)` — the budget is the larger of half the
+    # claimed gain and 3 sigma of the per-process overhead spread this run measured. Recomputing it
+    # here without them silently used a DIFFERENT, smaller budget, so every certificate reported
+    # "measured over 0 screened configs" while the gate had measured it over ~33, and a run whose
+    # gate passed on the 3-sigma budget could write a document saying `corroborated: false`.
+    # The document and the decision must come from the same inputs — the D-3 lesson, one layer up.
     cert["measurement"]["timing_corroboration"] = (
         {"corroborated": None, "not_applicable": True,
          "reason": "the emitted config IS the reference, so there is no ratio to corroborate"}
-        if self_compare else corroborate_ratio(win, ref))
+        if self_compare else corroborate_ratio(win, ref, screen_overheads=screen_overheads))
     clears_margin = (speedup is not None) and ((speedup - 1.0) > mar["margin"])
 
     # INVARIANT (I1.7 at its source). Anything that is not going to be certified as an improvement
