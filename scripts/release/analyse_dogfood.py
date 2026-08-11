@@ -75,6 +75,18 @@ def wall_times():
 
 def analyse(kid, walls):
     cert_path = os.path.join(DOG, "runs", kid, kid, "certificate.json")
+    return analyse_cert(kid, cert_path, walls.get(kid))
+
+
+def analyse_cert(kid, cert_path, wall_s=None):
+    """Regret for ONE certificate against kid's frozen table.
+
+    Split out of `analyse` so the repeated campaign (`analyse_repeat.py`, PREREG_LAUNCH.md §2) can
+    score 90 certificates in a different directory layout through THIS definition of regret rather
+    than a second one. The reason is the same one the module docstring gives for taking the dogfood
+    directory as argv[1]: one analyser over every comparison, so a before/after cannot drift into
+    two definitions.
+    """
     if not os.path.exists(cert_path):
         return {"kernel_id": kid, "error": f"no certificate at {cert_path}"}
     cert = json.load(open(cert_path))

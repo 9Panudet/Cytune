@@ -55,9 +55,22 @@ ORACLE = {"output_class": "int", "tolerance": {"rtol": 0.0, "atol": 0.0},
           "deterministic": True, "n_det_reps": 5, "golden_sha256": "abc"}
 FEAS = {"n_measured": 20, "n_infeasible": 0, "infeasible_fraction": 0.0, "reasons": {}}
 ROUTE = {"rule": "R4", "route": "tune", "engine": "DOE", "budget": 20, "why": "separable lever"}
+FLAT_ROUTE = {"rule": "R1", "route": "honest-flat", "engine": None, "budget": 0,
+              "why": "probe spread at or below this rig's noise floor"}
 
 
-def _cert(winner=REF, endpoint=None, gate=None, policy=None, **kw):
+def _endpoint_without_wall_clock(win_ns, ref_ns, win_id, ref_id=REF):
+    """Endpoint records with no parent wall clock, so C1 returns `corroborated: None`.
+
+    This is the fixture shape the sweep carried BEFORE 1.1, when it made the C1 branch unreachable
+    and let D-3 through. It is kept deliberately, as a NAMED shape reaching a registered path
+    (V-4-N), instead of being the accidental default for every row.
+    """
+    return {str(win_id): {"endpoint_ns": win_ns, "subs_ns": [win_ns] * 3, "n_sub": 3, "K": _K},
+            str(ref_id): {"endpoint_ns": ref_ns, "subs_ns": [ref_ns] * 3, "n_sub": 3, "K": _K}}
+
+
+def _cert(winner=REF, endpoint=None, gate=None, policy=None, route=None, **kw):
     from cytune.plan import EmissionPolicy
     ep = endpoint if endpoint is not None else _endpoint(100e6, 100e6, winner)
     g = CLEAN_GATE if gate is None else gate
@@ -65,7 +78,8 @@ def _cert(winner=REF, endpoint=None, gate=None, policy=None, **kw):
         g = {**g, "config_id": winner}
     return certify.build_certificate(
         name="demo", winner_id=winner, reference_id=REF, endpoint=ep, oracle=ORACLE,
-        feasibility=FEAS, route=ROUTE, rig_mode="quiesced", rig_detail="quiesced — verified",
+        feasibility=FEAS, route=route or ROUTE, rig_mode="quiesced",
+        rig_detail="quiesced — verified",
         budget={"probe": 17, "tuning": 3, "total_measured": 20},
         sources={"table": "/w/table.jsonl", "workspace": "/w"},
         allow_fast_math=False, emitted_gate=g,
@@ -316,10 +330,16 @@ def _outcomes():
                     yield g, p, w, win_ns, ref_ns
 
 
-def _as_the_cli_would(winner, endpoint, gate, policy):
+def _as_the_cli_would(winner, endpoint, gate, policy, route=None, confirm=True, seen=None):
     """Reproduce the CLI's decision order, so the sweep exercises the real composition.
 
-    THREE steps, in the order cli.tune does them and for the reasons it does them:
+    Records which registered path it took into `seen` (B4). `src/cytune/paths.py` enumerates
+    production's verify/emit paths as data; `test_cytune_paths.py` fails if a path marked REQUIRED
+    was never reached by this mirror. That is the class defence for the shape D-3 was the fourth
+    instance of — the unit is tested, the composition models fewer cases than production has.
+
+    THREE STEPS FOR A SURVIVING CANDIDATE, in the order cli.tune does them and for the reasons it
+    does them:
       1. a candidate the SANITIZER reports on is refused and replaced by the reference (G2) —
          gated first, because the gate is a bug finder and not only an emission filter;
       2. a candidate whose speedup the parent's wall clock cannot account for is refused and the
@@ -337,32 +357,82 @@ def _as_the_cli_would(winner, endpoint, gate, policy):
     nine-anchor dogfood found it instead, on fleet_R_08_elkan. A demotion path added here in future
     must be added to this mirror in the same commit.
     """
-    ep, rejection = endpoint, None
-    if winner != REF:
+    from cytune import plan as _plan
+    mark = (lambda pid: seen.add(pid)) if seen is not None else (lambda pid: None)
+    ep, rejection, flat_observation = endpoint, None, None
+    route = route or ROUTE
+
+    if winner is None:
+        # V-0: nothing feasible, or everything excluded by the policy. cli.py:405/419 skips the
+        # whole verify block, so no gate is ever run on anything.
+        mark("V-0")
+        return _cert(winner=None, endpoint=ep, gate=None, policy=policy, route=route)
+
+    if winner == REF:
+        # V-1b: the search's own best IS the reference. Nothing is demoted and nothing visibly
+        # happens, which is exactly why it is easy to leave unnamed -- and it is the majority
+        # path on a flat landscape.
+        mark("V-1b")
+
+    if route.get("route") == "honest-flat" and winner != REF:
+        # V-1 (D13): the route declined to tune, so the best-of-probe config is a selection-biased
+        # claim. It is reported as an observation and refused as a recommendation.
+        mark("V-1")
+        flat_observation = {"config_id": winner, "note": "measured but NOT recommended"}
+        winner = REF
+    elif not confirm:
+        # V-2 (D18): the endpoint tier refused the winner. plan.confirm_winner is called rather
+        # than transcribed, so the rejection dict has production's shape -- including the missing
+        # "gate" key that cli.py:543 branches on.
+        infeasible = {str(winner): {"feasible": False, "endpoint_ns": None},
+                      str(REF): {"feasible": True, "endpoint_ns": 100e6}}
+        winner, rejection = _plan.confirm_winner(winner, REF, infeasible)
+        mark("V-2")
+
+    if winner != REF and rejection is None:
         if gate.get("clean") is False:
+            mark("V-3")
             rejection = {"rejected_config_id": winner,
                          "reason": f"sanitizer_report: {', '.join(gate.get('tokens') or [])}",
                          "action": "fell back to the reference config",
                          "gate": "roadmap §1.4 / PREREG §301", "observed_ratio": None}
             winner = REF
-        elif certify.corroborate_ratio(ep.get(str(winner)),
-                                       ep.get(str(REF))).get("corroborated") is False:
-            # C1 refused: the reference is emitted, no speedup is claimed, and the gate that
-            # follows must describe the REFERENCE rather than the candidate.
-            rejection = {"rejected_config_id": winner,
-                         "reason": "timing_not_corroborated",
-                         "action": "fell back to the reference config; no speedup is claimed",
-                         "gate": "C1 parent wall-clock corroboration", "observed_ratio": None}
-            winner = REF
-        elif not certify.assess(ep.get(str(winner)), ep.get(str(REF)))["clears"]:
-            winner = REF
+        else:
+            cor = certify.corroborate_ratio(ep.get(str(winner)), ep.get(str(REF)))
+            if cor.get("corroborated") is False:
+                # V-4: C1 refused. The reference is emitted, no speedup is claimed, and the gate
+                # that follows must describe the REFERENCE rather than the candidate.
+                mark("V-4")
+                rejection = {"rejected_config_id": winner,
+                             "reason": "timing_not_corroborated",
+                             "action": "fell back to the reference config; no speedup is claimed",
+                             "gate": "C1 parent wall-clock corroboration", "observed_ratio": None}
+                winner = REF
+            else:
+                if cor.get("corroborated") is None:
+                    # V-4-N: the SAME condition's other outcome. Not a demotion -- no wall clock,
+                    # no medians, or the no-power cutoff. Registered separately because a sweep
+                    # that only ever reaches `False` has "covered C1" and covered one third of it.
+                    mark("V-4-N")
+                if not certify.assess(ep.get(str(winner)), ep.get(str(REF)))["clears"]:
+                    mark("V-5")
+                    flat_observation = {"config_id": winner, "sanitizer_gate": copy.deepcopy(gate)}
+                    winner = REF
+                else:
+                    mark("V-9")
     emitted_gate = copy.deepcopy(gate)
     if winner == REF and (emitted_gate.get("config_id") not in (None, REF)):
         # Whatever demoted the candidate, the emitted config gets its OWN gate (cli.tune's
         # `if san_emitted is None: san_emitted = _gate_emitted(...)`).
         emitted_gate["config_id"] = REF
-    return _cert(winner=winner, endpoint=ep, gate=emitted_gate, policy=policy,
-                 winner_rejection=rejection)
+    if emitted_gate.get("clean") is False:
+        mark("V-6")                     # the EMITTED config reports: certify.py:876 overwrites
+    if emitted_gate.get("clean") is None:
+        mark("V-7")                     # a qualifier, not a demotion
+    if emitted_gate.get("image_overridden"):
+        mark("V-8")                     # H6: CLEAN but not authoritative
+    return _cert(winner=winner, endpoint=ep, gate=emitted_gate, policy=policy, route=route,
+                 winner_rejection=rejection, flat_observation=flat_observation)
 
 
 def test_b2_the_invariant_holds_over_every_generated_run_outcome():

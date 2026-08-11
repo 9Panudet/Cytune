@@ -7,10 +7,22 @@ purely to enumerate fleet kernels that do not exist in a user's checkout. Vendor
 reach one function would put ~580 unreachable lines in the package, which A3 forbids.
 
 So the three product-relevant definitions are copied here verbatim and the study's module-scope
-plumbing is replaced with the vendored equivalents. `test_cytune_vendor.py::
-test_sanitizer_build_matches_the_study_function_source` compares the SOURCE TEXT of
-`_sanitizer_build` against the study's, and asserts SAN_TOKENS and CORNERS are equal, so this file
-cannot drift from the audited original any more quietly than the byte-identical ones can.
+plumbing is replaced with the vendored equivalents.
+
+HOW THAT COPY IS PINNED, accurately. Until the launch pass this docstring named a test
+(`test_sanitizer_build_matches_the_study_function_source`) that **did not exist** — it had been
+renamed — and claimed an assertion on SAN_TOKENS and CORNERS that existed nowhere. The two
+constants were in fact pinned by nothing at all, which matters more than it sounds: `SAN_TOKENS` is
+what `sanitize_gate` matches an AddressSanitizer report against, so dropping a token would turn a
+real memory-safety report into a CLEAN verdict with every drift test still green. The claim was
+made true rather than deleted. Three pins now cover this file, all in `test_cytune_vendor.py`:
+
+  * `test_tier1_vendored_functions_match_the_manifest` — source text of `_sanitizer_build`;
+  * `test_tier1_vendored_constants_match_the_manifest` — the VALUES of `SAN_TOKENS` and `CORNERS`;
+  * `test_vendored_functions_match_the_study_source` / `test_the_manifests_constants_still_match_
+    the_study` — the same two against the live study tree, where one is present.
+
+The first two run on every branch, against `_vendor/VENDOR_MANIFEST.json`.
 """
 from __future__ import annotations
 

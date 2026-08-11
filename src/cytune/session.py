@@ -17,7 +17,7 @@ import re
 import shutil
 import subprocess
 
-from . import binding, rig
+from . import binding, lock, rig
 
 
 # --------------------------------------------------------------------------------- cache keys
@@ -410,7 +410,18 @@ class Session:
             self._made = True
 
     # ---------------------------------------------------------------- plumbing
+    # Phases whose numbers are only meaningful on an uncontended machine. B3 asserts the
+    # machine-level lock is held before any of them runs, so that no future code path can time
+    # something outside `cli.tune`'s lock scope. Shaped like the CF-4 asserts: cheap, at the
+    # boundary, pointing at the rule it protects.
+    TIMED_PHASES = ("golden", "measure", "endpoint")
+
     def _run(self, cmd, phase):
+        if phase in self.TIMED_PHASES:
+            lock.assert_held(phase)
+            lk = lock.current()
+            if lk is not None:
+                lk.heartbeat(phase)
         self._ensure()
         with open(self.log_path, "a") as f:
             f.write(f"\n$ {' '.join(cmd)}\n")

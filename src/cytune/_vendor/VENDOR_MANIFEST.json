@@ -1,0 +1,78 @@
+{
+ "constants": {
+  "sanitizer_build.py": {
+   "CORNERS": null,
+   "SAN_TOKENS": "72ac598c3f082ab5d3eae3d6f05e26c571e4c4d12ec9131d14563a4c315d9831"
+  }
+ },
+ "data_files": {
+  "_vendor/data/doe_designs_theta.json": {
+   "sha256": "e6cad9d4f4fe019523fdf54cdb9fb6ae7f8cef2c6357092e252736251ae4d576",
+   "study_source": "results/prereg/doe_designs_theta.json"
+  }
+ },
+ "generated_from_git_head": "bdb9e1e4429f50ad57b98aa860598ce5455e301a",
+ "generated_utc": "2026-08-11T21:11:25Z",
+ "per_function": {
+  "algorithms.py": {
+   "functions": {
+    "_fit": "d070749ad195c236677e413a483f66793c760051381e9ea42d7f3453ca6017dc",
+    "_pred_rank": "75260c355a6bfd6d3c9707c9a712c0434f95212f507b2dced6ce171890ce45ec",
+    "_ridge_fit": "71c91538d01533dd0c1c7947a1441b867187e71c1423267f35e19af4bf69b353"
+   },
+   "study_source": "scripts/phasep/algorithms.py"
+  },
+  "campaign.py": {
+   "functions": {
+    "_knob_line": "3e4b2adaaea9f0016da56a4f90a69501da3734facd93a5afdf611daf0a556fe8",
+    "_manifest": "dcf2b4a019eb5df129f349f691373e0e9181831f070bb3b4d8dfb42731f861a1",
+    "_measure_one": "19c76fcfd90814f8ad45e3e86c156ed6d0ba8eca0c931fdbeae70c400f304fc0",
+    "_module_of": "7a98ea78107ad5e861204410af837dd6dab00ce5862f1a2d7eba8662293974ac",
+    "_rig": "ad8985400be43977eb6359c4976ac018eeead28915f86de6f40170fd40832575",
+    "build_all": "ee354b4838e9507a8e88ea0f0b4717a66e8348453b60d4ace0e08b13b98f73a6",
+    "calibrate": "046376482af44ca9ff71ae15dd967b341bc70454f5eaa3859339efc0531fc874",
+    "golden_and_oracle": "a3c98e14256eb8028f0ead9dd45683358ee4905557cc10178375ab2d82df3ea6",
+    "measure_all": "3a6315c32c5f46345a63d63f762c45ec71540a3ef6ecb2052ee497cea7ccde63"
+   },
+   "study_source": "scripts/phasep/campaign.py"
+  },
+  "sanitizer_build.py": {
+   "functions": {
+    "_sanitizer_build": "f29ceb5d49439cd88a669ed1f5069896e73ce4f16ffab8c06c55b1639b521810"
+   },
+   "study_source": "scripts/phasep/sanitizer_spot_audit.py"
+  }
+ },
+ "purpose": "expected hashes for src/cytune/_vendor/*, committed AS DATA so the drift check runs on a product-only branch with no study tree. See src/cytune/test_cytune_vendor.py.",
+ "schema": "cytune-vendor-manifest/1",
+ "whole_file": {
+  "build.py": {
+   "sha256": "8f7a04bb1874d5aeaf57660b2ff1aa1b134be2411f090b3ae4dc4f4a3b0e7676",
+   "study_source": "scripts/phasep/build.py"
+  },
+  "classify.py": {
+   "sha256": "84d189f5106db7ef8827844d50356a69ecad09292e37fe28ecb328acd7b77f44",
+   "study_source": "scripts/phasep/classify.py"
+  },
+  "measure_child.py": {
+   "sha256": "6abdf767a3249777739b4e5dfe7b5bc4116565c3f0ec9da7aef3618423d1291d",
+   "study_source": "scripts/phasep/measure_child.py"
+  },
+  "profiles.py": {
+   "sha256": "d8823fd7321f66e280de42c8598842989b28be29e53398907f0be73b6e53998f",
+   "study_source": "src/motifbo/build/profiles.py"
+  },
+  "san_child.py": {
+   "sha256": "e6932fe8170cb5e33fa5fb151e53489e95ea0e61c30f999def2724c62a7b1ee8",
+   "study_source": "scripts/phasep/san_child.py"
+  },
+  "seeds.py": {
+   "sha256": "8e2bcd61b34d29d158f07a7cc11164b9ea1bf2d2fceb7db2bf91afd222735e0c",
+   "study_source": "scripts/phasep/seeds.py"
+  },
+  "theta.py": {
+   "sha256": "be397df7cc3368714462067a006fe8924d5836ce81bc54f1341fbf2c59b97a96",
+   "study_source": "scripts/phasep/theta.py"
+  }
+ }
+}

@@ -29,6 +29,7 @@ FIELDS = {
     "allow_fp_contract": (bool, False),
     "portable_flags": (bool, False),
     "probe_as_screen": (bool, False),
+    "wait": (bool, False),
     "budget_scale": (float, 1.0),
     "preset": (str, "standard"),
 }

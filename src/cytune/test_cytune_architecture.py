@@ -172,6 +172,16 @@ SUBPROCESS_ENTRY_POINTS = {"_vendor/measure_child.py", "_vendor/san_child.py"}
 # test_the_shipped_example_exists_and_is_documented so it cannot rot into dead weight.
 EXAMPLE_DATA = {"examples/running_max.pyx", "examples/running_max_driver.py"}
 
+# Enumerations the SHIPPED TEST MODULES consume, not the runtime. `paths.py` is B4's registry of
+# production's verify/emit decision paths; it is data about cli.py, walked by test_cytune_paths.py
+# to fail when the composition sweep models fewer paths than production has (the shape defect D-3
+# was the fourth instance of). The reachability walk deliberately excludes test modules, so a
+# registry only they import reads as dead — the same reason `examples/` is exempt.
+#
+# Exempt, not unpinned: `test_test_support_is_actually_used` below asserts a shipped test really
+# imports it, so this cannot become a hiding place for dead code.
+TEST_SUPPORT = {"paths.py"}
+
 
 def _module_key(path):
     """`src/cytune/_vendor/build.py` -> `_vendor/build.py`, the key used by the reachability walk."""
@@ -269,12 +279,42 @@ def test_every_product_module_is_reachable_from_an_entry_point():
         seen.add(cur)
         stack.extend(graph.get(cur, ()))
 
-    unreachable = sorted(set(by_key) - seen - EXAMPLE_DATA)
+    unreachable = sorted(set(by_key) - seen - EXAMPLE_DATA - TEST_SUPPORT)
     assert not unreachable, (
         f"unreachable from any entry point: {unreachable}\n"
         f"Delete it, or move it out of the package. A3 measures leanness rather than assuming it. "
         f"If it is genuinely reachable by a route this graph cannot see (a subprocess, a container "
         f"snippet), add it to the seed list WITH the reason.")
+
+
+def test_test_support_is_actually_used():
+    """The exemption above is not a hiding place.
+
+    Every TEST_SUPPORT module must exist AND be imported by a shipped test module. An exemption
+    nobody checks is how dead code survives a leanness gate.
+    """
+    tests = [f for f in os.listdir(HERE) if f.startswith("test_") and f.endswith(".py")]
+    assert tests, "no shipped test modules found"
+    for rel in sorted(TEST_SUPPORT):
+        assert os.path.exists(os.path.join(HERE, rel)), f"TEST_SUPPORT module missing: {rel}"
+        mod = rel[:-3]
+        importers = []
+        for t in tests:
+            tree = ast.parse(open(os.path.join(HERE, t)).read())
+            for node in ast.walk(tree):
+                names = []
+                if isinstance(node, ast.Import):
+                    names = [a.name.split(".")[-1] for a in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    names = [a.name for a in node.names]
+                    if node.module:
+                        names.append(node.module.split(".")[-1])
+                if mod in names:
+                    importers.append(t)
+                    break
+        assert importers, (
+            f"{rel} is exempted from the reachability walk as test support, but no shipped test "
+            f"imports it. Delete it or use it.")
 
 
 def test_the_reachability_walk_would_notice_a_dead_module():

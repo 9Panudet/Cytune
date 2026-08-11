@@ -6,21 +6,38 @@ vendored copy and the product silently stops measuring the way every number in `
 measured. Either direction breaks the ground-truth dogfood in the release report, which compares
 cytune's answer against frozen tables produced by exactly this code.
 
-TWO PINS, because the files come in two kinds:
+THREE PINS, because the files come in three kinds:
 
   whole-file   sha256 of the vendored file == sha256 of the study original.
   per-function source text of each named function == the study's, for the three files that were
                deliberately trimmed to what the product reaches (A3).
+  constants    the module-scope constants a trimmed file exports, compared by their evaluated
+               value, because a trimmed file's constants are not covered by either pin above.
 
-WHEN THE STUDY TREE IS ABSENT — an installed wheel, or a user's checkout of just the package — the
-comparison is impossible. These tests then SKIP with the reason stated. A skip is not a pass, and
-`test_the_drift_check_is_not_vacuously_skipping` fails loudly if the study tree is present but no
-file was actually compared.
+TWO TIERS, AND WHY THE MANIFEST EXISTS (B2).
+
+Until the launch pass, every one of these comparisons went straight to `scripts/phasep/*` and
+called `pytest.skip` when it was absent. On a product-only branch that is EVERY comparison,
+forever — 12 of 14 collected items skipped, and the two that still ran tested nothing about drift.
+This project named that failure mode itself, in D23: *a check that never runs leaves no trace*. The
+manifest points that lesson at the check.
+
+  TIER 1 — runs everywhere, no study tree needed. `_vendor/*` is compared against
+           `_vendor/VENDOR_MANIFEST.json`, which ships inside the package.
+  TIER 2 — runs only where the study tree is present (dev / research). The MANIFEST is compared
+           against the study source, so the manifest cannot silently drift from the thing it
+           claims to represent either.
+
+A wheel therefore verifies that the vendored rig is the one that was audited; a full checkout
+additionally verifies that the audit record still matches the study. Neither tier can go quiet:
+`test_the_manifest_covers_every_vendored_module` fails if a new vendored file is unpinned, and
+`test_tier_1_is_not_vacuous` fails if the manifest is empty or truncated.
 """
 from __future__ import annotations
 
 import ast
 import hashlib
+import json
 import os
 
 import pytest
@@ -63,6 +80,19 @@ DATA_FILES = {
         "results/prereg/doe_designs_theta.json",
 }
 
+# Module-scope constants of the TRIMMED files. These are the gap the launch pass found: the
+# whole-file pin does not cover a trimmed file, and the per-function pin only covers `def`s, so
+# `sanitizer_build.py`'s own docstring claimed a test asserted `SAN_TOKENS` and `CORNERS` were
+# equal to the study's when no such assertion existed anywhere. `SAN_TOKENS` is the token set the
+# §1.4 sanitizer gate matches on (`sanitize_gate.py`); silently losing one token turns a real
+# AddressSanitizer report into a CLEAN verdict. That is the highest-consequence unpinned surface in
+# the package, so it is pinned rather than the claim deleted.
+CONSTANTS = {
+    "sanitizer_build.py": ["SAN_TOKENS", "CORNERS"],
+}
+
+MANIFEST = os.path.join(VENDOR, "VENDOR_MANIFEST.json")
+
 
 def _sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()
@@ -85,6 +115,149 @@ def _func_source(path, name):
     return None
 
 
+def _const_sha(path, name):
+    """sha256 of a module-scope constant's VALUE, canonicalised.
+
+    By value rather than by source text, so reformatting a literal is not a false alarm while
+    changing a single token is a real one. `ast.literal_eval` keeps this a pure parse: the module
+    is never imported, so a constant pin cannot execute study code.
+    """
+    src = open(path).read()
+    for node in ast.parse(src).body:
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        for t in targets:
+            if isinstance(t, ast.Name) and t.id == name and node.value is not None:
+                try:
+                    val = ast.literal_eval(node.value)
+                except ValueError:
+                    return None
+                canon = json.dumps(sorted(val) if isinstance(val, (set, frozenset)) else val,
+                                   sort_keys=True, default=str)
+                return hashlib.sha256(canon.encode()).hexdigest()
+    return None
+
+
+def _manifest():
+    if not os.path.exists(MANIFEST):
+        pytest.fail(f"no vendor manifest at {MANIFEST} — regenerate it with "
+                    f"scripts/release/build_vendor_manifest.py. Without it the drift check is "
+                    f"vacuous on any branch that does not carry the study tree.")
+    return json.load(open(MANIFEST))
+
+
+# ------------------------------------------------------------------ TIER 1: runs on every branch
+@pytest.mark.parametrize("vend", sorted(WHOLE_FILE))
+def test_tier1_vendored_file_matches_the_manifest(vend):
+    man = _manifest()
+    assert vend in man["whole_file"], (
+        f"{vend} is vendored but not pinned in VENDOR_MANIFEST.json — it can drift undetected on "
+        f"any branch without the study tree.")
+    assert _sha(os.path.join(VENDOR, vend)) == man["whole_file"][vend]["sha256"], (
+        f"cytune/_vendor/{vend} does not match the committed manifest. Either the file was edited "
+        f"in place, or it was re-synced from the study without regenerating the manifest "
+        f"(scripts/release/build_vendor_manifest.py).")
+
+
+@pytest.mark.parametrize("vend", sorted(PER_FUNCTION))
+def test_tier1_vendored_functions_match_the_manifest(vend):
+    man = _manifest()
+    pinned = man["per_function"][vend]["functions"]
+    path = os.path.join(VENDOR, vend)
+    bad = []
+    for fn, want in sorted(pinned.items()):
+        src = _func_source(path, fn)
+        assert src is not None, f"{vend} no longer defines {fn}"
+        if hashlib.sha256(src.encode()).hexdigest() != want:
+            bad.append(fn)
+    assert not bad, f"cytune/_vendor/{vend}: {bad} differ from the committed manifest"
+
+
+@pytest.mark.parametrize("vend", sorted(CONSTANTS))
+def test_tier1_vendored_constants_match_the_manifest(vend):
+    """The gap the launch pass found: a trimmed file's constants were pinned by nothing.
+
+    `sanitizer_build.SAN_TOKENS` is what `sanitize_gate` matches an AddressSanitizer report
+    against. Dropping a token would turn a real memory-safety report into a CLEAN verdict, and
+    every pin in this file would have stayed green.
+    """
+    man = _manifest()
+    pinned = man["constants"][vend]
+    path = os.path.join(VENDOR, vend)
+    bad = [n for n, want in sorted(pinned.items()) if _const_sha(path, n) != want]
+    assert not bad, f"cytune/_vendor/{vend}: constants {bad} differ from the committed manifest"
+
+
+@pytest.mark.parametrize("rel_in_pkg", sorted(DATA_FILES))
+def test_tier1_vendored_data_file_matches_the_manifest(rel_in_pkg):
+    man = _manifest()
+    assert _sha(os.path.join(HERE, rel_in_pkg)) == man["data_files"][rel_in_pkg]["sha256"]
+
+
+def test_the_manifest_covers_every_vendored_module():
+    """Anti-vacuity: a NEW vendored file must be pinned, or this fails.
+
+    Without this, B2 closes the hole for today's files and reopens it for tomorrow's.
+    """
+    man = _manifest()
+    covered = set(man["whole_file"]) | set(man["per_function"])
+    # `__init__.py` is product-authored packaging glue (sys.path + designs_path), not a copy of
+    # anything in the study, so there is nothing to pin it against. It is the ONLY exemption.
+    exempt = {"__init__.py"}
+    present = {f for f in os.listdir(VENDOR) if f.endswith(".py")}
+    unpinned = sorted(present - covered - exempt)
+    assert not unpinned, (
+        f"vendored modules with no manifest entry: {unpinned}. Add them to WHOLE_FILE or "
+        f"PER_FUNCTION and regenerate the manifest, or the drift check silently does not cover "
+        f"them.")
+
+
+def test_tier_1_is_not_vacuous():
+    """A manifest that is empty, truncated, or stale-by-count protects nothing."""
+    man = _manifest()
+    assert man.get("schema") == "cytune-vendor-manifest/1"
+    assert len(man["whole_file"]) == len(WHOLE_FILE)
+    assert len(man["per_function"]) == len(PER_FUNCTION)
+    for vend, (_rel, funcs) in PER_FUNCTION.items():
+        assert sorted(man["per_function"][vend]["functions"]) == sorted(funcs), (
+            f"the manifest pins a different function set for {vend} than PER_FUNCTION declares")
+    for vend, names in CONSTANTS.items():
+        assert sorted(man["constants"][vend]) == sorted(names)
+    assert len(man["data_files"]) == len(DATA_FILES)
+
+
+def test_tier1_would_catch_a_one_byte_edit():
+    """Positive control for the manifest pin itself, on a scratch copy — the real files are not
+    touched. Without this, `test_tier1_*` passing proves only that sha256 is deterministic."""
+    import shutil
+    import tempfile
+    vend = sorted(WHOLE_FILE)[0]
+    with tempfile.TemporaryDirectory() as d:
+        p = os.path.join(d, vend)
+        shutil.copy(os.path.join(VENDOR, vend), p)
+        assert _sha(p) == _manifest()["whole_file"][vend]["sha256"]
+        with open(p, "a") as f:
+            f.write("\n")
+        assert _sha(p) != _manifest()["whole_file"][vend]["sha256"]
+
+
+def test_the_constant_pin_would_catch_a_dropped_token():
+    """Positive control for the constants pin, the one that guards the sanitizer verdict."""
+    import tempfile
+    a = 'SAN_TOKENS = ("AddressSanitizer", "runtime error")\n'
+    b = 'SAN_TOKENS = ("AddressSanitizer",)\n'
+    c = 'SAN_TOKENS = (\n    "AddressSanitizer",\n    "runtime error",\n)\n'
+    with tempfile.TemporaryDirectory() as d:
+        pa, pb, pc = (os.path.join(d, n) for n in ("a.py", "b.py", "c.py"))
+        for p, s in ((pa, a), (pb, b), (pc, c)):
+            open(p, "w").write(s)
+        assert _const_sha(pa, "SAN_TOKENS") != _const_sha(pb, "SAN_TOKENS")   # dropped token: caught
+        assert _const_sha(pa, "SAN_TOKENS") == _const_sha(pc, "SAN_TOKENS")   # reformat: not a hit
+        assert _const_sha(pa, "MISSING") is None
+
+
+# ------------------------------------- TIER 2: only where the study tree is present (dev/research)
 @pytest.mark.parametrize("vend,rel", sorted(WHOLE_FILE.items()))
 def test_vendored_file_is_byte_identical_to_the_study_source(vend, rel):
     study = _study(rel)
@@ -121,15 +294,32 @@ def test_vendored_functions_match_the_study_source(vend):
         f"the product reaches, but the functions it keeps must be the study's verbatim.")
 
 
+@pytest.mark.parametrize("vend", sorted(CONSTANTS))
+def test_the_manifests_constants_still_match_the_study(vend):
+    """Tier 2 for the constants pin: the manifest must not drift from the study either."""
+    rel = PER_FUNCTION[vend][0]
+    study = _study(rel)
+    man = _manifest()["constants"][vend]
+    bad = [n for n, want in sorted(man.items())
+           if _const_sha(study, n) is not None and _const_sha(study, n) != want]
+    assert not bad, (
+        f"the manifest pins {bad} for {vend}, but the study source now has different values. "
+        f"Re-sync the vendored file and regenerate the manifest.")
+
+
 def test_the_drift_check_is_not_vacuously_skipping():
     """A pin that skips everywhere protects nothing.
 
-    In a full checkout every comparison above must actually run. This asserts the study tree is
-    reachable and that each mapped source really exists, so a renamed or deleted study file
-    surfaces as a failure here rather than as fourteen silent skips.
+    In a full checkout every TIER 2 comparison above must actually run. This asserts the study tree
+    is reachable and that each mapped source really exists, so a renamed or deleted study file
+    surfaces as a failure here rather than as twelve silent skips.
+
+    Note what this test can and cannot do: it guards TIER 2 only. Tier 1 needs no such guard
+    because it cannot skip — that is the entire point of the manifest.
     """
     if not os.path.isdir(STUDY):
-        pytest.skip("study tree absent (standalone install) — drift cannot be checked here")
+        pytest.skip("study tree absent (standalone install) — TIER 2 cannot be checked here; "
+                    "TIER 1 has already compared every vendored file against the manifest")
     missing = [rel for rel in list(WHOLE_FILE.values()) + list(DATA_FILES.values())
                + [v[0] for v in PER_FUNCTION.values()]
                if not os.path.exists(os.path.join(REPO, rel))]

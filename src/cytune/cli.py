@@ -14,7 +14,7 @@ import time
 from . import apply as applymod
 from . import audit as auditmod
 from . import init as initmod
-from . import binding, certify, coherence, config, invariants, rig, routing, sanitize_gate
+from . import binding, certify, coherence, config, invariants, lock, rig, routing, sanitize_gate
 from . import __version__, version_banner
 from .doctor import doctor
 from .plan import EmissionPolicy, confirm_winner, select_winner
@@ -194,6 +194,24 @@ def tune(args):
                   f"  Run `sudo scripts/host_prep.sh` for the quiesced rig, or pass\n"
                   f"  `--rig portable` to accept indicative timings.", file=sys.stderr)
             return certify.EXIT_ERROR
+
+    # B3 — the machine-level measurement lock, taken HERE: after the rig mode is known (so the
+    # refusal can name it), before `Session(...)` creates anything on disk (so a refusal leaves no
+    # workspace behind), and above every one of the container spawns below. Whole-run scope, not
+    # per phase: a per-phase lock would still let a competing run's BUILD land inside this run's
+    # MEASURE, which is the contamination mode.
+    _lk = lock.MeasurementLock(workspace=workspace, rig_mode=mode,
+                               argv=" ".join(sys.argv[:6]))
+    try:
+        _lk.acquire(wait=bool(eff.get("wait")),
+                    on_wait=lambda h: print(
+                        "cytune: queued — " + lock.describe(h, _lk.path).splitlines()[0]
+                        + "\n  waiting for it to finish (--wait). Ctrl-C to give up.",
+                        file=sys.stderr))
+    except lock.Busy as e:
+        print("cytune: REFUSING TO MEASURE — " + lock.describe(e.holder, e.path), file=sys.stderr)
+        return certify.EXIT_ERROR
+    lock.set_current(_lk)
 
     say(f"{version_banner()} — {name}")
     say(f"  rig mode: {mode} ({detail})")
@@ -736,6 +754,24 @@ def audit(args):
     say("  kernel gives the same verdict every run.")
     say()
 
+    # B3. `audit` times nothing, so it cannot be CORRUPTED by a concurrent run — but it compiles
+    # and runs the whole risk set under ASan, so it is a heavy load PRODUCER and would corrupt a
+    # concurrent `tune`. It takes the same machine-level lock for that reason, in the direction
+    # that matters: this process is the contaminant.
+    _lk = lock.MeasurementLock(workspace=workspace, rig_mode="audit (load producer)",
+                               argv=" ".join(sys.argv[:5]))
+    try:
+        _lk.acquire(wait=bool(getattr(args, "wait", False)),
+                    on_wait=lambda h: print("cytune: queued behind a running measurement (--wait)",
+                                            file=sys.stderr))
+    except lock.Busy as e:
+        print("cytune: REFUSING TO RUN — " + lock.describe(e.holder, e.path)
+              + "\n  `audit` measures no time, but it compiles and runs the whole risk set under\n"
+                "  ASan, which would contaminate the measurement already in flight.",
+              file=sys.stderr)
+        return certify.EXIT_ERROR
+    lock.set_current(_lk)
+
     # portable is honest here: `audit` never times anything, so the rig mode cannot affect a
     # single one of its conclusions. Requiring the quiesced rig would be ceremony.
     sess = Session(workspace, name, rig.PORTABLE, "audit does not measure time", target_ms=0)
@@ -838,6 +874,10 @@ def main(argv=None):
                         "and spend the whole tuning budget on the predicted-best walk — the "
                         "17-config probe is already a D-optimal screen. It measured better but "
                         "did not clear its pre-registered acceptance rule, so it is opt-in")
+    t.add_argument("--wait", dest="wait", action="store_true",
+                   help="if another cytune measurement holds this machine, queue behind it "
+                        "instead of refusing. Two runs measuring at once produce wrong numbers "
+                        "with no warning (default: refuse)")
     t.add_argument("--dry-run", dest="dry_run", action="store_true",
                    help="ingest + probe only: print the landscape, what cytune would do, and an "
                         "estimated cost. Spends no tuning budget")
@@ -870,6 +910,8 @@ def main(argv=None):
                          "OUTPUT_CLASS")
     au.add_argument("--workspace", default=".cytune", help="working directory (default: .cytune)")
     au.add_argument("--name", default=None, help="session name (default: module basename)")
+    au.add_argument("--wait", dest="wait", action="store_true",
+                    help="queue behind a running cytune measurement instead of refusing")
     au.add_argument("--json", action="store_true",
                     help="write the audit report as JSON to stdout; narration goes to stderr")
     au.set_defaults(func=audit)
@@ -922,6 +964,11 @@ def main(argv=None):
 
     try:
         return a.func(a)
+    except KeyboardInterrupt:
+        # Ctrl-C during a queue wait, or mid-run. The `finally` below still releases the lock, so
+        # an interrupted run never leaves the machine locked against the next one.
+        print("\ncytune: interrupted.", file=sys.stderr)
+        return certify.EXIT_ERROR
     except BuildFailure as e:
         print(f"\ncytune: {e}", file=sys.stderr)
         return certify.EXIT_ERROR
@@ -960,6 +1007,15 @@ def main(argv=None):
               f"  tool exists to refuse. Please report it with the command you ran.\n"
               f"  See docs/ARCHITECTURE.md#invariants.", file=sys.stderr)
         return certify.EXIT_ERROR
+    finally:
+        # B3: release the machine-level measurement lock on EVERY exit path, including the
+        # refusals above. The kernel would drop it at process exit anyway, but `main()` is called
+        # in-process by the test suite and by anything embedding cytune, where "the process exits"
+        # is not a release.
+        _held = lock.current()
+        if _held is not None:
+            _held.release()
+            lock.set_current(None)
 
 
 if __name__ == "__main__":
