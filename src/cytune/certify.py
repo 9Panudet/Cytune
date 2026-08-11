@@ -1075,6 +1075,53 @@ def _wrap(text, indent="  ", width=96):
     return out
 
 
+def next_step(cert):
+    """One sentence for a human, printed ABOVE the certificate: what to do next.
+
+    C3. The certificate is a document for someone who wants the evidence; it opens with a verdict
+    token and a table. A first-time user's actual question is "so what do I do?", and answering it
+    after two screens of provenance is answering it too late.
+
+    A pure function of the document, so it cannot say something the certificate does not support,
+    and so the wording is testable without a run. It is NOT part of the rendered certificate --
+    the document is unchanged and `certificate.txt` still round-trips from `certificate.json`.
+    """
+    v = cert.get("verdict")
+    emitted = (cert.get("emitted_config") or {}).get("config_id")
+    is_ref = emitted == theta.REFERENCE_ID or emitted is None
+    gate = cert.get("sanitizer_gate") or {}
+    finding = cert.get("memory_safety_finding") or cert.get("memory_safety_finding_emitted")
+    speed = cert.get("speedup")
+
+    if finding:
+        # Ordering is a judgement and it is deliberate: a memory-safety report outranks every
+        # performance statement in the document, including a good one.
+        return ("WHAT TO DO: fix the memory-safety bug below before anything else. cytune rebuilt "
+                "your kernel under AddressSanitizer and it read memory it does not own. No speed "
+                "recommendation is worth acting on until that is fixed.")
+    if v == IMPROVEMENT:
+        line = (f"WHAT TO DO: paste the directive header below into your .pyx and build with the "
+                f"gcc flags shown — measured {speed:.3f}x faster than your current settings."
+                if speed else
+                "WHAT TO DO: paste the directive header below into your .pyx and build with the "
+                "gcc flags shown.")
+        if cert.get("safety_wording_earned") is False:
+            line += (" NOTE: the memory-safety gate did not run authoritatively on this machine, "
+                     "so the speed claim stands and the safety claim does not.")
+        return line
+    if v == HONEST_FLAT:
+        return ("WHAT TO DO: nothing — keep your current settings. cytune measured the space and "
+                "found no configuration reliably faster than what you already have. That is a "
+                "real answer, not a failure.")
+    if v == NO_SAFE_IMPROVEMENT:
+        if is_ref:
+            return ("WHAT TO DO: keep your current settings. cytune found a faster candidate but "
+                    "could not stand behind it — the reason is in the REJECTED block below.")
+        return ("WHAT TO DO: keep your current settings. cytune has no recommendation it can "
+                "support for this kernel.")
+    return "WHAT TO DO: read the verdict below; cytune has no short answer for this outcome."
+
+
 def render(cert):
     """Human-readable certificate — what the user actually reads in the terminal."""
     L = []

@@ -16,6 +16,7 @@ from . import audit as auditmod
 from . import init as initmod
 from . import binding, certify, coherence, config, invariants, lock, rig, routing, sanitize_gate
 from . import __version__, version_banner
+from . import doctor as doctormod
 from .doctor import doctor
 from .plan import EmissionPolicy, confirm_winner, select_winner
 from .session import BuildFailure, IngestError, Session, validate_inputs
@@ -193,6 +194,23 @@ def tune(args):
                   f"  {detail}\n"
                   f"  Run `sudo scripts/host_prep.sh` for the quiesced rig, or pass\n"
                   f"  `--rig portable` to accept indicative timings.", file=sys.stderr)
+            return certify.EXIT_ERROR
+
+    # C2 — doctor's own BLOCKING checks, run by `tune` itself. A beginner should never have to
+    # know that `doctor` exists in order to be told what to install; before this, a machine
+    # without podman failed inside the build stage with a container spawn error three stages
+    # later. Runs BEFORE the lock and before the workspace, so a refusal leaves nothing behind.
+    if not args.dry_run:
+        _blocking = doctormod.blocking_preflight()
+        if _blocking:
+            print("cytune: this machine is not ready to tune.\n", file=sys.stderr)
+            for r in _blocking:
+                print(f"  FAIL  {r['check']}: {r['detail']}", file=sys.stderr)
+                if r["fix"]:
+                    for line in str(r["fix"]).splitlines():
+                        print(f"        {line}", file=sys.stderr)
+            print("\n  Run `cytune doctor` for the full picture, including the checks that are "
+                  "not blocking.", file=sys.stderr)
             return certify.EXIT_ERROR
 
     # B3 — the machine-level measurement lock, taken HERE: after the rig mode is known (so the
@@ -647,6 +665,9 @@ def tune(args):
         json.dump(cert, f, indent=2)
     with open(os.path.join(sess.odir, "certificate.txt"), "w") as f:
         f.write(rendered + "\n")
+    say()
+    # C3 — the human answer first. Everything below it is the evidence for it.
+    say(certify.next_step(cert))
     say()
     say(rendered)
     say()

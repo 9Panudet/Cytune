@@ -578,3 +578,109 @@ boundary, an algorithm. That is worth knowing, and it took under two minutes to 
 And note what it now does **not** mean: if a faster config existed and was refused, you get
 `NO-SAFE-IMPROVEMENT` instead, because "no headroom exists" and "all the headroom was unsafe" are
 different answers.
+
+---
+
+## 13. The complete surface (reference)
+
+Everything cytune exposes, in one place. Sections 0–12 above are the guide; this is the reference,
+kept separate on purpose — a beginner needs three commands and should not have to read this table
+to find them, and a senior needs the table and should not have to reconstruct it from `--help`.
+
+**Counts, so leanness is measured rather than asserted:** 4 commands · 27 flags · 10 config keys ·
+3 verdicts (+2 non-verdict exit codes) · 23 enforced invariants · 24 registered decision paths.
+`src/cytune/test_cytune_ux.py::test_every_flag_and_config_key_is_documented_here` fails if a flag
+or key exists without a line in this section, so the table cannot silently fall behind the code.
+
+### 13.1 The three-command path
+
+```
+cytune init kernel.pyx                                 # write a driver.py you can run
+cytune doctor                                          # is this machine ready?
+cytune tune kernel.pyx --driver driver.py              # the answer
+```
+
+`tune` runs `doctor`'s blocking checks itself, so you can skip step 2 and still be told what to
+install rather than being handed an internal error three stages in.
+
+### 13.2 Commands
+
+| command | what it does | exits |
+|---|---|---|
+| `cytune init MODULE` | writes `driver.py` and `.cytune.toml` beside the module, from the function signature, and checks the driver against the contract before returning | 0 / 1 |
+| `cytune doctor` | every environment check with its fix line | 0 if nothing blocking |
+| `cytune tune MODULE --driver D` | ingest → probe → route → tune → verify → certify | 0 / 2 / 3 verdicts, 1 error |
+| `cytune audit MODULE --driver D` | memory-safety audit of the pre-registered risk set. No search, no timing, same verdict every run | 0 / 3 / 1 |
+
+### 13.3 `tune` flags
+
+| flag | why it exists |
+|---|---|
+| `--driver PATH` | required: the contract that makes correctness checkable — inputs, call, canon, output class |
+| `--workspace DIR` | where builds and measurements live (default `.cytune`); point it at scratch space on a small disk |
+| `--name NAME` | the session name, and the certificate's subject (default: module basename) |
+| `--rig {auto,quiesced,portable}` | `quiesced` REFUSES to run without the verified host rig; `portable` accepts indicative timings knowingly |
+| `--target-ms MS` | calibrate the driver knob so the reference lands near this. `0` disables calibration and measures your workload as written |
+| `--preset {quick,standard,thorough}` | scales the routed search budget and the workload size together. Cannot change the oracle, the gate, or the emit margin |
+| `--allow-fast-math` | opt in to `-ffast-math` candidates being **emitted**. Still oracle-checked; changes FP results |
+| `--allow-fp-contract` | opt in to FMA contraction. Weaker than fast-math, still changes FP results — a separate axis, and separately consented |
+| `--portable-flags` | restrict to `-march=x86-64`, so the emitted flags are safe on machines other than this one |
+| `--probe-as-screen` | EXPERIMENTAL, off by default. Skip the second D-optimal screen and spend the whole budget on the walk. See §13.7 |
+| `--wait` | queue behind another cytune measurement instead of refusing. See §13.6 |
+| `--dry-run` | ingest + probe only: the landscape, the plan, and an estimated cost. Spends no tuning budget |
+| `--explain` | after the verdict: why this route, this budget, this margin, and what would have to change for the answer to change |
+| `--json` | the certificate as JSON on stdout; all narration to stderr |
+| `--apply` | write the emitted header into `MODULE.tuned.pyx`. Refuses unless the verdict is an improvement whose gate was CLEAN |
+| `--in-place` | with `--apply`, edit the module itself; a `.cytune-backup` is kept |
+| `--config PATH` | use this `.cytune.toml` instead of the nearest one at or above the CWD |
+| `--no-config` | ignore every `.cytune.toml`. Use this in scripts you want reproducible on someone else's machine |
+
+`audit` takes `--driver`, `--workspace`, `--name`, `--wait`, `--json` with the same meanings.
+`doctor` takes `--json` and `--build-image` (build the pinned image and verify its digest).
+`init` takes `--driver PATH` (where to write it) and `--force` (overwrite an existing driver).
+
+### 13.4 `.cytune.toml` keys and precedence
+
+Ten keys, all under `[cytune]`: `workspace`, `rig`, `target_ms`, `allow_fast_math`,
+`allow_fp_contract`, `portable_flags`, `probe_as_screen`, `preset`, `budget_scale`, `wait`.
+
+Precedence, highest first:
+
+1. **an explicitly passed flag** — always wins, including over a preset;
+2. **`preset`** — but only over `budget_scale` and `target_ms`, the two things a preset is allowed
+   to move;
+3. **`.cytune.toml`**;
+4. **the built-in default.**
+
+The certificate records which file supplied the defaults, so a run is reproducible from the
+document rather than from your shell history.
+
+### 13.5 Exit codes
+
+| code | meaning | is it an error? |
+|---|---|---|
+| `0` | `improvement` — a faster config was found, gated and certified. Also `--dry-run`'s success | no |
+| `2` | `honest-flat` — no configuration is reliably faster than yours | **no**: a real answer |
+| `3` | `no-safe-improvement` — headroom existed and could not be safely claimed. Read the REJECTED block | **no**: a real answer |
+| `1` | error — bad arguments, a broken environment, a refused certificate, or a held measurement lock | yes |
+
+In a script: `0`, `2` and `3` all mean cytune finished and stands behind its answer. Only `1` means
+it could not.
+
+### 13.6 The measurement lock
+
+cytune takes a machine-wide lock for the whole of a `tune` or `audit` run. A second run refuses,
+naming the holder, its workspace and how long it has been going. `--wait` queues instead.
+
+This is not politeness. Two runs measuring at once produce **wrong numbers with no warning**: a
+contended machine measures slower, and because config id order correlates with the `-O1`/`-O3`
+factor, a time-correlated slowdown can alias onto a factor and look like a result. This project
+discarded 626 measured rows to exactly that on 2026-07-24.
+
+### 13.7 Why `--probe-as-screen` is off by default
+
+It measured better nearly everywhere in offline replay across the frozen tables. It is off by
+default because the improvement is smaller than one live run can resolve: two runs of the *same
+unchanged engine* disagreed by 3.597 pp on one anchor, and a default should not be changed on a
+difference the instrument cannot see. The full evidence, and the repeated-measurement protocol
+that settles it, are in `results/release/LAUNCH_REPORT.md`.

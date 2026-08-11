@@ -27,7 +27,18 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, os.path.join(REPO, "src"))
 
 from cytune import certify, routing                      # noqa: E402
-from cytune._phasep import theta                         # noqa: E402
+from cytune._vendor import theta                          # noqa: E402
+
+# D25. This file imported `cytune._phasep` and had done since the package renamed that subpackage
+# to `_vendor` at 1.0.0. It therefore died with ModuleNotFoundError on import, and had not run
+# once in the interval -- a check whose entire purpose is to catch "each part correct, the
+# composition dishonest" (D13/D14/D18), silently absent from every gate that claimed to include
+# it. That is D23's lesson ("a check that never runs leaves no trace") landing on the check
+# itself, and it is the same class the B4 path registry now defends.
+#
+# `--artifacts-only` is what makes it cheap enough to keep green: it re-reads the certificates a
+# previous live run left behind, so `smoke.sh` can run the composition properties without paying
+# for another podman campaign.
 
 WS = os.path.join(REPO, "results", "cli_v0", "ws")
 CASES = [

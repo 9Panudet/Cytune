@@ -163,6 +163,28 @@ def run_checks():
     return out
 
 
+# The checks `tune` runs for itself (C2). Deliberately a SUBSET: `measurement rig` is not here,
+# because a non-quiesced rig is a degraded run and not a broken one, and `workspace` is not here
+# because tune creates its own. These four are the ones whose absence makes a run impossible, and
+# whose failure without this check surfaced as an internal error three stages later.
+TUNE_PREFLIGHT = ("podman", "pinned image", "sanitizer gate", "python")
+
+
+def blocking_preflight():
+    """The BLOCKING checks `cytune tune` must pass before it builds anything.
+
+    Why tune runs these itself rather than telling the user to run `doctor` first: a beginner does
+    not know `doctor` exists. Before this, a machine with no podman produced a container spawn
+    failure from inside the build stage -- accurate, and useless. Now the run stops before it
+    creates a workspace and prints DOCTOR'S OWN fix line, which is the line that has been kept
+    current because `doctor` is what people are told to run.
+
+    Returns the failing rows, most important first. Empty means clear to proceed.
+    """
+    rows = [r for r in run_checks() if r["check"] in TUNE_PREFLIGHT]
+    return [r for r in rows if r["tier"] == BLOCKING and not r["ok"]]
+
+
 def build_image(args=None):
     """`cytune doctor --build-image` — run the pinned build, then VERIFY what came out.
 

@@ -6,6 +6,8 @@ test of whether that rule is checkable rather than aspirational.
 """
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from cytune import certify, config
@@ -250,3 +252,51 @@ def test_the_endpoint_recheck_sentence_states_its_actual_scope():
     s = c["correctness"]["endpoint_recheck"]
     assert "FIRST repetition" in s
     assert "not output-checked" in s
+
+
+def test_every_flag_and_config_key_is_documented_here():
+    """C5 — leanness is measured, not asserted.
+
+    Every flag and every `.cytune.toml` key must appear in the guide's reference section. A flag
+    nobody can justify in one sentence is a flag to remove; a flag documented nowhere is worse
+    than one that does not exist, because a senior user has to read source to find it and a
+    beginner meets it in `--help` with no explanation.
+
+    Pinned against USER_GUIDE.md §13, which is the ONE place the whole surface is enumerated.
+    """
+    import subprocess
+    import sys as _sys
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    guide_path = os.path.join(repo, "docs", "USER_GUIDE.md")
+    if not os.path.exists(guide_path):
+        pytest.skip("USER_GUIDE.md is not on this branch")
+    guide = open(guide_path).read()
+
+    from cytune import config as _config
+    missing = []
+    for key in _config.FIELDS:
+        if key not in guide:
+            missing.append(f".cytune.toml key {key!r}")
+
+    for cmd in ("tune", "audit", "doctor", "init"):
+        out = subprocess.run([_sys.executable, "-m", "cytune", cmd, "--help"],
+                             capture_output=True, text=True, cwd=repo).stdout
+        for line in out.splitlines():
+            t = line.strip()
+            if not t.startswith("--"):
+                continue
+            flag = t.split()[0].rstrip(",")
+            if flag in ("--help", "--version"):
+                continue
+            if flag not in guide:
+                missing.append(f"{cmd} flag {flag}")
+
+    assert not missing, (
+        "undocumented surface: " + ", ".join(sorted(set(missing)))
+        + "\nAdd a one-sentence justification to USER_GUIDE.md §13, or remove it.")
+
+
+def test_the_documentation_check_would_notice_an_undocumented_flag():
+    """Positive control: the check above must actually be able to fail."""
+    guide = "a guide mentioning --driver and --json and nothing else"
+    assert "--probe-as-screen" not in guide

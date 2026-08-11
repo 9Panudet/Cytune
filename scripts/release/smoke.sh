@@ -24,6 +24,36 @@ step() { printf '\n[%s] %s\n' "$1" "$2"; }
 
 printf 'cytune live smoke gate — %s\n' "$($CY --version 2>&1)"
 
+# ---------------------------------------------------------------------------- 0. offline gates
+# B5. These run FIRST because they are seconds and the live steps below are minutes: a regressed
+# engine should be caught before four minutes of container time, not after. They are also the
+# gates that see what a live run cannot -- the nine anchors are validation, the 149 frozen tables
+# are coverage.
+step 0 "offline gates (B1 fleet replay, B2 vendor manifest, B4 path registry)"
+
+"$REPO/.venv/bin/python" -m pytest -q     "$REPO/src/cytune/test_cytune_vendor.py"     "$REPO/src/cytune/test_cytune_paths.py"     "$REPO/src/cytune/test_cytune_lock.py"     > "$WORK/gates.txt" 2>&1 || { tail -30 "$WORK/gates.txt"; fail "B2/B3/B4 gate tests failed"; }
+tail -1 "$WORK/gates.txt" | sed 's/^/  /'
+pass "vendor manifest, path registry and measurement lock hold"
+
+if [ -f "$REPO/results/fleet/FREEZE_MANIFEST_V2.json" ]; then
+  "$REPO/.venv/bin/python" "$REPO/scripts/release/fleet_gate.py"       --report "$WORK/fleet_gate.md" > "$WORK/fleet.txt" 2>&1
+  FRC=$?
+  tail -12 "$WORK/fleet.txt" | sed 's/^/  /'
+  [ "$FRC" -eq 0 ] || fail "B1 fleet gate: an engine regression the nine anchors would not show"
+  pass "B1 fleet gate: 149 frozen tables x 9 budgets, no regression past its bound"
+else
+  # NOT a silent skip. On a product-only branch the frozen tables are on `research`, and the
+  # correct report is that this machine cannot run the gate -- not that the gate passed.
+  printf '  \033[33mNOT RUN\033[0m B1 fleet gate — results/fleet is absent on this branch.\n'
+  printf '           Run it on `dev` or `research` before tagging. A gate that cannot run here\n'
+  printf '           has NOT passed here.\n'
+fi
+
+if [ -f "$REPO/results/cli_v0/ws" ] || [ -d "$REPO/results/cli_v0/ws" ]; then
+  "$REPO/.venv/bin/python" "$REPO/scripts/cytune_e2e_composition_check.py" --artifacts-only       > "$WORK/comp.txt" 2>&1 || { tail -20 "$WORK/comp.txt"; fail "composition checks (D13/D14/D18)"; }
+  pass "composition checks green on current code, red on reconstructed pre-fix behaviour"
+fi
+
 # ---------------------------------------------------------------------------- 1. doctor
 step 1 "doctor — the environment is real"
 if ! $CY doctor > "$WORK/doctor.txt" 2>&1; then
@@ -136,6 +166,32 @@ $CY tune smoke.pyx --driver driver.py --target-ms 5 --preset quick --dry-run \
 [ $? -eq 0 ] || { tail -20 "$WORK/resume.txt"; fail "the resumed dry run failed"; }
 grep -q "cache invalidated" "$WORK/resume.txt" && fail "an unchanged re-run discarded its cache"
 pass "an unchanged re-run keeps its cache"
+
+# ---------------------------------------------------------------------------- 5b. the lock, live
+step 5b "measurement lock — a second run must refuse rather than measure alongside the first"
+cd "$WORK/proj"
+( $CY tune smoke.pyx --driver driver.py --target-ms 5 --preset quick \
+     --workspace "$WORK/lockws" > "$WORK/lock_first.txt" 2>&1 ) &
+FIRST=$!
+# Wait until the first run actually holds the lock, rather than sleeping a guessed interval.
+for _ in $(seq 1 60); do
+  "$REPO/.venv/bin/python" -c "
+import sys; sys.path.insert(0, '$REPO/src')
+from cytune import lock
+sys.exit(0 if lock.read_holder() else 1)" && break
+  sleep 1
+done
+$CY tune smoke.pyx --driver driver.py --target-ms 5 --preset quick \
+   --workspace "$WORK/lockws2" > "$WORK/lock_second.txt" 2>&1
+SRC2=$?
+wait $FIRST
+if [ "$SRC2" -eq 1 ] && grep -q "REFUSING TO MEASURE" "$WORK/lock_second.txt"; then
+  pass "the second concurrent run refused, naming the holder"
+else
+  tail -20 "$WORK/lock_second.txt"
+  fail "a second run measured alongside the first (exit $SRC2) — CF-1 is unenforced"
+fi
+cd "$REPO"
 
 # ---------------------------------------------------------------------------- 6. binding
 step 6 "the container-backed binding tests (skipped by a plain pytest run without podman)"
