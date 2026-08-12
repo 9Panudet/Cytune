@@ -12,6 +12,7 @@ not in the table below, it is a defect and should be reported as one.
 | "the certificate names what it did not prove" | `example_certificate_improvement.txt` | a real certificate from the campaign above, unedited |
 | "it finds latent out-of-bounds bugs your tests cannot see" | `example_sanitizer_report.log` | a real AddressSanitizer report from the gate, on a kernel whose own correctness oracle passed |
 | "four document schemas, machine-readable" | `schemas.json` | the certificate, audit, doctor and dry-run schemas |
+| "it is tested by people trying to break it" | `adversarial_campaign.md` | what four testers found, including the five defects they found and the six issues still open |
 | the guarantees | `../docs/GUARANTEES.md` | on this branch; the **non**-guarantees N1–N9 are in the same file and are not optional reading |
 
 ## Three things about these numbers that a careful reader should check first

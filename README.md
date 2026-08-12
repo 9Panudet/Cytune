@@ -181,6 +181,14 @@ not shipped.
 
 ## Status
 
-Research preview, version 1.0.0. It is used, it is tested (910 tests, a live end-to-end gate before
-every tag), and its own defect ledger is public. It has not been run by many people on many
-machines yet, and that is the main thing standing between "research preview" and "1.0".
+Research preview, version 1.0.0. It is used, it is tested (900+ tests, a live end-to-end gate before
+every tag), and its own defect ledger is public.
+
+Before this release, four testers — a first-time user, an adversary, a QA engineer and a senior
+reviewer — were pointed at it with instructions to break it. **They found five defects in a few
+hours, four of which produced a confident wrong answer rather than an error.** All five are fixed;
+six further issues are open and published. The whole account, including what held:
+[`evidence/adversarial_campaign.md`](evidence/adversarial_campaign.md).
+
+That is the honest state of it: the machinery is careful, and it has not yet been run by many people
+on many machines. That is the main thing standing between "research preview" and 1.0.
