@@ -323,3 +323,45 @@ a certificate whose PROVENANCE names an artifact that was never built, under tha
 This needs a defect in `cli.py` rather than hostile input. It is the class `src/cytune/paths.py`
 exists for, and it is listed here because no invariant currently compares the rendered block against
 the artifacts it names.
+
+## K-15 — a `preset` in `.cytune.toml` overrides that same file's `target_ms`, and the certificate blames a flag
+
+**Status: known, documented, not fixed. Breaker agent, 2026-08-12.**
+
+`config.resolve` applies preset values ahead of file values whenever the preset is not `standard` —
+including when the preset itself came from the file. So a `.cytune.toml` saying
+`preset = "quick"` **and** `target_ms = 100.0` produces `target_ms = 30.0`, with one file value
+losing to another file value.
+
+Worse, the provenance string is hardcoded to `f"--preset {preset_name}"` regardless of where the
+preset came from, so the certificate's answer to "where did this setting come from" names a command
+line flag that was never typed. A reader auditing a certificate cannot distinguish "someone typed
+`--preset quick`" from "a checked-in config file did it".
+
+The documented precedence (`docs/USER_GUIDE.md` §13.4) is *flag > preset > file > default*, and
+this is the case where "preset" and "file" are the same file.
+
+## K-16 — two identical runs can emit different directive headers, and a near-tie is not disclosed
+
+**Status: known, documented, not fixed. Breaker agent, 2026-08-12.**
+
+Three clean runs of one kernel, identical flags, fresh workspace each, emitted config **786** twice
+and config **210** once. The winner endpoint times were within **0.13 %**, so the choice is
+noise-determined — and the two headers differ in `-O` level, `wraparound` and `nonecheck`, which
+that run's own `factor_degeneracy` listed as **live** directives.
+
+The speedup claim is honest in both cases. What is missing is disclosure: the certificate has no
+runner-up field and no tie margin, so a user who re-runs to confirm gets a different header with no
+indication that the two were within noise of each other.
+
+This is the discrete-regret property described in `results/release/LAUNCH_REPORT.md` §1.2 seen from
+the user's side rather than the fleet's. A tie-margin field on the certificate is the obvious fix and
+is not built.
+
+## K-17 — a read-only workspace raises an unhandled `PermissionError`
+
+**Status: known, documented, not fixed. Breaker agent, 2026-08-12.**
+
+`chmod 500` on the workspace produces a bare traceback from `session.py::_ensure` rather than a
+cytune-level message. Honest — nothing is silently wrong — but it is the one environment failure
+`doctor`'s workspace row promises to pre-check, and it does not.
