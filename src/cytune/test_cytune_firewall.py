@@ -112,3 +112,28 @@ def test_no_user_facing_string_points_at_a_path_the_user_does_not_have():
         + "; ".join(f"{f}:{n} {t!r}" for f, n, t in bad)
         + "\nPoint at something on the branch the reader is holding (docs/ or evidence/), or say "
           "which branch carries it.")
+
+
+def test_every_doc_a_shipped_string_cites_is_on_this_branch():
+    """The product-branch version of the previous test.
+
+    `cli.py`'s I4 refusal tells the user to see `docs/ARCHITECTURE.md#invariants`. If the branch
+    split moves that file to `dev`, the message becomes a dead pointer for exactly the user who has
+    just hit the hardest failure the tool has. So the split is constrained by what shipped strings
+    cite, and this test is what states that constraint.
+    """
+    import ast
+    import re
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    cited = set()
+    for path in _product_sources():
+        if os.path.basename(path).startswith("test_"):
+            continue
+        for node in ast.walk(ast.parse(open(path).read())):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                cited.update(re.findall(r"docs/[A-Za-z_]+\.md", node.value))
+    assert cited, "no docs are cited at all — this check has gone vacuous"
+    missing = sorted(d for d in cited if not os.path.exists(os.path.join(repo, d)))
+    assert not missing, (
+        f"shipped strings cite documents that are not on this branch: {missing}. Either keep them "
+        f"on the product branch, or stop citing them where a user will read it.")
