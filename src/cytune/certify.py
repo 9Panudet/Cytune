@@ -34,11 +34,14 @@ ATTESTATION = {
                         "loads the user's own driver into the process that owns the clock, so the "
                         "reported medians are as trustworthy as that driver. cytune corroborates "
                         "them against the parent process's wall clock (see timing_corroboration): "
-                        "that catches ANY claimed speedup on a kernel that is really flat, and "
-                        "catches an inflated claim up to a true speedup of roughly 1.2x-2.3x "
-                        "depending on the size of the claim. It does NOT catch a large real gain "
-                        "being inflated further, and it cannot catch a driver that genuinely does "
-                        "different work for different configurations."),
+                        "that catches a fabricated speedup on a flat kernel, and catches an "
+                        "inflated claim up to a true speedup of roughly 1.2x-2.3x depending on the "
+                        "size of the claim. It does NOT catch a large real gain being inflated "
+                        "further; it cannot catch a driver that genuinely does different work for "
+                        "different configurations; and it can be DISARMED by a driver whose "
+                        "reported wall clocks are noisy enough, because the noise floor the check "
+                        "budgets against is estimated from those same wall clocks - in which case "
+                        "this field reads NOT CHECKED and the speedup above is uncorroborated."),
     # The ARTIFACT half of the same boundary. The clock limit above was stated from the first
     # version of this block; this one was recorded in the JSON provenance note and never printed,
     # so a reader of the rendered certificate — which is the copy that gets forwarded — did not see
@@ -941,7 +944,42 @@ def safety_wording_earned(gate):
     from an image that is not the pinned one is not a pass either (H6).
     """
     g = gate or {}
-    return bool(g.get("clean") is True and not g.get("image_overridden"))
+    return gate_is_trustworthy(g)
+
+
+def gate_is_trustworthy(g):
+    """The ONE predicate for "may this gate result license a safety claim?".
+
+    Extracted and tightened after an adversarial pass found that the gate's *checks* and the gate's
+    *licence* keyed on different fields:
+
+        binding.assert_gate_bound  -> `if gate.get("ran") and ...`   (config id, source tree)
+        coherence I1.4             -> `if gate.get("ran") and ...`
+        safety_wording_earned      -> `clean is True` alone
+        apply.check_applicable     -> `clean is True` alone
+
+    A gate carrying `ran=False, clean=True` therefore fell in the hole between them: nothing checked
+    which configuration it described, and everything licensed it. The adversary used it to render
+    "CLEAN — config 7 was rebuilt under ASan+UBSan and ran with no report" on a certificate emitting
+    config 0, and to reproduce D-3 exactly — the reference emitted carrying the demoted candidate's
+    verdict, under the words "best safe choice".
+
+    Four conditions now, and each names the defect it answers:
+
+      clean is True         CLEAN, and nothing else
+      ran is not False      a gate that did not run cannot be clean (D23: not-run is never a pass)
+      not image_overridden  a clean verdict from an unpinned image is not a pass (H6)
+      authoritative != False  the gate attested which source tree it built
+
+    The last one was previously written by `binding.py` and read by NOTHING, so its own warning
+    string — "the 'safe' wording is withheld and --apply refuses" — was false in the same document
+    that carried it.
+    """
+    g = g or {}
+    return bool(g.get("clean") is True
+                and g.get("ran") is not False
+                and not g.get("image_overridden")
+                and g.get("authoritative") is not False)
 
 
 def _downgrade_safety_claims(summary):

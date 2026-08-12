@@ -329,6 +329,9 @@ def tune(args):
         if c.get("reused"):
             say(f"      reusing the calibrated {c['knob']} = {c['new']} from the previous run "
                 f"(module, driver, --target-ms, image and rig are unchanged)")
+        elif stale_b and stale_b.get("invalidated_calibration"):
+            say("      (the previous calibration was discarded with the stale builds — "
+                "re-calibrating)")
         else:
             say(f"      calibrated {c['knob']}: {c['cur']} -> {c['new']} "
                 f"(reference ~{eff['target_ms']} ms)")
@@ -365,6 +368,44 @@ def tune(args):
     say("[2/6] probe — pre-registered 16-config screen + the reference (PREREG §9.2)")
     t = time.time()
     sess.measure("probe")
+
+    # D30 — the calibration MISS, checked against the workload it actually produced.
+    # `calibrate` extrapolates linearly from one measurement at the driver's current knob. On a
+    # kernel whose single call is dominated by constant per-call overhead that extrapolation is
+    # badly wrong: a systematic-tester agent got `calibrated REPS: 1 -> 1431 (reference ~5.0 ms)`
+    # printed against a reference the same document then measured at 0.023 ms — a 215x miss, with
+    # a confident IMPROVEMENT verdict and no caveat anywhere in the run.
+    #
+    # The information to catch it was already in the document; nothing compared the two numbers.
+    # Reported, not corrected: re-calibrating in a loop spends the search's budget on calibration
+    # (the standing decision recorded above), and the user's real question is "is this workload
+    # the one I asked for?".
+    _ref_ns = (sess.feasible_medians() or {}).get(certify.theta.REFERENCE_ID)
+    _tgt_ms = eff["target_ms"]
+    if _ref_ns and _tgt_ms:
+        _got_ms = _ref_ns / 1e6
+        if _got_ms < 1.0:
+            print(f"\ncytune: REFUSING TO TUNE — the calibrated workload is {_got_ms:.4f} ms, "
+                  f"below this rig's\n"
+                  f"  timing resolution. You asked for ~{_tgt_ms:g} ms and calibration missed by "
+                  f"{_tgt_ms / _got_ms:.0f}x.\n\n"
+                  f"  Calibration extrapolates linearly from one measurement, which fails when a "
+                  f"single call is\n"
+                  f"  dominated by fixed per-call overhead. Raise the work your driver does per "
+                  f"repetition (a\n"
+                  f"  larger input, or a larger starting REPS/SCALE), or pass `--target-ms 0` to "
+                  f"measure the\n"
+                  f"  workload exactly as your driver writes it.", file=sys.stderr)
+            return certify.EXIT_ERROR
+        if _got_ms > 3 * _tgt_ms or _got_ms < _tgt_ms / 3:
+            say(f"      WARNING: you asked for a ~{_tgt_ms:g} ms reference and calibration landed "
+                f"at {_got_ms:.3f} ms ({_got_ms / _tgt_ms:.1f}x).")
+            say("      Calibration extrapolates linearly from one measurement; a kernel whose "
+                "cost is not linear in")
+            say("      its knob lands elsewhere. Every number below describes the workload it "
+                "ACTUALLY measured.")
+            sess.calibration_miss = {"target_ms": _tgt_ms, "achieved_ms": _got_ms}
+
     feat = sess.features()["features"]
     clock.learn(time.time() - t, feat["n_probe_attempted"])
     rate = f", ~{clock.per_config_s:.1f}s/config" if clock.per_config_s else ""

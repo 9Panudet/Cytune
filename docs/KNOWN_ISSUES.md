@@ -257,3 +257,111 @@ Previously untested, now exercised end-to-end — evidence in the productisation
 - `--allow-fast-math` opt-in;
 - `OUTPUT_CLASS = "float"` and the tolerance oracle;
 - verdict repeatability across two runs of the same fixture.
+
+---
+
+## K-12 — C1's noise floor is estimated from the driver's own wall clocks (adversarial finding)
+
+**Status: known, documented, not fixed. Reported by an adversarial pass, 2026-08-12.**
+
+`certify.corroborate_ratio` checks a claimed speedup against the parent process's wall clock. Its
+budget is `max(0.5 × claimed_gain, 3σ)`, and when that budget exceeds what the test could ever
+detect it returns `corroborated: None` — "no power to decide" — which is a pass-through, not a pass.
+
+**The weakness.** The per-configuration `σ` is a MAD estimate over **n = 3** overhead values, all
+derived from wall clocks that **the driver's own process reported**. A driver whose reported wall
+clocks are noisy enough inflates σ, which inflates the budget, which trips the no-power cutoff — and
+the claimed speedup is then certified with `wall-clock corroboration: NOT CHECKED` beside it. An
+adversary demonstrated a certified `IMPROVEMENT 2.000x` on a kernel whose true speedup was 1.000×.
+
+Note the screen-overhead term of the same formula *does* require n ≥ 4 (`_robust_sigma`); the
+per-configuration term has no minimum-sample guard.
+
+**Why it is not fixed here.** Adding a minimum-n guard changes the C1 budget, which changes
+verdicts, which would invalidate every measured number in `results/release/LAUNCH_REPORT.md` — those
+were measured with the current formula. `docs/CONTRIBUTING.md` sets the bar for an engine change:
+pre-registration, offline evaluation against the frozen tables, and the fleet gate. This one has not
+had it, and shipping it on an adversary's say-so would be exactly the shortcut this project refuses.
+
+**What changed instead.** The certificate's own attestation used to say C1 "catches ANY claimed
+speedup on a kernel that is really flat". That sentence was false, and it was false *in the document
+the claim appears in*. It now states the limit, including that a noisy driver can disarm the check
+and that `NOT CHECKED` means the speedup is uncorroborated.
+
+**What protects you meanwhile.** This requires a driver that misreports. Your driver is already
+inside the trust boundary — `docs/GUARANTEES.md` N8 says so, and the certificate says it is evidence
+to whoever controls the driver and *not* evidence to a third party. C1 is a defence against an
+honest driver on a busy machine, not against a hostile one.
+
+## K-13 — a directive is only checked for inertness when a single-bit-flip pair was built
+
+**Status: known, documented, not fixed. Same adversarial pass.**
+
+`binding.degeneracy` classifies a directive as live or inert by comparing two builds that differ in
+exactly that one directive. If the measured set contains no such pair — which a Hamming-distance-≥2
+screening design produces *by construction* — every directive comes back `undetermined`, and I4.2's
+`total_collapse` check does not fire because the sources genuinely differ.
+
+`directives_undetermined` is computed and then dropped: it is not in `binding.provenance`, not in
+`render_provenance`, and not in the schema. So a reader sees an empty inert list and no signal that
+the question was unanswerable.
+
+The probe design cytune actually ships does contain flip pairs, so this is latent rather than live
+today. It is recorded because "the check is only performed when a particular pair happens to have
+been built" is exactly the shape of finding this project has learned to write down.
+
+## K-14 — the PROVENANCE block is as true as its caller
+
+**Status: known, documented, not fixed. Same adversarial pass.**
+
+`assert_emission_bound` returns the artifact hash it bound; `cli.py` discards the return value and
+the `provenance` dict is assembled separately. So I4.1 binds the **decision** and nothing binds the
+**document** — a one-line drift in which config id is passed to `binding.provenance` would produce
+a certificate whose PROVENANCE names an artifact that was never built, under that block's own line
+"every hash here is of a file this run produced", with every invariant green.
+
+This needs a defect in `cli.py` rather than hostile input. It is the class `src/cytune/paths.py`
+exists for, and it is listed here because no invariant currently compares the rendered block against
+the artifacts it names.
+
+## K-15 — a `preset` in `.cytune.toml` overrides that same file's `target_ms`, and the certificate blames a flag
+
+**Status: known, documented, not fixed. Breaker agent, 2026-08-12.**
+
+`config.resolve` applies preset values ahead of file values whenever the preset is not `standard` —
+including when the preset itself came from the file. So a `.cytune.toml` saying
+`preset = "quick"` **and** `target_ms = 100.0` produces `target_ms = 30.0`, with one file value
+losing to another file value.
+
+Worse, the provenance string is hardcoded to `f"--preset {preset_name}"` regardless of where the
+preset came from, so the certificate's answer to "where did this setting come from" names a command
+line flag that was never typed. A reader auditing a certificate cannot distinguish "someone typed
+`--preset quick`" from "a checked-in config file did it".
+
+The documented precedence (`docs/USER_GUIDE.md` §13.4) is *flag > preset > file > default*, and
+this is the case where "preset" and "file" are the same file.
+
+## K-16 — two identical runs can emit different directive headers, and a near-tie is not disclosed
+
+**Status: known, documented, not fixed. Breaker agent, 2026-08-12.**
+
+Three clean runs of one kernel, identical flags, fresh workspace each, emitted config **786** twice
+and config **210** once. The winner endpoint times were within **0.13 %**, so the choice is
+noise-determined — and the two headers differ in `-O` level, `wraparound` and `nonecheck`, which
+that run's own `factor_degeneracy` listed as **live** directives.
+
+The speedup claim is honest in both cases. What is missing is disclosure: the certificate has no
+runner-up field and no tie margin, so a user who re-runs to confirm gets a different header with no
+indication that the two were within noise of each other.
+
+This is the discrete-regret property described in `results/release/LAUNCH_REPORT.md` §1.2 seen from
+the user's side rather than the fleet's. A tie-margin field on the certificate is the obvious fix and
+is not built.
+
+## K-17 — a read-only workspace raises an unhandled `PermissionError`
+
+**Status: known, documented, not fixed. Breaker agent, 2026-08-12.**
+
+`chmod 500` on the workspace produces a bare traceback from `session.py::_ensure` rather than a
+cytune-level message. Honest — nothing is silently wrong — but it is the one environment failure
+`doctor`'s workspace row promises to pre-check, and it does not.

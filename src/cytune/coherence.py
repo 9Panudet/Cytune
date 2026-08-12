@@ -56,6 +56,7 @@ import json
 
 from ._vendor import theta
 from .certify import (EXIT_BY_VERDICT, HONEST_FLAT, IMPROVEMENT, NO_SAFE_IMPROVEMENT,
+                      gate_is_trustworthy,
                       _json_safe, cython_x_flags, directive_header, gcc_flags, render)
 
 
@@ -260,7 +261,7 @@ def _assert_safety_earned(cert, gate):
 
     Earned means CLEAN from the PINNED image. An overridden image cannot buy the wording (H6).
     """
-    earned = bool(gate.get("clean") is True and not gate.get("image_overridden"))
+    earned = gate_is_trustworthy(gate)
     stated = cert.get("safety_wording_earned")
     if stated is None:
         _violation("I1.6", "the certificate does not record whether the safety wording was earned; "
