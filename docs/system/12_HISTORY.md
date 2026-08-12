@@ -4,7 +4,7 @@
 looks like paranoia is here, attached to the thing that made it necessary.*
 
 Full post-mortems: `logs/defects/D<n>.md`. **The series starts at D3** — there are no D1/D2 files
-on disk, and the ledger is D3–D25, twenty-three records. That gap is itself worth knowing, because
+on disk, and the ledger is D3–D30, twenty-eight records. That gap is itself worth knowing, because
 several documents in this repo's history said "D1–D12" and were wrong.
 
 ---
@@ -38,6 +38,11 @@ several documents in this repo's history said "D1–D12" and were wrong.
 | **D23** | the §1.4 sanitizer gate **never ran**, and the oracle passed 1,296 configs that read out of bounds | a tripwire on a suspiciously large lever | **a check that never runs leaves no trace** | `run_study` REFUSES without the overlay; the gate runs on the emitted config in the product |
 | **D24** | one of three demotion paths left the candidate's sanitizer verdict on a certificate emitting the reference | **the live dogfood**, under 674 green tests | **composition models fewer cases than production has** | **B4 path registry** — a REQUIRED path the sweep never reaches is now a test failure |
 | **D25** | the composition-level E2E check had not run since the `_phasep` → `_vendor` rename | reading it while building B4 | **a check that never runs leaves no trace** | in `smoke.sh` step 0; `tests/test_script_imports.py` checks every script's `cytune.*` imports |
+| **D26** | a constant golden made the correctness oracle unfalsifiable; `IMPROVEMENT 1.079x` certified on a flat kernel | **a first-time-user agent, first kernel it wrote** | **the instrument had no control on itself** | `Session.oracle_power()` refuses; `init` no longer collides repeated scalars |
+| **D27** | the gate's checks keyed on `ran`, its licence on `clean`; `ran=False, clean=True` was checked by nothing and licensed by everything | **an adversarial agent** | **two predicates for one question** | `certify.gate_is_trustworthy` — one predicate, with a test asserting the consumers call it |
+| **D28** | an edited kernel silently reused the previous kernel's calibration; narration contradicted itself 8 lines apart | **a breaker agent** | **a comparison made against a record the caller already updated** | invalidating builds drops the calibration |
+| **D29** | `doctor` reported `[ok]` on a toolchain digest mismatch | **a breaker agent** | **the label carried the finding and the verdict did not** | a mismatch is DEGRADED with a fix line |
+| **D30** | a 215× calibration miss reported as `reference ~5.0 ms` under a confident IMPROVEMENT | **a breaker agent** | **the tool had both numbers and never compared them** | refuses below 1 ms, warns beyond 3× |
 
 ---
 
@@ -105,7 +110,27 @@ Found by an auditor, not by the author. That is the point of having one. The sta
 *statistics are recomputed from raw by `stats-auditor`, never hand-entered* — exists because of
 this one defect.
 
-### 6. Environment, resources, and interface drift — the remainder
+### 6. "The tool had both numbers and never compared them" — **3** (D26, D28, D30)
+
+Named after the launch pass, because three defects appeared in one afternoon with this shape and it
+had not been articulated before.
+
+In each case the evidence needed to refuse was **already in hand**, in the same process, often in
+the same document:
+
+* the golden output was captured, and nothing asked whether it could discriminate;
+* the module hash had just changed, and nothing asked whether the calibration survived it;
+* the requested workload and the achieved workload were printed twenty lines apart, and nothing
+  subtracted them.
+
+D24/D-4 belongs to the same family from the other side — the document and the decision were computed
+from different inputs.
+
+**There is no class defence.** Each was fixed at its own site. A general one would need something
+like "every pair of quantities the system reports must have a stated relationship", which is not a
+mechanism, it is a wish. What exists instead is this entry, so the next person recognises the shape.
+
+### 7. Environment, resources, and interface drift — the remainder
 
 D3, D4, D6, D7, D8, D9, D12, D17, D20, D21. Ordinary engineering defects, each with an ordinary
 fix. They are in the ledger because the ledger is not a highlight reel.
@@ -126,6 +151,12 @@ correction in the record.
 **Auditors find things the author cannot.** D22 was found by `stats-auditor` after the author had
 read the same report repeatedly. During the launch pass an independent audit corrected **three**
 numbers in the DOE-v2 report, and all three made the conclusion weaker.
+
+**Outsiders find what insiders cannot.** D26 through D30 were found in a few hours by four agents
+told to use or attack the tool, on a codebase that had just passed 900 tests and gained four
+standing gates. Four of the five produce a confident wrong answer rather than an error. **The gates
+caught none of them** — they were each built to catch a class already suffered, and they do that.
+Two of the five (D26, D28) are reached by using the tool normally rather than attacking it.
 
 **Instance fixes are marked as instance fixes.** D10 and D21 carry **NONE** in the prevented-by
 column. That is deliberate. A ledger that claimed a class defence for every entry would be a
