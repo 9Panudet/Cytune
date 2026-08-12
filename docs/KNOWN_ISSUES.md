@@ -365,3 +365,37 @@ is not built.
 `chmod 500` on the workspace produces a bare traceback from `session.py::_ensure` rather than a
 cytune-level message. Honest — nothing is silently wrong — but it is the one environment failure
 `doctor`'s workspace row promises to pre-check, and it does not.
+
+## K-18 — no way to demand more than the emit margin (`--min-speedup` / `--fail-on-thin`)
+
+**Status: known, documented, not fixed. Senior power-user agent, 2026-08-12.**
+
+The emit margin is `max(2 × combined endpoint CV, 2 %)`, computed from the run's own noise. It is a
+floor, not a policy: a run can be certified `IMPROVEMENT` at 1.0259× having cleared a 1.0236× bar
+with an endpoint separation of 0.0107 %, and the certificate labels that separation `THIN`.
+
+`thin` **is** in the JSON (`measurement.endpoint_separation.thin`), so CI can act on it — the agent
+did, in four lines of bash. What is missing is a flag: no `--min-speedup`, no `--fail-on-thin`, and
+no way to make a thin result exit 3 instead of 0.
+
+Not added here because it is a new decision rule about what cytune certifies, and this project puts
+those through pre-registration rather than through a good suggestion. The workaround is one `jq`
+expression and it is documented in the agent's evaluation.
+
+## K-19 — the improvement path does not report what the emission policy cost
+
+**Status: known, documented, not fixed. Senior power-user agent, 2026-08-12.**
+
+On the improvement path the certificate reports a *count* of policy-excluded candidates
+(`emittable candidates: 9 of 25 feasible (16 excluded by policy: fast_math=9, fp_contract=7)`) but
+never the **ratio of the best excluded config**.
+
+On the agent's kernel that concealed a 2×: the strict run certified 1.0259×, and the same kernel
+with `--allow-fp-contract` measured **2.0036×**. cytune had measured those configurations and had
+the numbers in hand; the strict certificate said only that seven were excluded.
+
+`OBSERVED BUT NOT RECOMMENDED` exists for exactly this kind of disclosure but is scoped to the flat
+route. Extending it to the improvement path is the obvious fix and is not built.
+
+This is the same shape as D26/D28/D30 — **the tool had the number and did not report it** — which is
+why it is written down rather than left as a nice-to-have.

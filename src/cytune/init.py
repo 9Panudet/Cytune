@@ -250,11 +250,15 @@ def scaffold_driver(pyx_path, scale=None):
 
 CONFIG_TEMPLATE = '''# cytune project defaults. CLI flags win over this file; the certificate records
 # the effective value AND where it came from, so a reader never has to guess.
+#
+# `preset` is deliberately NOT scaffolded here. A preset moves `budget_scale` and `target_ms`, and
+# it wins over a `target_ms` written in this same file -- so scaffolding both keys pre-installs a
+# collision that arms itself the moment you edit one line (docs/KNOWN_ISSUES.md K-15). Set ONE of
+# them: `target_ms` for a specific workload size, or `preset` INSTEAD of it for quick/thorough.
 [cytune]
 workspace         = "{workspace}"
 rig               = "auto"        # auto | quiesced | portable
-target_ms         = 65
-preset            = "standard"    # quick | standard | thorough
+target_ms         = 65            # or delete this line and set `preset` instead
 allow_fast_math   = false         # both default OFF: they change floating-point results
 allow_fp_contract = false
 portable_flags    = false         # true restricts the answer to -march=x86-64

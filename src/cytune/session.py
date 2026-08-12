@@ -445,6 +445,27 @@ class Session:
         writes .c/.so next to sources and calibration may rewrite the driver knob, and doing either
         to a user's working tree would be rude and irreversible."""
         validate_inputs(pyx_path, driver_path)
+        # D32 — a workspace INSIDE the module tree. In closure (directory) mode `vendor` copytrees
+        # the module directory into the workspace; if the workspace lives inside that directory the
+        # copy recurses into itself until the path exceeds PATH_MAX, and the user gets a raw
+        # `shutil.Error: File name too long` from 150 levels of `.cytune/_kernels/.cytune/...`.
+        #
+        # That is the DOCUMENTED default invocation of USER_GUIDE §2.1 -- `cytune tune .` from
+        # inside the module directory, with the default `.cytune` workspace. Found by a
+        # senior-power-user agent following the guide literally.
+        if os.path.isdir(pyx_path):
+            mod_root = os.path.abspath(pyx_path)
+            ws = os.path.abspath(self.workspace)
+            if ws == mod_root or ws.startswith(mod_root + os.sep):
+                raise IngestError(
+                    f"the workspace is inside the module directory, and cytune copies that "
+                    f"directory into it.\n"
+                    f"  module   : {mod_root}\n"
+                    f"  workspace: {ws}\n"
+                    f"  The copy would recurse into itself until the path is too long for the "
+                    f"filesystem.\n"
+                    f"  Pass a workspace outside the module tree, e.g. "
+                    f"`--workspace {os.path.join(os.path.dirname(mod_root) or '.', '.cytune')}`.")
         # Contract check BEFORE copying anything: a driver that cannot work should not leave a
         # vendored kernel behind (F11).
         missing = self._driver_contract_gaps(driver_path)

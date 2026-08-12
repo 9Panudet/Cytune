@@ -1430,7 +1430,16 @@ def render(cert):
                                       else ""))
         add(f"FLOATING-POINT CONSENT: opted in via {', '.join(parts)}; emitted semantics = "
             f"{fp.get('emitted_fp_semantics')}")
-        if any(w and w not in ("command line", "built-in default") for w in srcs.values()):
+        # D31. This used to test `srcs.values()` — the provenance of BOTH fp flags, including one
+        # the user never opted into. A `.cytune.toml` that merely MENTIONS `allow_fast_math = false`
+        # gives that key a file provenance, so typing `--allow-fp-contract` on the command line
+        # printed "that opt-in did NOT come from the command line you typed" about a flag that had
+        # just been typed. A false statement about who consented to changed floating-point
+        # semantics, in the one block a reviewer is meant to trust, and a G7 violation: the JSON
+        # said "command line" in the same document.
+        # Only the flags actually OPTED INTO can say anything about where the opt-in came from.
+        if any((srcs.get(flag) or "") not in ("command line", "built-in default")
+               for flag in opted):
             para("NOTE: that opt-in did NOT come from the command line you typed. It came from the "
                  "source named above — check it if you did not intend to relax floating-point "
                  "semantics.")
