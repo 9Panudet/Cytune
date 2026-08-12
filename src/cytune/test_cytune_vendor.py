@@ -325,7 +325,13 @@ def test_the_drift_check_is_not_vacuously_skipping():
     # file that is not supposed to be there — found by running the suite from a clean clone of each
     # branch, which is the only way that distinction shows up.
     sources = list(WHOLE_FILE.values()) + [v[0] for v in PER_FUNCTION.values()]
-    if os.path.isdir(os.path.join(REPO, "results")):
+    # Include the DATA pins only when the study DATA tree is actually POPULATED on this branch.
+    # Keying on `os.path.isdir("results")` was not enough: a working tree switched from `research`
+    # to `dev` keeps an empty-ish `results/` full of untracked leftovers while the one tracked file
+    # this pin needs has been deleted by the branch switch. That is the branch hazard in
+    # docs/system/15_BRANCH_HAZARD.md, and it made the guard demand a file that is not supposed to
+    # be on this branch at all.
+    if any(os.path.exists(os.path.join(REPO, rel)) for rel in DATA_FILES.values()):
         sources += list(DATA_FILES.values())
     missing = [rel for rel in sources if not os.path.exists(os.path.join(REPO, rel))]
     assert not missing, (
