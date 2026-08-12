@@ -1,0 +1,15 @@
+measure_wrap: state OK — no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+[build] pilot_ctrl_planted
+[measure] pilot_ctrl_planted (rig=measure_wrap)
+  pilot_ctrl_planted: measured=boundary Δ_all=10.909044798557506 IF=0.3814652755153113 build=1625.3s measure=1393.8s
+[build] pilot_ctrl_flat
+[measure] pilot_ctrl_flat (rig=measure_wrap)
+  pilot_ctrl_flat: measured=A Δ_all=1.0164682897062745 IF=0.9653307084851572 build=1491.7s measure=2189.1s
+[build] pilot_ctrl_bcprobe
+[measure] pilot_ctrl_bcprobe (rig=measure_wrap)
+  pilot_ctrl_bcprobe: measured=boundary Δ_all=1.4453090263108161 IF=0.3535616316497243 build=1611.0s measure=2368.1s
+
+CONTROLS GATE (A-1): PASS
+  planted: Δ_all=10.909044798557506 opt_top=True o3_faster=True (need Δ≥1.6 AND opt largest AND -O3 faster) -> True
+  flat:    Δ_all=1.0164682897062745 class=A if_gated=True (need Δ≤1.10; A-1b IF-gated) -> True
+  bcprobe (A-1c char, not gated): top=opt_level bc_effect=0.11705624039380019

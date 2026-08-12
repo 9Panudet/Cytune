@@ -1,0 +1,33 @@
+tools: Python 3.12.3 | gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 | Cython 3.2.5 | numpy 2.4.6 | scipy 1.17.1
+installed sklearn (must be IRRELEVANT to this build): Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+AttributeError: module 'sklearn' has no attribute '__version__'
+reference -X: -X language_level=3 -X boundscheck=False -X wraparound=False -X initializedcheck=False -X nonecheck=False -X cdivision=True
+
+=== (1) POSITIVE: build the full runtime .so closure in dep order ===
+    [dep 1/3] sklearn.utils._cython_blas (BLAS wrapper .so; cdef-capi provider)
+--- cythonize sklearn/utils/_cython_blas.pyx ---
+--- gcc-13 compile sklearn/utils/_cython_blas.c ---
+so-bytes (_cython_blas): 390160
+    [dep 2/3] sklearn.utils._random (runtime-import dep; cdef DEFAULT_SEED module state)
+--- cythonize sklearn/utils/_random.pyx ---
+warning: sklearn/utils/_random.pxd:8:0: Assignment in pxd file will not be executed. Suggest declaring as const.
+--- gcc-13 compile sklearn/utils/_random.c ---
+so-bytes (_random): 329032
+    [dep 3/3] sklearn.linear_model._cd_fast (unit)
+--- cythonize sklearn/linear_model/_cd_fast.pyx ---
+warning: sklearn/utils/_random.pxd:8:0: Assignment in pxd file will not be executed. Suggest declaring as const.
+--- gcc-13 compile sklearn/linear_model/_cd_fast.c ---
+so-bytes (_cd_fast): 452352
+
+--- STANDALONE IMPORT (real package submodule; OMP_NUM_THREADS=1) ---
+exported: ['ConvergenceWarning', 'enet_coordinate_descent', 'enet_coordinate_descent_gram', 'enet_coordinate_descent_multi_task', 'np', 'sparse_enet_coordinate_descent', 'warnings']
+IMPORT-OK sklearn.linear_model._cd_fast
+
+=== (2) NEGATIVE CONTROL: hide vendored _cython_blas.pxd -> _cd_fast cythonize MUST fail ===
+    (proves the compile resolves ..utils._cython_blas cimport from the VENDORED closure)
+NEGATIVE CONTROL PASSED: cythonize fails without vendored _cython_blas.pxd (closure is the real source).
+  err tail: Error compiling Cython file:
+sklearn/linear_model/_cd_fast.pyx:16:0: 'sklearn/utils/_cython_blas.pxd' not found
+
+=== VENDORED-CLOSURE BUILD-CONFIRM: PASS (positive build+standalone import OK; negative control fails as required) ===

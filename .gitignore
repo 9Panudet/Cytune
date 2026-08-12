@@ -46,21 +46,3 @@ results/
 *.egg-info/
 .cytune/
 
-# --- the branch split (see docs/system/15_BRANCH_HAZARD.md on `dev`) ---
-# `main` carries the PRODUCT only. The development surface lives on `dev` and the study on
-# `research`; both are still present in this working tree if you checked out from a full clone.
-# Ignored here so `git status` on `main` is about the product and not about 590 files that belong
-# to another branch. Nothing is deleted from history — `git checkout dev -- scripts/` brings any
-# of it back.
-/scripts/
-/tests/
-/logs/
-/data/
-/prompts/
-/sandbox/
-/src/motifbo/
-/PRODUCT_ROADMAP.md
-/CLAUDE.md
-/docs/CONTRIBUTING.md
-/docs/system/
-/graphify-out/

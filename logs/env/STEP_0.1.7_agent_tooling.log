@@ -1,0 +1,68 @@
+# Step 0.1.7 evidence — agent tooling installed/verified, version-pinned
+# Date: 2026-06-11 (UTC).
+
+## 1. Host probe
+uv: ABSENT. npx/node: ABSENT. graphify: PRESENT at ~/.local/bin/graphify.
+9arm-skills: PRESENT at ~/.claude/skills/{debug-mantra,management-talk,post-mortem,
+scrutinize} (no local provenance metadata).
+
+## 2. graphify — verify-and-pin (RECORDED DEVIATION from the roadmap mechanism)
+Roadmap Step 0.1.7 says `uv tool install graphifyy==<ver>`; the host already had
+graphifyy installed by the human via pipx (shebang: ~/.local/share/pipx/venvs/graphifyy/
+bin/python). Decision: verify-and-pin the existing install instead of overwriting
+user-installed tooling with a parallel uv install — same pin guarantee, no host churn.
+  $ graphify --version        -> graphify 0.8.37
+Pin recorded: TOOLCHAIN.lock [agent-tooling] graphifyy==0.8.37.
+Assertion command (preflight): `graphify --version` must print 0.8.37.
+
+## 3. 9arm-skills — provenance established, commit-pinned
+Upstream clone (github.com/thananon/9arm-skills): HEAD = 167c83445c82a4e87161029fa70be400c659e849.
+All four installed SKILL.md byte-match HEAD (diff -q, 4/4 MATCH); also 4/4 at d714cb8
+(HEAD differs only in README); 2/3 at the initial commit (debug-mantra did not exist).
+Pin recorded: TOOLCHAIN.lock [agent-tooling] = 167c8344...e849. The npx-install
+mechanism was not run (node/npx absent; skills already installed and verified).
+
+## 4. Initial repo graph (code-only, no LLM key — §0.6 role: AST navigation)
+`graphify .` requires an LLM key for 8 doc files; the project role is local tree-sitter
+AST extraction only (§0.6; CLAUDE.md hook contract "AST-only, no API cost"), so the
+graph is built with the documented no-LLM path:
+  $ graphify update .   -> "Rebuilt: 110 nodes, 100 edges, 21 communities"
+graphify-out/ (graph.json, graph.html, GRAPH_REPORT.md, manifest.json, cache/; 192K)
+committed per roadmap. Doc-file semantic extraction remains intentionally absent.
+
+## 5. graphify install + hook install
+`graphify install` -> registers the skill with the assistant platform (skill appeared
+in the session skill list; global ~/CLAUDE.md graphify section present).
+`graphify hook install` -> wrote .git/hooks/post-commit and .git/hooks/post-checkout.
+The Step-0.1.4 pre-commit hook is UNTOUCHED (verified by header inspection) — the
+copy-install (not core.hooksPath) design held; no conflict.
+
+## 6. Check 1 — smoke query: PASS
+  $ graphify query "Which script asserts the toolchain versions against TOOLCHAIN.lock
+    and what does it check?"
+  -> BFS depth=2, 5 nodes: check_toolchain.sh / check_python_env.sh (+norm()) with
+     correct source paths, communities 16/17, contains/defines edges.
+
+## 7. Check 2 — hook regenerates graph on a test commit
+Procedure: sha256(graph.json) recorded before the Step-0.1.7 artifact commit; the
+post-commit hook must regenerate the graph (AST-only). Result recorded below by
+appendix after the commit (this log is written pre-commit; the boundary STATE commit
+captures the regenerated graph).
+APPENDIX (post-commit): see STATE 0.1.7 entry + boundary-commit diff for the
+regenerated graphify-out/ files — hash change = hook fired.
+
+## 8. check_toolchain.sh parser scoped (consequence of the new lock section)
+[agent-tooling] entries are host-side and not dpkg-assertable; parser now reads only
+[apt-pinned*]/[recorded-asserted] sections. Re-verified: PASS (21 assertions, zero
+diff) + perturbed-lock negative test still FAILs (exit 1).
+
+# 9. DELEGATED CHOICE: graphify-out volatile metadata gitignored
+Observed after the hook test: every commit triggers the post-commit rebuild, which
+rewrites graphify-out/{manifest.json,cache/} with mtime/hash bookkeeping of tracked
+files (incl. STATE_PHASE0.md, which changes at every Step boundary) -> committing
+those files guarantees an infinite dirty-tree cycle (verified across commits 3359d6d
+and 69fb28e). Resolution: semantic outputs (graph.json, GRAPH_REPORT.md, graph.html,
+.graphify_labels.json, .graphify_root) remain COMMITTED per roadmap Step 0.1.7;
+volatile rebuild metadata (cache/, manifest.json) is gitignored and untracked.
+graph.json itself was hash-stable across the no-code-change rebuilds
+(cdb07f4f65dee82a...), confirming the ignored files carry no semantic content.

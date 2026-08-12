@@ -1,0 +1,22 @@
+tools: Python 3.12.3 | gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 | Cython 3.2.5 | numpy 2.4.6
+installed scipy (must be IRRELEVANT to the kernel build): 1.17.1 /opt/venv/lib/python3.12/site-packages/scipy/__init__.py
+
+=== (1) POSITIVE: build the runtime .so closure in dep order, then standalone-import ===
+--- cythonize _tools (scipy bare -3) ---
+[_tools] so-bytes: 177568
+--- cythonize _traversal (scipy bare -3) ---
+[_traversal] so-bytes: 522104
+--- standalone-import (bare loader; OMP_NUM_THREADS=1) ---
+real scipy: 1.17.1 /opt/venv/lib/python3.12/site-packages/scipy/__init__.py
+IMPORT-OK scipy.sparse.csgraph._traversal
+exported callables: ['DTYPE', 'ITYPE', '_breadth_first_directed', '_breadth_first_undirected', '_connected_components_directed', '_connected_components_undirected', '_depth_first_directed', '_depth_first_undirected', 'breadth_first_order', 'breadth_first_tree', 'connected_components', 'depth_first_order', 'depth_first_tree', 'reconstruct_path', 'validate_graph']
+POSITIVE IMPORT: PASS
+
+=== (2) NEGATIVE CONTROL: hide vendored _tools.pyx -> _tools.so build MUST fail ===
+    (proves _traversal's reconstruct_path kernel resolves from the VENDORED closure, not scipy 1.17.1)
+--- cythonize _tools (scipy bare -3) ---
+/opt/venv/bin/cython: No such file or directory: 'scipy/sparse/csgraph/_tools.pyx'
+[_tools] CYTHONIZE FAILED (no .c emitted)
+NEGATIVE CONTROL PASSED: _tools build fails without the vendored _tools.pyx (closure is the real source).
+
+=== VENDORED-CLOSURE BUILD-CONFIRM: PASS (positive build+import OK; negative control fails as required) ===

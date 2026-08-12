@@ -1,0 +1,53 @@
+# Step 0.1.3 evidence — Python 3.12.x / Cython 3.x / SMAC3 2.x pinning
+# Date: 2026-06-11 (UTC). All actions inside the pinned image lineage (base: IMAGE_DIGEST).
+
+## 1. Apt layer (Python)
+Discovery: apt-cache policy in pinned image -> all src:python3.12 packages at
+3.12.3-1ubuntu0.13. Pin: data/env/apt-pin-python312.pref (priority 1001) + explicit
+=version installs of python3.12, python3.12-venv, python3.12-dev.
+
+## 2. Dependency resolution (hash-pinned lock)
+requirements.in: Cython>=3,<4; smac>=2,<3; scikit-learn<1.9 (D3 cap); numpy; pytest.
+Resolver: pip-tools 7.5.3 under pip 24.0, python 3.12.3, run IN-IMAGE with
+  pip-compile --generate-hashes --allow-unsafe --strip-extras
+First bind mount of the project: -v ./data/env:/work:Z (SELinux label recorded in
+HOST_NOTES.md). Result: data/env/requirements.lock — 39 packages, every one hash-pinned.
+Key pins: smac==2.4.0, cython==3.2.5, numpy==2.4.6, scipy==1.17.1, scikit-learn==1.8.0,
+configspace==1.2.2, pytest==9.0.3. All wheels (no sdist) -> no g++/swig needed.
+
+## 3. Defect D3 (full record: /logs/defects/D3.md)
+First resolution chose scikit-learn 1.9.0 -> `import smac` ImportError (smac 2.4.0
+imports private sklearn.tree._tree.DTYPE, removed in 1.9.0; smac metadata uncapped:
+scikit-learn>=1.6.1). debug-mantra applied (repro -> fail path -> 4 hypotheses, 3
+disproved -> metadata cross-check). Fix: scikit-learn<1.9 cap in requirements.in
+(carried caveat) -> re-resolve -> scikit-learn 1.8.0. Validated: bare import + full
+probe + train/predict smoke green.
+
+## 4. Image
+COPY requirements.lock; python3.12 -m venv /opt/venv; pip install --no-cache-dir
+--require-hashes -r; ENV PATH. Final image: localhost/motifbo-env:phase0
+id sha256:f9328a8a92f8a644d351b2f8553350027f4b7a4e69da15ce4a5ce8acc66a831f
+
+## 5. RF backend (required record, §1.3) — see data/env/SMAC_RF_BACKEND.md
+Probe scripts/probe_smac_backend.py: facade default model = smac RandomForest wrapping
+EPMRandomForest -> sklearn.ensemble._forest.ForestRegressor (proven post-fit via MRO);
+pyrfr ABSENT (upstream: optional extra only). BACKEND VERDICT: sklearn.
+
+## 6. Assertions (CI/preflight hooks)
+scripts/check_python_env.sh:
+  (1) sha256 of requirements.{lock,in} vs data/env/LOCK_HASHES.sha256
+  (2) in-image `pip freeze --all --exclude pip` == lock package set (zero diff)
+  (3) interpreter == 3.12.3; `import smac` succeeds (D3 regression guard)
+  (4) pyrfr absent + RandomForest module imports sklearn ForestRegressor (backend guard)
+Run: PASS (hashes, package set, interpreter, backend).
+Negative test (non-vacuity, §6.3): perturbed hash manifest -> FAILED + exit 1. PASS.
+scripts/check_toolchain.sh extended by [apt-pinned-python] section in TOOLCHAIN.lock:
+  TOOLCHAIN CHECK: PASS (21 assertions, zero diff).
+
+## 7. Correction note (empirical honesty)
+While editing TOOLCHAIN.lock, image_id_0.1.2 was momentarily written with a corrupted
+hash (tail spliced from the discarded first 0.1.2 build attempt); caught and fixed to
+the true value baccc282...799 in the immediately following edit, before any use.
+
+RESULT: PASS — Python/Cython/SMAC3 pinned by hash; RF backend recorded as sklearn;
+defect D3 root-caused, fixed, validated, and guarded against regression.

@@ -1,0 +1,30 @@
+tools: Python 3.12.3 | gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 | Cython 3.2.5 | numpy 2.4.6
+installed scipy (IRRELEVANT to the COMPILE; image-scipy only services runtime py-imports): 1.17.1 /opt/venv/lib/python3.12/site-packages/scipy/__init__.py
+
+=== (1) POSITIVE: build from the complete vendored closure ===
+--- cythonize (positive): scipy bare -3 reference directive (per-fn @cython pins are as-shipped) ---
+so-bytes: 423640
+--- STANDALONE IMPORT as the real dotted name 'scipy.sparse.csgraph._shortest_path' (bare loader; OMP_NUM_THREADS=1) ---
+module file: /tmp/_shortest_path.so
+exported names: ['DTYPE', 'ITYPE', 'NegativeCycleError', 'bellman_ford', 'convert_pydata_sparse_to_scipy', 'csr_matrix', 'dijkstra', 'floyd_warshall', 'issparse', 'johnson', 'np', 'shortest_path', 'validate_graph', 'warnings']
+IMPORT-OK scipy.sparse.csgraph._shortest_path
+
+=== (2) NEGATIVE CONTROL: hide the vendored parameters.pxi -> cythonize MUST fail ===
+    (proves the compile resolves include 'parameters.pxi' from the VENDORED closure, not elsewhere)
+--- cythonize (negative-control): scipy bare -3 reference directive (per-fn @cython pins are as-shipped) ---
+------------------------------------------------------------
+...
+from libc.stdlib cimport malloc, free
+from libc.math cimport INFINITY
+
+np.import_array()
+
+include 'parameters.pxi'
+^
+------------------------------------------------------------
+scipy/sparse/csgraph/_shortest_path.pyx:28:0: 'parameters.pxi' not found
+
+[negative-control] CYTHONIZE FAILED (no .c emitted)
+NEGATIVE CONTROL PASSED: build fails without the vendored parameters.pxi (closure is the real source).
+
+=== VENDORED-CLOSURE BUILD-CONFIRM: PASS (positive build+STANDALONE-IMPORT OK; negative control fails as required) ===

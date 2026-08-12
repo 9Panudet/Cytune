@@ -1,0 +1,8 @@
+{
+ "schema": "motifbo-divergence-v1",
+ "expected_ghz": 3.6,
+ "median_eff_ghz": 3.533457235514369,
+ "rel_dev": 0.018484101246008584,
+ "divergent": false,
+ "n_reps": 10
+}

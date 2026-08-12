@@ -1,0 +1,8 @@
+# Motif+BO Step 0.1.3 — apt version pin for Python 3.12.x (roadmap §1.3).
+# Scope: binary packages from src:python3.12 (co-versioned). Discovered 2026-06-11.
+# Names cover noble's time64 lib rename (libpython3.12t64); pinning a name that does
+# not exist is harmless.
+
+Package: python3.12 python3.12-minimal python3.12-venv python3.12-dev libpython3.12t64 libpython3.12-stdlib libpython3.12-minimal libpython3.12-dev
+Pin: version 3.12.3-1ubuntu0.13
+Pin-Priority: 1001

@@ -1,0 +1,41 @@
+# STEP 0.5.1 — reference-kernel hot-loop drivers + D2 input-scaling check (§4.4, §0.2)
+
+Grounding read first: §4.4 (driver protocol), §0.2 (D2: bare-import driver defect —
+guard = real drivers + profile evidence + input-scaling regression + I-1 on real
+workload only), §5.1 (timing). Drivers = size-parameterised pilot setups consumed by
+the RUNTIME_NS harness (fresh subprocess, kernel-only timing, import/setup excluded).
+
+Declared bands (Tier-3, frozen, drivers.py): both kernels O(n), band [1.7, 2.3].
+Lower bound > 1.0 IS the D2 guard (an import/startup-dominated driver scales ~1.0x).
+
+## pure-logic + driver-validity TDD (tests/test_d2_scaling.py) — 9 passed
+scaling_ratio/in_band non-vacuous (ratio 1.0 AND 4.0 both rejected); every declared
+band excludes 1.0; generated setups build in-contract inputs at both sizes.
+
+## integration D2 run (isolated core via measure_wrap; -O3 -march=native contract=fast)
+Reproduce: bash scripts/measure_wrap.sh -v ./src:/src:ro,Z -v ./scripts:/scripts:ro,Z -v ./results:/results:Z -e PYTHONPATH=/src localhost/motifbo-env:phase0 python /scripts/run_d2_scaling.py
+
+# D2 input-scaling check + §4.4 profile evidence — Step 0.5.1
+
+Config: cython known-good (boundscheck/wraparound/initializedcheck/nonecheck off, cdivision on) + gcc -O3 -march=native -ffp-contract=fast -g0 -pipe
+Reps: 10 (+5 warmup); image 3bbe69a1d8f8 git 5448f94
+
+| kernel | cx | n->2n | med(n) ms | med(2n) ms | ratio | band | in-band | import/setup ms (excl.) | overhead ms | kernel % |
+|---|---|---|---|---|---|---|---|---|---|---|
+| csr_scale | O(n) | nnz | 10.929 | 22.409 | 2.050 | [1.7, 2.3] | YES | 0.59/100.08 | 0.0009 | 99.99% |
+| pava | O(n) | n | 32.432 | 64.803 | 1.998 | [1.7, 2.3] | YES | 0.67/109.21 | 0.0016 | 99.99% |
+
+All kernels in band (D2 guard, §4.4 item 4): **YES**.
+All kernels ≥90% of timed region (§4.4 item 1): **YES**.
+import_ns/setup_ns are recorded by the harness and EXCLUDED from the timed signal (samples_ns is kernel-only). kernel % = 1 - overhead/work (overhead = near-zero-compute config; cProfile is inapplicable to a no-Python-subcall C kernel — see the step log).
+Raw: results/calibration/d2/d2_scaling.json
+
+## profile-instrument finding (honest): cProfile is INAPPLICABLE to these C kernels.
+Probed empirically: cProfile/lsprof records total_tt ~1.8e-05 s for 10 kernel calls
+(~30ms real) even WITH cython -X profile=True, because lsprof only tracks Python-call
+boundaries and the kernels make no Python subcalls. Replaced with a model-free overhead
+decomposition: kernel_fraction = 1 - overhead/work, overhead measured at a near-zero-
+compute config (csr passes=0 same arrays; pava n=64). Result: 99.99% both kernels.
+
+## full suite
+227 passed in the pinned container (9 new D2 tests).

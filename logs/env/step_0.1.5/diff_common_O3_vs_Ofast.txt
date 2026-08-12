@@ -1,0 +1,48 @@
+160c160
+<   -fallow-store-data-races    		[disabled]
+---
+>   -fallow-store-data-races    		[enabled]
+180c180
+<   -fassociative-math          		[disabled]
+---
+>   -fassociative-math          		[enabled]
+215c215
+<   -fcx-limited-range          		[disabled]
+---
+>   -fcx-limited-range          		[enabled]
+279c279
+<   -fexcess-precision=[fast|standard|16] 	[default]
+---
+>   -fexcess-precision=[fast|standard|16] 	fast
+285c285
+<   -ffinite-math-only          		[disabled]
+---
+>   -ffinite-math-only          		[enabled]
+385c385
+<   -fmath-errno                		[enabled]
+---
+>   -fmath-errno                		[disabled]
+451c451
+<   -freciprocal-math           		[disabled]
+---
+>   -freciprocal-math           		[enabled]
+505c505
+<   -fsemantic-interposition    		[enabled]
+---
+>   -fsemantic-interposition    		[disabled]
+510c510
+<   -fsigned-zeros              		[enabled]
+---
+>   -fsigned-zeros              		[disabled]
+552c552
+<   -ftrapping-math             		[enabled]
+---
+>   -ftrapping-math             		[disabled]
+606c606
+<   -funsafe-math-optimizations 		[disabled]
+---
+>   -funsafe-math-optimizations 		[enabled]
+673c673
+<   -o <file>                   		/tmp/ccuE3sOC.s
+---
+>   -o <file>                   		/tmp/cctAJGvV.s

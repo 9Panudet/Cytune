@@ -1,0 +1,8 @@
+# Step 1.1.3 — manifold _barnes_hut_tsne KERNEL-LEVEL determinism proof (X':phase1; 2026-06-21T22:42:47Z)
+# drive gradient() twice with FIXED embedding + FIXED CSR P-matrix, num_threads=1, OMP_NUM_THREADS=1
+# ----------------------------------------------------------------------------
+  run1: C=3.444598913192749 forces.sha256=782b36d51a47e6e1
+  run2: C=3.444598913192749 forces.sha256=782b36d51a47e6e1
+  forces bit-identical: True  | C bit-identical: True
+  DETERMINISM: PASS
+# EXIT=0

@@ -1,0 +1,2 @@
+macros_Ofast.txt
+macros_ffastmath.txt

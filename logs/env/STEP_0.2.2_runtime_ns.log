@@ -1,0 +1,37 @@
+# Step 0.2.2 evidence — RUNTIME_NS harness (TDD red-green)
+# Date: 2026-06-11 (UTC). All test runs inside the pinned container:
+#   podman run --rm -v ./src:/src:ro,Z -w /src -e PYTHONDONTWRITEBYTECODE=1 \
+#     -e PYTHONPATH=/src localhost/motifbo-env:phase0 \
+#     python -m pytest -q -p no:cacheprovider tests/test_runtime_ns.py
+
+## RED (commit eb7899a — tests + fixtures only)
+  from motifbo.timing.runtime_ns import measure
+  E   ModuleNotFoundError: No module named 'motifbo'
+  1 error in 0.11s
+
+## Implementation (the green commit)
+- src/motifbo/timing/_child.py — fresh-process driver, stdlib-only, invoked by file
+  path; JSON spec in, JSON result to a FILE (stdout never the data channel).
+  Timed region: perf_counter_ns immediately around fn(*args, **kwargs), nothing else;
+  import + setup measured separately as evidence; warmup executed, never reported;
+  gc disabled across the measured loop.
+- src/motifbo/timing/runtime_ns.py — measure(): one fresh subprocess per call
+  (§3.2(2) containment; GCC_SEMANTICS.md F7 boundaries); child failure, missing
+  result file, or malformed/short result => RuntimeError (no silent fabrication, D1).
+
+## GREEN
+  6 passed in 3.84s
+Tests:
+  1 measured ~= slept: all 5 samples + median in [50ms, 75ms)
+  2 import (>=100ms) and setup (>=200ms) recorded but absent from samples
+  3 fresh subprocess per measure(): distinct child PIDs, != parent
+  4 warmup discipline: 4 warmup + 3 reps -> kernel called 7x, 3 samples reported
+  5 SENSITIVITY (the step's "mis-placed region must fail"): the deliberately bad
+    child (setup+call timed per rep) yields median >= 75ms bound -> DETECTED.
+    If this test ever passes with the bad child inside the bound, the placement
+    suite is vacuous (§6.3) — the assertion message says exactly that.
+  6 child failure (missing kernel) raises RuntimeError, never silent
+
+Calibration rationale: tolerance 25ms is >= 10x typical sleep() overshoot under the
+container, and 4x below the smallest contamination source (200ms setup) — the bound
+separates correct from mis-placed regions deterministically even on a busy desktop.
