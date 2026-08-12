@@ -1,0 +1,24 @@
+2a3
+> #define __ASSOCIATIVE_MATH__ 1
+74c75,76
+< #define __FINITE_MATH_ONLY__ 0
+---
+> #define __FAST_MATH__ 1
+> #define __FINITE_MATH_ONLY__ 1
+211,212c213,214
+< #define __GCC_IEC_559 2
+< #define __GCC_IEC_559_COMPLEX 2
+---
+> #define __GCC_IEC_559 0
+> #define __GCC_IEC_559_COMPLEX 0
+289a292,294
+> #define __NO_MATH_ERRNO__ 1
+> #define __NO_SIGNED_ZEROS__ 1
+> #define __NO_TRAPPING_MATH__ 1
+298a304
+> #define __RECIPROCAL_MATH__ 1
+334,337d339
+< #define __STDC_IEC_559_COMPLEX__ 1
+< #define __STDC_IEC_559__ 1
+< #define __STDC_IEC_60559_BFP__ 201404L
+< #define __STDC_IEC_60559_COMPLEX__ 201404L

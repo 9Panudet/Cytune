@@ -1,0 +1,460 @@
+# STEP 0.3.3 — tolerance comparator (atol/rtol + ULP modes incl. NaN/Inf policy), TDD red->green->refactor
+
+Grounding: roadmap §3.1 (numerically-approximate outputs satisfy declared (atol,rtol)
+or max-ULP tolerance). Policy (both modes): non-finite values match positionally and
+identically (NaN<->NaN, +inf<->+inf, -inf<->-inf); tolerance arithmetic on finite pairs
+only. ULP = IEEE-754 ordered-int distance; +-0 are 0 ULPs apart; opposite-sign distance
+computed unsigned (immune to int64 wraparound: -1e300 vs 1e300 cannot falsely pass).
+
+## RED (vacuous always-pass stub)
+Invocation: podman run --rm -v ./src:/src:ro,Z -w /src -e PYTHONDONTWRITEBYTECODE=1 -e PYTHONPATH=/src localhost/motifbo-env:phase0 python -m pytest -q -p no:cacheprovider tests/test_oracle_tolerance.py
+
+.FFFFFFF.FFFFFF.FFFFFFFFF                                                [100%]
+=================================== FAILURES ===================================
+_________________________ test_within_and_outside_atol _________________________
+
+    def test_within_and_outside_atol():
+        g = np.array([1.0, 2.0])
+        c = np.array([1.0 + 5e-13, 2.0])
+        assert compare_tolerance(g, c, tol_ar(atol=1e-12)) is None
+>       assert_mismatch(compare_tolerance(g, c, tol_ar(atol=1e-13)), "tolerance")
+
+tests/test_oracle_tolerance.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('tolerance',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+___________________ test_rtol_scales_by_golden_not_candidate ___________________
+
+    def test_rtol_scales_by_golden_not_candidate():
+        # |c - g| = 1.0; bound = rtol * |golden|. golden=2 -> bound 1.0 (pass);
+        # golden=1 -> bound 0.5 (fail). An implementation scaling by |candidate|
+        # would get both wrong.
+        assert compare_tolerance(np.array([2.0]), np.array([1.0]),
+                                 tol_ar(rtol=0.5)) is None
+>       assert_mismatch(compare_tolerance(np.array([1.0]), np.array([2.0]),
+                                          tol_ar(rtol=0.5)), "tolerance")
+
+tests/test_oracle_tolerance.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('tolerance',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+____________________ test_atol_and_rtol_combine_additively _____________________
+
+    def test_atol_and_rtol_combine_additively():
+        g = np.array([10.0])
+        c = np.array([10.0 + 0.2])
+        assert compare_tolerance(g, c, tol_ar(atol=0.1, rtol=0.011)) is None  # 0.21
+>       assert_mismatch(compare_tolerance(g, c, tol_ar(atol=0.1, rtol=0.009)),
+                        "tolerance")  # bound 0.19 < 0.2
+
+tests/test_oracle_tolerance.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('tolerance',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+___________________ test_zero_golden_elements_get_atol_only ____________________
+
+    def test_zero_golden_elements_get_atol_only():
+        g = np.array([0.0])
+        c = np.array([1e-9])
+>       assert_mismatch(compare_tolerance(g, c, tol_ar(rtol=0.9)), "tolerance")
+
+tests/test_oracle_tolerance.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('tolerance',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+__________________ test_worst_element_and_count_are_reported ___________________
+
+    def test_worst_element_and_count_are_reported():
+        g = np.zeros(8)
+        c = g.copy()
+        c[3] = 1e-6   # violation
+        c[5] = 2e-6   # worst violation
+        reason = compare_tolerance(g, c, tol_ar(atol=1e-9))
+>       assert_mismatch(reason, "(5,)", "2 of 8")
+
+tests/test_oracle_tolerance.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('(5,)', '2 of 8'), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+________________________ test_scalars_and_empty_arrays _________________________
+
+    def test_scalars_and_empty_arrays():
+        assert compare_tolerance(1.0, 1.0 + 5e-13, tol_ar(atol=1e-12)) is None
+>       assert_mismatch(compare_tolerance(1.0, 1.1, tol_ar(atol=1e-12)), "tolerance")
+
+tests/test_oracle_tolerance.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('tolerance',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+______________________ test_complex_uses_modulus_distance ______________________
+
+    def test_complex_uses_modulus_distance():
+        g = np.array([1.0 + 1.0j])
+        c = np.array([1.0 + 1.0j + (3e-13 + 4e-13j)])  # |diff| = 5e-13
+        assert compare_tolerance(g, c, tol_ar(atol=6e-13)) is None
+>       assert_mismatch(compare_tolerance(g, c, tol_ar(atol=4e-13)), "tolerance")
+
+tests/test_oracle_tolerance.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('tolerance',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+________________ test_nan_against_finite_fails_both_directions _________________
+
+    def test_nan_against_finite_fails_both_directions():
+        g = np.array([np.nan])
+        c = np.array([0.0])
+>       assert_mismatch(compare_tolerance(g, c, tol_ar(atol=1e308)), "non-finite")
+
+tests/test_oracle_tolerance.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('non-finite',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+____________________ test_inf_matches_only_same_signed_inf _____________________
+
+    def test_inf_matches_only_same_signed_inf():
+        inf = np.inf
+        assert compare_tolerance(np.array([inf]), np.array([inf]), tol_ar()) is None
+        assert compare_tolerance(np.array([-inf]), np.array([-inf]), tol_ulp(1)) is None
+>       assert_mismatch(compare_tolerance(np.array([inf]), np.array([-inf]),
+                                          tol_ar(atol=1e308)), "non-finite")
+
+tests/test_oracle_tolerance.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('non-finite',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+_______________ test_inf_is_never_within_ulps_of_a_finite_value ________________
+
+    def test_inf_is_never_within_ulps_of_a_finite_value():
+        # DBL_MAX is adjacent to +inf in bit space; the identity policy must
+        # still reject it — "within N ULPs of inf" does not exist.
+        g = np.array([np.inf])
+        c = np.array([np.finfo(np.float64).max])
+>       assert_mismatch(compare_tolerance(g, c, tol_ulp(1000)), "non-finite")
+
+tests/test_oracle_tolerance.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('non-finite',), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+_______________ test_nan_position_disagreement_fails_in_ulp_mode _______________
+
+    def test_nan_position_disagreement_fails_in_ulp_mode():
+        g = np.array([np.nan, 1.0])
+        c = np.array([1.0, np.nan])
+>       assert_mismatch(compare_tolerance(g, c, tol_ulp(10)), "non-finite", "(0,)")
+
+tests/test_oracle_tolerance.py:125: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('non-finite', '(0,)'), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+_______________________ test_zero_and_one_ulp_distances ________________________
+
+    def test_zero_and_one_ulp_distances():
+        one = np.array([1.0])
+        up1 = np.nextafter(one, 2.0)
+        assert compare_tolerance(one, one.copy(), tol_ulp(1)) is None
+        assert compare_tolerance(one, up1, tol_ulp(1)) is None
+        up2 = np.nextafter(up1, 2.0)
+>       assert_mismatch(compare_tolerance(one, up2, tol_ulp(1)), "ULP")
+
+tests/test_oracle_tolerance.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('ULP',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+____________________ test_ulp_counts_across_binade_boundary ____________________
+
+    def test_ulp_counts_across_binade_boundary():
+        one = np.array([1.0])
+        down1 = np.nextafter(one, 0.0)  # mantissa wraps into the lower binade
+        assert compare_tolerance(one, down1, tol_ulp(1)) is None
+>       assert_mismatch(compare_tolerance(one, np.nextafter(down1, 0.0),
+                                          tol_ulp(1)), "ULP")
+
+tests/test_oracle_tolerance.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('ULP',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+____________________ test_sign_straddle_counts_through_zero ____________________
+
+    def test_sign_straddle_counts_through_zero():
+        pos = np.nextafter(np.array([0.0]), 1.0)   # smallest positive subnormal
+        neg = np.nextafter(np.array([0.0]), -1.0)  # smallest negative subnormal
+        assert compare_tolerance(pos, neg, tol_ulp(2)) is None
+>       assert_mismatch(compare_tolerance(pos, neg, tol_ulp(1)), "ULP")
+
+tests/test_oracle_tolerance.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('ULP',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+______________ test_opposite_sign_huge_values_do_not_wrap_around _______________
+
+    def test_opposite_sign_huge_values_do_not_wrap_around():
+        # The ordered-int distance between -1e300 and 1e300 exceeds 2**63; naive
+        # int64 arithmetic wraps and could falsely pass a small max_ulp.
+        g = np.array([1e300])
+        c = np.array([-1e300])
+>       assert_mismatch(compare_tolerance(g, c, tol_ulp(4)), "ULP")
+
+tests/test_oracle_tolerance.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('ULP',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+________________________ test_ulp_respects_float32_grid ________________________
+
+    def test_ulp_respects_float32_grid():
+        one = np.array([1.0], dtype=np.float32)
+        up1 = np.nextafter(one, np.float32(2.0))
+        assert compare_tolerance(one, up1, tol_ulp(1)) is None
+>       assert_mismatch(compare_tolerance(one, np.nextafter(up1, np.float32(2.0)),
+                                          tol_ulp(1)), "ULP")
+
+tests/test_oracle_tolerance.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('ULP',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+______________________ test_ulp_worst_element_is_reported ______________________
+
+    def test_ulp_worst_element_is_reported():
+        g = np.array([1.0, 1.0, 1.0])
+        c = g.copy()
+        c[1] = np.nextafter(np.nextafter(1.0, 2.0), 2.0)  # 2 ULPs
+        reason = compare_tolerance(g, c, tol_ulp(1))
+>       assert_mismatch(reason, "(1,)", "2")
+
+tests/test_oracle_tolerance.py:181: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('(1,)', '2'), @py_assert2 = None
+@py_assert1 = False, @py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+______________________ test_shape_mismatch_is_a_mismatch _______________________
+
+    def test_shape_mismatch_is_a_mismatch():
+>       assert_mismatch(compare_tolerance(np.zeros(3), np.zeros(4), tol_ar(atol=1.0)),
+                        "shape")
+
+tests/test_oracle_tolerance.py:187: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('shape',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+_______________ test_dtype_mismatch_is_a_mismatch_in_both_modes ________________
+
+    def test_dtype_mismatch_is_a_mismatch_in_both_modes():
+        g32 = np.zeros(2, dtype=np.float32)
+        g64 = np.zeros(2, dtype=np.float64)
+>       assert_mismatch(compare_tolerance(g64, g32, tol_ar(atol=1.0)), "dtype")
+
+tests/test_oracle_tolerance.py:194: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+reason = None, fragments = ('dtype',), @py_assert2 = None, @py_assert1 = False
+@py_format4 = 'None is not None'
+
+    def assert_mismatch(reason, *fragments):
+>       assert reason is not None, "expected a mismatch, got a match"
+E       AssertionError: expected a mismatch, got a match
+E       assert None is not None
+
+tests/test_oracle_tolerance.py:24: AssertionError
+____________________ test_integer_golden_is_rejected_loudly ____________________
+
+    def test_integer_golden_is_rejected_loudly():
+        # §3.1: integer outputs are correctness-critical — declaring them
+        # numerically-approximate is a manifest/programming error, not a mismatch.
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE <class 'TypeError'>
+
+tests/test_oracle_tolerance.py:201: Failed
+__________ test_ulp_mode_rejects_complex_and_unsupported_float_widths __________
+
+    def test_ulp_mode_rejects_complex_and_unsupported_float_widths():
+        z = np.zeros(2, dtype=np.complex128)
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE <class 'TypeError'>
+
+tests/test_oracle_tolerance.py:207: Failed
+______________________ test_unknown_tolerance_mode_raises ______________________
+
+    def test_unknown_tolerance_mode_raises():
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_oracle_tolerance.py:215: Failed
+=========================== short test summary info ============================
+FAILED tests/test_oracle_tolerance.py::test_within_and_outside_atol - Asserti...
+FAILED tests/test_oracle_tolerance.py::test_rtol_scales_by_golden_not_candidate
+FAILED tests/test_oracle_tolerance.py::test_atol_and_rtol_combine_additively
+FAILED tests/test_oracle_tolerance.py::test_zero_golden_elements_get_atol_only
+FAILED tests/test_oracle_tolerance.py::test_worst_element_and_count_are_reported
+FAILED tests/test_oracle_tolerance.py::test_scalars_and_empty_arrays - Assert...
+FAILED tests/test_oracle_tolerance.py::test_complex_uses_modulus_distance - A...
+FAILED tests/test_oracle_tolerance.py::test_nan_against_finite_fails_both_directions
+FAILED tests/test_oracle_tolerance.py::test_inf_matches_only_same_signed_inf
+FAILED tests/test_oracle_tolerance.py::test_inf_is_never_within_ulps_of_a_finite_value
+FAILED tests/test_oracle_tolerance.py::test_nan_position_disagreement_fails_in_ulp_mode
+FAILED tests/test_oracle_tolerance.py::test_zero_and_one_ulp_distances - Asse...
+FAILED tests/test_oracle_tolerance.py::test_ulp_counts_across_binade_boundary
+FAILED tests/test_oracle_tolerance.py::test_sign_straddle_counts_through_zero
+FAILED tests/test_oracle_tolerance.py::test_opposite_sign_huge_values_do_not_wrap_around
+FAILED tests/test_oracle_tolerance.py::test_ulp_respects_float32_grid - Asser...
+FAILED tests/test_oracle_tolerance.py::test_ulp_worst_element_is_reported - A...
+FAILED tests/test_oracle_tolerance.py::test_shape_mismatch_is_a_mismatch - As...
+FAILED tests/test_oracle_tolerance.py::test_dtype_mismatch_is_a_mismatch_in_both_modes
+FAILED tests/test_oracle_tolerance.py::test_integer_golden_is_rejected_loudly
+FAILED tests/test_oracle_tolerance.py::test_ulp_mode_rejects_complex_and_unsupported_float_widths
+FAILED tests/test_oracle_tolerance.py::test_unknown_tolerance_mode_raises - F...
+22 failed, 3 passed in 0.44s
+
+## GREEN (one impl fix en route: np.unravel_index leaks np.int64 reprs into reason
+## strings under numpy 2.x — '(np.int64(5),)' instead of '(5,)'; added _plain_index
+## to cast paths to Python ints. 3 reporting tests red -> green; logic unchanged.)
+
+.........................                                                [100%]
+25 passed in 0.31s
+
+## REFACTOR (bound gv/cv once in _compare_ulp, matching the atol_rtol branch) + FULL SUITE
+
+........................................................................ [ 67%]
+...................................                                      [100%]
+107 passed in 5.49s

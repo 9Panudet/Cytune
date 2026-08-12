@@ -1,0 +1,6 @@
+before-dlopen MXCSR=0x9fc0 FTZ=1 DAZ=1
+before-dlopen subnormal 5e-324*2 = 0 (flushed: DAZ/FTZ active)
+after-dlopen  MXCSR=0x9fc0 FTZ=1 DAZ=1
+after-dlopen  subnormal 5e-324*2 = 0 (flushed: DAZ/FTZ active)
+kernel(0.1,0.2,0.3) = 0.32000000000000001
+after-call    MXCSR=0x9fe0 FTZ=1 DAZ=1

@@ -1,0 +1,679 @@
+The following options are language-independent:
+  --completion=               		
+  --debug                     		-g
+  --dumpbase                  		-dumpbase
+  --dumpbase-ext              		-dumpbase-ext
+  --dumpdir                   		-dumpdir
+  --extra-warnings            		-Wextra
+  --help                      		[disabled]
+  --help=<class>              		
+  --optimize                  		-O
+  --output                    		-o
+  --output=                   		
+  --pedantic-errors           		-pedantic-errors
+  --profile                   		-p
+  --target-help               		
+  --verbose                   		-v
+  --version                   		
+  -O<number>                  		
+  -Ofast                      		
+  -Og                         		
+  -Os                         		
+  -Oz                         		
+  -W                          		-Wextra
+  -Waggregate-return          		[disabled]
+  -Waggressive-loop-optimizations 	[enabled]
+  -Wanalyzer-allocation-size  		[enabled]
+  -Wanalyzer-deref-before-check 	[enabled]
+  -Wanalyzer-double-fclose    		[enabled]
+  -Wanalyzer-double-free      		[enabled]
+  -Wanalyzer-exposure-through-output-file 	[enabled]
+  -Wanalyzer-exposure-through-uninit-copy 	[enabled]
+  -Wanalyzer-fd-access-mode-mismatch 	[enabled]
+  -Wanalyzer-fd-double-close  		[enabled]
+  -Wanalyzer-fd-leak          		[enabled]
+  -Wanalyzer-fd-phase-mismatch 		[enabled]
+  -Wanalyzer-fd-type-mismatch 		[enabled]
+  -Wanalyzer-fd-use-after-close 	[enabled]
+  -Wanalyzer-fd-use-without-check 	[enabled]
+  -Wanalyzer-file-leak        		[enabled]
+  -Wanalyzer-free-of-non-heap 		[enabled]
+  -Wanalyzer-imprecise-fp-arithmetic 	[enabled]
+  -Wanalyzer-infinite-recursion 	[enabled]
+  -Wanalyzer-jump-through-null 		[enabled]
+  -Wanalyzer-malloc-leak      		[enabled]
+  -Wanalyzer-mismatching-deallocation 	[enabled]
+  -Wanalyzer-null-argument    		[enabled]
+  -Wanalyzer-null-dereference 		[enabled]
+  -Wanalyzer-out-of-bounds    		[enabled]
+  -Wanalyzer-possible-null-argument 	[enabled]
+  -Wanalyzer-possible-null-dereference 	[enabled]
+  -Wanalyzer-putenv-of-auto-var 	[enabled]
+  -Wanalyzer-shift-count-negative 	[enabled]
+  -Wanalyzer-shift-count-overflow 	[enabled]
+  -Wanalyzer-stale-setjmp-buffer 	[enabled]
+  -Wanalyzer-tainted-allocation-size 	[enabled]
+  -Wanalyzer-tainted-array-index 	[enabled]
+  -Wanalyzer-tainted-assertion 		[enabled]
+  -Wanalyzer-tainted-divisor  		[enabled]
+  -Wanalyzer-tainted-offset   		[enabled]
+  -Wanalyzer-tainted-size     		[enabled]
+  -Wanalyzer-too-complex      		[disabled]
+  -Wanalyzer-unsafe-call-within-signal-handler 	[enabled]
+  -Wanalyzer-use-after-free   		[enabled]
+  -Wanalyzer-use-of-pointer-in-stale-stack-frame 	[enabled]
+  -Wanalyzer-use-of-uninitialized-value 	[enabled]
+  -Wanalyzer-va-arg-type-mismatch 	[enabled]
+  -Wanalyzer-va-list-exhausted 		[enabled]
+  -Wanalyzer-va-list-leak     		[enabled]
+  -Wanalyzer-va-list-use-after-va-end 	[enabled]
+  -Wanalyzer-write-to-const   		[enabled]
+  -Wanalyzer-write-to-string-literal 	[enabled]
+  -Warray-bounds              		-Warray-bounds=1
+  -Warray-bounds=<0,2>        		0
+  -Wattribute-alias           		-Wattribute-alias=1
+  -Wattribute-alias=<0,2>     		1
+  -Wattribute-warning         		[enabled]
+  -Wattributes                		[enabled]
+  -Wattributes=               		
+  -Wcannot-profile            		[enabled]
+  -Wcast-align                		[disabled]
+  -Wcast-align=strict         		[disabled]
+  -Wcomplain-wrong-lang       		[enabled]
+  -Wcoverage-invalid-line-number 	[enabled]
+  -Wcoverage-mismatch         		[enabled]
+  -Wdeprecated-declarations   		[enabled]
+  -Wdisabled-optimization     		[disabled]
+  -Werror=                    		
+  -Wfatal-errors              		[disabled]
+  -Wframe-larger-than=<byte-size> 	9223372036854775807 bytes
+  -Wfree-nonheap-object       		[enabled]
+  -Whsa                       		[ignored]
+  -Wimplicit-fallthrough      		-Wimplicit-fallthrough=3
+  -Wimplicit-fallthrough=<0,5> 		0
+  -Winline                    		[disabled]
+  -Winvalid-memory-model      		[enabled]
+  -Wlarger-than-              		
+  -Wlarger-than=<byte-size>   		9223372036854775807 bytes
+  -Wlto-type-mismatch         		[enabled]
+  -Wmissing-noreturn          		-Wsuggest-attribute=noreturn
+  -Wmissing-profile           		[enabled]
+  -Wno-frame-larger-than      		-Wframe-larger-than=18446744073709551615EiB
+  -Wno-larger-than            		-Wlarger-than=18446744073709551615EiB
+  -Wno-stack-usage            		-Wstack-usage=18446744073709551615EiB
+  -Wnull-dereference          		[disabled]
+  -Wodr                       		[enabled]
+  -Woverflow                  		[enabled]
+  -Wpacked                    		[disabled]
+  -Wpadded                    		[disabled]
+  -Wreturn-local-addr         		[enabled]
+  -Wshadow                    		[disabled]
+  -Wshadow-compatible-local   		-Wshadow=compatible-local
+  -Wshadow-local              		-Wshadow=local
+  -Wshadow=compatible-local   		[disabled]
+  -Wshadow=global             		-Wshadow
+  -Wshadow=local              		[disabled]
+  -Wstack-protector           		[disabled]
+  -Wstack-usage=<byte-size>   		9223372036854775807 bytes
+  -Wstrict-aliasing           		
+  -Wstrict-overflow           		
+  -Wsuggest-attribute=cold    		[disabled]
+  -Wsuggest-attribute=const   		[disabled]
+  -Wsuggest-attribute=malloc  		[disabled]
+  -Wsuggest-attribute=noreturn 		[disabled]
+  -Wsuggest-attribute=pure    		[disabled]
+  -Wsuggest-final-methods     		[disabled]
+  -Wsuggest-final-types       		[disabled]
+  -Wswitch-unreachable        		[enabled]
+  -Wtrampolines               		[disabled]
+  -Wtrivial-auto-var-init     		[disabled]
+  -Wtsan                      		[enabled]
+  -Wtype-limits               		[disabled]
+  -Wunreachable-code          		[ignored]
+  -Wunsafe-loop-optimizations 		[ignored]
+  -Wunused-but-set-parameter  		[disabled]
+  -Wunused-but-set-variable   		[disabled]
+  -Wunused-function           		[disabled]
+  -Wunused-label              		[disabled]
+  -Wunused-value              		[disabled]
+  -Wuse-after-free            		[disabled]
+  -Wuse-after-free=<0,3>      		0
+  -Wvector-operation-performance 	[disabled]
+  -aux-info <file>            		
+  -aux-info=                  		
+  -dumpbase <file>            		
+  -dumpbase-ext               		
+  -dumpdir <dir>              		
+  -fPIC                       		[enabled]
+  -fPIE                       		[enabled]
+  -fabi-version=              		0
+  -faggressive-loop-optimizations 	[enabled]
+  -falign-functions           		[disabled]
+  -falign-functions=          		
+  -falign-jumps               		[disabled]
+  -falign-jumps=              		
+  -falign-labels              		[disabled]
+  -falign-labels=             		
+  -falign-loops               		[disabled]
+  -falign-loops=              		
+  -fallocation-dce            		[enabled]
+  -fallow-store-data-races    		[disabled]
+  -fanalyzer                  		[disabled]
+  -fanalyzer-call-summaries   		[disabled]
+  -fanalyzer-checker=         		
+  -fanalyzer-feasibility      		[enabled]
+  -fanalyzer-fine-grained     		[disabled]
+  -fanalyzer-show-duplicate-count 	[disabled]
+  -fanalyzer-state-merge      		[enabled]
+  -fanalyzer-state-purge      		[enabled]
+  -fanalyzer-suppress-followups 	[enabled]
+  -fanalyzer-transitivity     		[disabled]
+  -fanalyzer-undo-inlining    		[enabled]
+  -fanalyzer-verbose-edges    		[disabled]
+  -fanalyzer-verbose-state-changes 	[disabled]
+  -fanalyzer-verbosity=       		2
+  -fargument-alias            		[ignored]
+  -fargument-noalias          		[ignored]
+  -fargument-noalias-anything 		[ignored]
+  -fargument-noalias-global   		[ignored]
+  -fasan-shadow-offset=<number> 	
+  -fassociative-math          		[enabled]
+  -fasynchronous-unwind-tables 		[enabled]
+  -fauto-inc-dec              		[enabled]
+  -fauto-profile              		[disabled]
+  -fauto-profile=             		
+  -fbit-tests                 		[enabled]
+  -fbranch-count-reg          		[disabled]
+  -fbranch-probabilities      		[disabled]
+  -fbranch-target-load-optimize 	[ignored]
+  -fbranch-target-load-optimize2 	[ignored]
+  -fbtr-bb-exclusive          		[ignored]
+  -fcall-saved-<register>     		
+  -fcall-used-<register>      		
+  -fcaller-saves              		[disabled]
+  -fcallgraph-info            		[disabled]
+  -fcallgraph-info=           		
+  -fcanon-prefix-map          		
+  -fcf-protection             		-fcf-protection=full
+  -fcf-protection=[full|branch|return|none|check] 	[default]
+  -fcheck-data-deps           		[ignored]
+  -fcheck-new                 		[disabled]
+  -fchecking                  		[disabled]
+  -fchecking=                 		0
+  -fcode-hoisting             		[disabled]
+  -fcombine-stack-adjustments 		[disabled]
+  -fcommon                    		[disabled]
+  -fcompare-debug-second      		[disabled]
+  -fcompare-debug[=<opts>]    		
+  -fcompare-elim              		[disabled]
+  -fconserve-stack            		[disabled]
+  -fcprop-registers           		[disabled]
+  -fcrossjumping              		[disabled]
+  -fcse-follow-jumps          		[disabled]
+  -fcse-skip-blocks           		[ignored]
+  -fcx-fortran-rules          		[disabled]
+  -fcx-limited-range          		[enabled]
+  -fdata-sections             		[disabled]
+  -fdbg-cnt-list              		[disabled]
+  -fdbg-cnt=<counter>[:<lower_limit1>-]<upper_limit1>[:<lower_limit2>-<upper_limit2>:...][,<counter>:...] 	
+  -fdce                       		[enabled]
+  -fdebug-prefix-map=<old>=<new> 	
+  -fdebug-types-section       		[disabled]
+  -fdefer-pop                 		[disabled]
+  -fdelayed-branch            		[disabled]
+  -fdelete-dead-exceptions    		[disabled]
+  -fdelete-null-pointer-checks 		
+  -fdevirtualize              		[disabled]
+  -fdevirtualize-at-ltrans    		[disabled]
+  -fdevirtualize-speculatively 		[disabled]
+  -fdiagnostics-color         		-fdiagnostics-color=always
+  -fdiagnostics-color=[never|always|auto] 	never
+  -fdiagnostics-column-origin=<number> 	
+  -fdiagnostics-column-unit=[display|byte] 	
+  -fdiagnostics-escape-format=[unicode|bytes] 	
+  -fdiagnostics-format=[text|sarif-stderr|sarif-file|json|json-stderr|json-file] 	
+  -fdiagnostics-generate-patch 		[disabled]
+  -fdiagnostics-minimum-margin-width= 	6
+  -fdiagnostics-parseable-fixits 	[disabled]
+  -fdiagnostics-path-format=  		inline-events
+  -fdiagnostics-plain-output  		
+  -fdiagnostics-show-caret    		[enabled]
+  -fdiagnostics-show-cwe      		[enabled]
+  -fdiagnostics-show-labels   		[enabled]
+  -fdiagnostics-show-line-numbers 	[enabled]
+  -fdiagnostics-show-location=[once|every-line] 	
+  -fdiagnostics-show-option   		[enabled]
+  -fdiagnostics-show-path-depths 	[disabled]
+  -fdiagnostics-show-rules    		[enabled]
+  -fdiagnostics-urls=[never|always|auto] 	auto
+  -fdisable-[tree|rtl|ipa]-<pass>=range1+range2 	
+  -fdse                       		[disabled]
+  -fdump-<type>               		
+  -fdump-analyzer             		[disabled]
+  -fdump-analyzer-callgraph   		[disabled]
+  -fdump-analyzer-exploded-graph 	[disabled]
+  -fdump-analyzer-exploded-nodes 	[disabled]
+  -fdump-analyzer-exploded-nodes-2 	[disabled]
+  -fdump-analyzer-exploded-nodes-3 	[disabled]
+  -fdump-analyzer-exploded-paths 	[disabled]
+  -fdump-analyzer-feasibility 		[disabled]
+  -fdump-analyzer-json        		[disabled]
+  -fdump-analyzer-state-purge 		[disabled]
+  -fdump-analyzer-stderr      		[disabled]
+  -fdump-analyzer-supergraph  		[disabled]
+  -fdump-analyzer-untracked   		[disabled]
+  -fdump-final-insns=filename 		
+  -fdump-go-spec=filename     		
+  -fdump-internal-locations   		[disabled]
+  -fdump-noaddr               		[disabled]
+  -fdump-passes               		[disabled]
+  -fdump-unnumbered           		[disabled]
+  -fdump-unnumbered-links     		[disabled]
+  -fdwarf2-cfi-asm            		[enabled]
+  -fearly-inlining            		[enabled]
+  -feliminate-dwarf2-dups     		[ignored]
+  -feliminate-unused-debug-symbols 	[enabled]
+  -feliminate-unused-debug-types 	[enabled]
+  -femit-class-debug-always   		[disabled]
+  -fenable-[tree|rtl|ipa]-<pass>=range1+range2 	
+  -fexcess-precision=[fast|standard|16] 	fast
+  -fexpensive-optimizations   		[disabled]
+  -ffast-math                 		
+  -ffat-lto-objects           		[disabled]
+  -ffile-prefix-map=<old>=<new> 	
+  -ffinite-loops              		[disabled]
+  -ffinite-math-only          		[enabled]
+  -ffixed-<register>          		
+  -ffloat-store               		[disabled]
+  -fforce-addr                		[ignored]
+  -fforward-propagate         		[disabled]
+  -ffp-contract=[off|on|fast] 		fast
+  -ffp-int-builtin-inexact    		[enabled]
+  -ffunction-cse              		[enabled]
+  -ffunction-sections         		[disabled]
+  -fgcse                      		[disabled]
+  -fgcse-after-reload         		[disabled]
+  -fgcse-las                  		[disabled]
+  -fgcse-lm                   		[enabled]
+  -fgcse-sm                   		[disabled]
+  -fgnat-encodings=[all|gdb|minimal] 	gdb
+  -fgnu-tm                    		[disabled]
+  -fgnu-unique                		[enabled]
+  -fgraphite                  		[disabled]
+  -fgraphite-identity         		[disabled]
+  -fguess-branch-probability  		[disabled]
+  -fharden-compares           		[disabled]
+  -fharden-conditional-branches 	[disabled]
+  -fhelp                      		--help
+  -fhelp=                     		
+  -fhoist-adjacent-loads      		[disabled]
+  -fident                     		[enabled]
+  -fif-conversion             		[disabled]
+  -fif-conversion2            		[disabled]
+  -findirect-inlining         		[disabled]
+  -finhibit-size-directive    		[disabled]
+  -finline                    		[disabled]
+  -finline-atomics            		[enabled]
+  -finline-functions          		[disabled]
+  -finline-functions-called-once 	[disabled]
+  -finline-limit-             		
+  -finline-limit=<number>     		
+  -finline-small-functions    		[disabled]
+  -finstrument-functions      		[disabled]
+  -finstrument-functions-exclude-file-list=filename,... 	
+  -finstrument-functions-exclude-function-list=name,... 	
+  -finstrument-functions-once 		[disabled]
+  -fipa-bit-cp                		[disabled]
+  -fipa-cp                    		[disabled]
+  -fipa-cp-alignment          		[ignored]
+  -fipa-cp-clone              		[disabled]
+  -fipa-icf                   		[disabled]
+  -fipa-icf-functions         		[disabled]
+  -fipa-icf-variables         		[disabled]
+  -fipa-matrix-reorg          		[ignored]
+  -fipa-modref                		[disabled]
+  -fipa-profile               		[disabled]
+  -fipa-pta                   		[disabled]
+  -fipa-pure-const            		[disabled]
+  -fipa-ra                    		[disabled]
+  -fipa-reference             		[disabled]
+  -fipa-reference-addressable 		[disabled]
+  -fipa-sra                   		[disabled]
+  -fipa-stack-alignment       		[enabled]
+  -fipa-strict-aliasing       		[enabled]
+  -fipa-struct-reorg          		[ignored]
+  -fipa-vrp                   		[disabled]
+  -fira-algorithm=[CB|priority] 	CB
+  -fira-hoist-pressure        		[enabled]
+  -fira-loop-pressure         		[disabled]
+  -fira-region=[one|all|mixed] 		one
+  -fira-share-save-slots      		[enabled]
+  -fira-share-spill-slots     		[enabled]
+  -fira-verbose=<number>      		5
+  -fisolate-erroneous-paths-attribute 	[disabled]
+  -fisolate-erroneous-paths-dereference 	[disabled]
+  -fivopts                    		[enabled]
+  -fjump-tables               		[enabled]
+  -fkeep-gc-roots-live        		[disabled]
+  -fkeep-inline-functions     		[disabled]
+  -fkeep-static-consts        		[enabled]
+  -fkeep-static-functions     		[disabled]
+  -flarge-source-files        		[disabled]
+  -fleading-underscore        		
+  -flifetime-dse              		[enabled]
+  -flifetime-dse=<0,2>        		2
+  -flimit-function-alignment  		[disabled]
+  -flive-patching             		-flive-patching=inline-clone
+  -flive-patching=[inline-only-static|inline-clone] 	[default]
+  -flive-range-shrinkage      		[disabled]
+  -floop-block                		-floop-nest-optimize
+  -floop-flatten              		[ignored]
+  -floop-interchange          		[disabled]
+  -floop-nest-optimize        		[disabled]
+  -floop-optimize             		[ignored]
+  -floop-parallelize-all      		[disabled]
+  -floop-strip-mine           		-floop-nest-optimize
+  -floop-unroll-and-jam       		[disabled]
+  -flra-remat                 		[disabled]
+  -flto                       		
+  -flto-compression-level=<0,19> 		-1
+  -flto-odr-type-merging      		[ignored]
+  -flto-partition=            		balanced
+  -flto-report                		[disabled]
+  -flto-report-wpa            		[disabled]
+  -flto=                      		
+  -fmath-errno                		[disabled]
+  -fmax-errors=<number>       		0
+  -fmem-report                		[disabled]
+  -fmem-report-wpa            		[disabled]
+  -fmerge-all-constants       		[disabled]
+  -fmerge-constants           		[disabled]
+  -fmerge-debug-strings       		[enabled]
+  -fmessage-length=<number>   		
+  -fmodulo-sched              		[disabled]
+  -fmodulo-sched-allow-regmoves 	[disabled]
+  -fmove-loop-invariants      		[disabled]
+  -fmove-loop-stores          		[disabled]
+  -fmultiflags                		
+  -fnon-call-exceptions       		[disabled]
+  -foffload-abi=[lp64|ilp32]  		
+  -foffload-options=<targets>=<options> 	
+  -fomit-frame-pointer        		[disabled]
+  -fopenmp-target-simd-clone  		-fopenmp-target-simd-clone=any
+  -fopenmp-target-simd-clone= 		none
+  -fopt-info                  		[disabled]
+  -fopt-info[-<type>=filename] 		
+  -foptimize-register-move    		[ignored]
+  -foptimize-sibling-calls    		[disabled]
+  -foptimize-strlen           		[disabled]
+  -fpack-struct               		[disabled]
+  -fpack-struct=<number>      		
+  -fpartial-inlining          		[disabled]
+  -fpatchable-function-entry= 		
+  -fpcc-struct-return         		[disabled]
+  -fpeel-loops                		[disabled]
+  -fpeephole                  		[enabled]
+  -fpeephole2                 		[disabled]
+  -fpermitted-flt-eval-methods=[c11|ts-18661] 	[default]
+  -fpic                       		[disabled]
+  -fpie                       		[disabled]
+  -fplt                       		[enabled]
+  -fplugin-arg-<name>-<key>[=<value>] 	
+  -fplugin=                   		
+  -fpost-ipa-mem-report       		[disabled]
+  -fpre-ipa-mem-report        		[disabled]
+  -fpredictive-commoning      		[disabled]
+  -fprefetch-loop-arrays      		
+  -fprofile                   		[disabled]
+  -fprofile-abs-path          		[disabled]
+  -fprofile-arcs              		[disabled]
+  -fprofile-correction        		[disabled]
+  -fprofile-dir=              		
+  -fprofile-exclude-files=    		
+  -fprofile-filter-files=     		
+  -fprofile-generate          		
+  -fprofile-generate=         		
+  -fprofile-info-section      		
+  -fprofile-info-section=     		
+  -fprofile-note=             		
+  -fprofile-partial-training  		[disabled]
+  -fprofile-prefix-map=<old>=<new> 	
+  -fprofile-prefix-path=      		
+  -fprofile-reorder-functions 		[disabled]
+  -fprofile-report            		[disabled]
+  -fprofile-reproducible=[serial|parallel-runs|multithreaded] 	serial
+  -fprofile-update=[single|atomic|prefer-atomic] 	single
+  -fprofile-use               		[disabled]
+  -fprofile-use=              		
+  -fprofile-values            		[disabled]
+  -frandom-seed               		
+  -frandom-seed=<string>      		
+  -freciprocal-math           		[enabled]
+  -frecord-gcc-switches       		[disabled]
+  -free                       		[disabled]
+  -freg-struct-return         		[enabled]
+  -fregmove                   		[ignored]
+  -frename-registers          		[disabled]
+  -freorder-blocks            		[disabled]
+  -freorder-blocks-algorithm=[simple|stc] 	simple
+  -freorder-blocks-and-partition 	[disabled]
+  -freorder-functions         		[disabled]
+  -freport-bug                		[disabled]
+  -frerun-cse-after-loop      		[disabled]
+  -frerun-loop-opt            		[ignored]
+  -freschedule-modulo-scheduled-loops 	[disabled]
+  -frounding-math             		[disabled]
+  -fsanitize-address-use-after-scope 	[disabled]
+  -fsanitize-coverage=        		[default]
+  -fsanitize-recover          		
+  -fsanitize-recover=         		
+  -fsanitize-sections=<sec1,sec2,...> 	
+  -fsanitize-trap             		
+  -fsanitize-trap=            		
+  -fsanitize-undefined-trap-on-error 	-fsanitize-trap
+  -fsanitize=                 		
+  -fsave-optimization-record  		[disabled]
+  -fsched-critical-path-heuristic 	[enabled]
+  -fsched-dep-count-heuristic 		[enabled]
+  -fsched-group-heuristic     		[enabled]
+  -fsched-interblock          		[enabled]
+  -fsched-last-insn-heuristic 		[enabled]
+  -fsched-pressure            		[disabled]
+  -fsched-rank-heuristic      		[enabled]
+  -fsched-spec                		[enabled]
+  -fsched-spec-insn-heuristic 		[enabled]
+  -fsched-spec-load           		[disabled]
+  -fsched-spec-load-dangerous 		[disabled]
+  -fsched-stalled-insns       		[disabled]
+  -fsched-stalled-insns-dep   		[enabled]
+  -fsched-stalled-insns-dep=<number> 	
+  -fsched-stalled-insns=<number> 	
+  -fsched-verbose=<number>    		1
+  -fsched2-use-superblocks    		[disabled]
+  -fsched2-use-traces         		[ignored]
+  -fschedule-fusion           		[enabled]
+  -fschedule-insns            		[disabled]
+  -fschedule-insns2           		[disabled]
+  -fsection-anchors           		[disabled]
+  -fsee                       		[ignored]
+  -fsel-sched-pipelining      		[disabled]
+  -fsel-sched-pipelining-outer-loops 	[disabled]
+  -fsel-sched-reschedule-pipelined 	[disabled]
+  -fselective-scheduling      		[disabled]
+  -fselective-scheduling2     		[disabled]
+  -fself-test=                		
+  -fsemantic-interposition    		[enabled]
+  -fshow-column               		[enabled]
+  -fshrink-wrap               		[disabled]
+  -fshrink-wrap-separate      		[enabled]
+  -fsignaling-nans            		[disabled]
+  -fsigned-zeros              		[disabled]
+  -fsimd-cost-model=[unlimited|dynamic|cheap|very-cheap] 	unlimited
+  -fsingle-precision-constant 		[disabled]
+  -fsplit-ivs-in-unroller     		[enabled]
+  -fsplit-loops               		[disabled]
+  -fsplit-paths               		[disabled]
+  -fsplit-stack               		[disabled]
+  -fsplit-wide-types          		[disabled]
+  -fsplit-wide-types-early    		[disabled]
+  -fssa-backprop              		[enabled]
+  -fssa-phiopt                		[disabled]
+  -fstack-check               		-fstack-check=specific
+  -fstack-check=[no|generic|specific] 	
+  -fstack-clash-protection    		[enabled]
+  -fstack-limit               		
+  -fstack-limit-register=<register> 	
+  -fstack-limit-symbol=<name> 		
+  -fstack-protector           		[disabled]
+  -fstack-protector-all       		[disabled]
+  -fstack-protector-explicit  		[disabled]
+  -fstack-protector-strong    		[enabled]
+  -fstack-reuse=[all|named_vars|none] 	all
+  -fstack-usage               		[disabled]
+  -fstdarg-opt                		[enabled]
+  -fstore-merging             		[disabled]
+  -fstrength-reduce           		[ignored]
+  -fstrict-aliasing           		[disabled]
+  -fstrict-overflow           		
+  -fstrict-volatile-bitfields 		
+  -fsync-libcalls             		[enabled]
+  -fsyntax-only               		[disabled]
+  -ftabstop=                  		
+  -ftarget-help               		--target-help
+  -ftest-coverage             		[disabled]
+  -fthread-jumps              		[disabled]
+  -ftime-report               		[disabled]
+  -ftime-report-details       		[disabled]
+  -ftls-model=[global-dynamic|local-dynamic|initial-exec|local-exec] 	global-
+                              dynamic
+  -ftoplevel-reorder          		[disabled]
+  -ftracer                    		[disabled]
+  -ftrampolines               		[disabled]
+  -ftrapping-math             		[disabled]
+  -ftrapv                     		[disabled]
+  -ftree-bit-ccp              		[disabled]
+  -ftree-builtin-call-dce     		[disabled]
+  -ftree-ccp                  		[disabled]
+  -ftree-ch                   		[disabled]
+  -ftree-coalesce-inlined-vars 		[ignored]
+  -ftree-coalesce-vars        		[disabled]
+  -ftree-copy-prop            		[disabled]
+  -ftree-copyrename           		[ignored]
+  -ftree-cselim               		[disabled]
+  -ftree-dce                  		[disabled]
+  -ftree-dominator-opts       		[disabled]
+  -ftree-dse                  		[disabled]
+  -ftree-forwprop             		[enabled]
+  -ftree-fre                  		[disabled]
+  -ftree-loop-distribute-patterns 	[disabled]
+  -ftree-loop-distribution    		[disabled]
+  -ftree-loop-if-convert      		
+  -ftree-loop-if-convert-stores 	[ignored]
+  -ftree-loop-im              		[enabled]
+  -ftree-loop-ivcanon         		[enabled]
+  -ftree-loop-linear          		-floop-nest-optimize
+  -ftree-loop-optimize        		[enabled]
+  -ftree-loop-vectorize       		[disabled]
+  -ftree-lrs                  		[disabled]
+  -ftree-parallelize-loops=<number> 	1
+  -ftree-partial-pre          		[disabled]
+  -ftree-phiprop              		[enabled]
+  -ftree-pre                  		[disabled]
+  -ftree-pta                  		[disabled]
+  -ftree-reassoc              		[enabled]
+  -ftree-salias               		[ignored]
+  -ftree-scev-cprop           		[enabled]
+  -ftree-sink                 		[disabled]
+  -ftree-slp-vectorize        		[disabled]
+  -ftree-slsr                 		[disabled]
+  -ftree-sra                  		[disabled]
+  -ftree-store-ccp            		[ignored]
+  -ftree-store-copy-prop      		[ignored]
+  -ftree-switch-conversion    		[disabled]
+  -ftree-tail-merge           		[disabled]
+  -ftree-ter                  		[disabled]
+  -ftree-vect-loop-version    		[ignored]
+  -ftree-vectorize            		[disabled]
+  -ftree-vectorizer-verbose=  		
+  -ftree-vrp                  		[disabled]
+  -ftrivial-auto-var-init=[uninitialized|pattern|zero] 	uninitialized
+  -funconstrained-commons     		[disabled]
+  -funit-at-a-time            		[enabled]
+  -funreachable-traps         		[enabled]
+  -funroll-all-loops          		[disabled]
+  -funroll-loops              		[disabled]
+  -funsafe-loop-optimizations 		[ignored]
+  -funsafe-math-optimizations 		[enabled]
+  -funswitch-loops            		[disabled]
+  -funwind-tables             		[disabled]
+  -fuse-ld=bfd                		
+  -fuse-ld=gold               		
+  -fuse-ld=lld                		
+  -fuse-ld=mold               		
+  -fuse-linker-plugin         		[disabled]
+  -fvar-tracking              		[disabled]
+  -fvar-tracking-assignments  		[disabled]
+  -fvar-tracking-assignments-toggle 	[disabled]
+  -fvar-tracking-uninit       		[disabled]
+  -fvariable-expansion-in-unroller 	[disabled]
+  -fvect-cost-model           		-fvect-cost-model=dynamic
+  -fvect-cost-model=[unlimited|dynamic|cheap|very-cheap] 	[default]
+  -fverbose-asm               		[disabled]
+  -fversion                   		--version
+  -fversion-loops-for-strides 		[disabled]
+  -fvisibility=[default|internal|hidden|protected] 	default
+  -fvpt                       		[disabled]
+  -fvtable-verify=            		none
+  -fvtv-counts                		[disabled]
+  -fvtv-debug                 		[disabled]
+  -fweb                       		[disabled]
+  -fwhole-program             		[disabled]
+  -fwrapv                     		[disabled]
+  -fwrapv-pointer             		[disabled]
+  -fzee                       		[ignored]
+  -fzero-call-used-regs=      		
+  -fzero-initialized-in-bss   		[enabled]
+  -g                          		
+  -gas-loc-support            		[disabled]
+  -gas-locview-support        		[disabled]
+  -gbtf                       		
+  -gcoff                      		
+  -gcoff1                     		
+  -gcoff2                     		
+  -gcoff3                     		
+  -gcolumn-info               		[enabled]
+  -gctf                       		
+  -gdescribe-dies             		[disabled]
+  -gdwarf                     		
+  -gdwarf-                    		5
+  -gdwarf32                   		[enabled]
+  -gdwarf64                   		[disabled]
+  -ggdb                       		
+  -ggnu-pubnames              		[disabled]
+  -ginline-points             		[disabled]
+  -ginternal-reset-location-views 	[enabled]
+  -gno-pubnames               		[disabled]
+  -gpubnames                  		[disabled]
+  -grecord-gcc-switches       		[enabled]
+  -gsplit-dwarf               		[disabled]
+  -gstabs                     		
+  -gstabs+                    		
+  -gstatement-frontiers       		[disabled]
+  -gstrict-dwarf              		[disabled]
+  -gtoggle                    		[disabled]
+  -gvariable-location-views   		[disabled]
+  -gvariable-location-views=incompat5 	[disabled]
+  -gvms                       		
+  -gxcoff                     		
+  -gxcoff+                    		
+  -gz                         		
+  -gz=<format>                		
+  -imultiarch <dir>           		x86_64-linux-gnu
+  -iplugindir=<dir>           		
+  -o <file>                   		/tmp/ccdqIml5.s
+  -p                          		[disabled]
+  -pedantic-errors            		[disabled]
+  -quiet                      		[disabled]
+  -v                          		[disabled]
+  -version                    		[disabled]
+

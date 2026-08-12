@@ -1,0 +1,11 @@
+{
+ "schema": "motifbo-oracle-v1",
+ "unit": "horner",
+ "outputs": [
+  {
+   "name": "out",
+   "class": "numerically-approximate",
+   "tolerance": {"mode": "atol_rtol", "atol": 1e-9, "rtol": 1e-9}
+  }
+ ]
+}

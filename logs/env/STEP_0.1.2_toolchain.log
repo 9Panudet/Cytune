@@ -1,0 +1,46 @@
+# Step 0.1.2 evidence — GCC 13.x apt version pin
+# Date: 2026-06-11 (UTC). Image built from the digest-pinned base (see IMAGE_DIGEST).
+
+## 1. Version discovery (inside pinned base, before any change)
+$ podman run --rm <pinned-base-digest> bash -c 'apt-get update -qq && apt-cache policy gcc-13 gcc cpp-13 libgcc-13-dev'
+  gcc-13        Candidate: 13.3.0-6ubuntu2~24.04.1
+  gcc (meta)    Candidate: 4:13.2.0-7ubuntu1
+  cpp-13        Candidate: 13.3.0-6ubuntu2~24.04.1
+  libgcc-13-dev Candidate: 13.3.0-6ubuntu2~24.04.1
+
+## 2. Pin mechanism
+- /etc/apt/preferences.d/motifbo-gcc13 (COPY of data/env/apt-pin-gcc13.pref), priority 1001,
+  scope = src:gcc-13 binaries + meta gcc. Runtime libs (libasan8/libgcc-s1/...) deliberately
+  NOT pinned: in noble they build from src:gcc-14 (see pref header); they are recorded and
+  asserted instead.
+- Explicit =version on apt-get install (fail-loud if the archive drops the version).
+
+## 3. First build attempt — defect caught by smoke compile, fixed within the step
+Build 52d141547eb6... compiled gcc-13 fine but `gcc -O2 -ffp-contract=off hello.c` failed:
+  fatal error: stdio.h: No such file or directory
+Trace: dpkg-query showed libc6-dev ABSENT — gcc-13 only Recommends libc6-dev and the
+install uses --no-install-recommends. Fix: explicit pinned libc6-dev=2.39-0ubuntu8.7
+added to the Containerfile install list. (Within-step implementation fix, not a project
+red gate: no committed gate/test went red; cause fully traced before the fix.)
+
+## 4. Final build
+$ podman build --timestamp 0 -t localhost/motifbo-env:phase0 -f Containerfile .
+  -> image id sha256:baccc2821580bb350a3491b5b76a5aec2f15ea33dc5af336c9d09ab7099de799
+
+## 5. In-image verification
+gcc -v  -> "gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1)"  [bytes: data/env/GCC_V_OUTPUT.txt]
+gcc -dumpfullversion -> 13.3.0
+dpkg-query (all 12 toolchain packages) -> exactly the versions in TOOLCHAIN.lock
+Smoke compile: gcc -O2 -ffp-contract=off /tmp/hello.c -> prints 4.25 -> SMOKE_PASS
+(-ffp-contract passed explicitly per the standing rule, CLAUDE.md / roadmap §3.2.)
+
+## 6. CI assertion (scripts/check_toolchain.sh)
+$ ./scripts/check_toolchain.sh
+  TOOLCHAIN CHECK: PASS (13 assertions, zero diff)
+Negative test (non-vacuity per §6.3): perturbed lock copy (gcc-13=13.2.0-WRONG) ->
+  MISMATCH: lock has 'gcc-13=13.2.0-WRONG'; image has 'gcc-13=13.3.0-6ubuntu2~24.04.1'
+  TOOLCHAIN CHECK: FAIL, exit=1
+Re-run with real lock -> PASS.
+
+RESULT: PASS — GCC 13.3.0 pinned (apt preferences + explicit versions), recorded, and
+asserted with a proven-non-vacuous check.

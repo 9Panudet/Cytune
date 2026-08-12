@@ -1,0 +1,63 @@
+STEP 1.1.1 condition 3 — mini-I-3 C++ sanitizer/oracle extension: EVIDENCE
+=========================================================================
+Image X' (:phase1 = d45e33b0). Probe: scripts/corpus/sanitizer/{cpp_probe.pyx,
+run_cpp_sanitizer_probe.sh}. C++ Cython unit (libcpp.vector + 3 C++ throws via except+),
+built g++-13 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -ffp-contract=fast.
+
+[A] FAILURE FOUND (Phase-0 sanitizer runtime env, C path only): a C++ throw aborts ASan:
+    "AddressSanitizer: CHECK failed asan_interceptors.cpp:458 real___cxa_throw != 0"
+    Cause: ASan loaded via LD_PRELOAD into a non-instrumented python3.12; at interceptor
+    init libstdc++ is not yet present, so ASan's __cxa_throw interceptor never binds the real
+    symbol -> first C++ exception unwind CHECK-fails. (Allocation path use_vector ran fine;
+    the failure is SPECIFICALLY C++ exception unwinding.)
+
+[B] FIX (runtime-env, NOT a suppression line): add libstdc++.so.6 to LD_PRELOAD AHEAD of the
+    throw so __cxa_throw exists when ASan binds interceptors:
+      LD_PRELOAD="$(gcc-13 -print-file-name=libasan.so):$(g++-13 -print-file-name=libstdc++.so.6)"
+    Result with fix:
+      RUN detect_leaks=0 (operational / feasibility gate): exit=0, CLEAN.
+        use_vector(1_000_000) sum = 499999500000  (correct; ASan/UBSan no report)
+      RUN detect_leaks=1 (leak-audit): SUMMARY 769 byte(s) in 2 allocs — ALL CPython
+        (PyMem_Malloc / PyModule_ExecDef / __Pyx_FetchCommonTypeFromSpec), i.e. the SAME
+        by-design teardown leaks lsan_cpython.supp + detect_leaks=0 already cover.
+        *** NO libstdc++ leak appeared for this archetype (vector + exceptions). ***
+
+[C] C++ -> Python EXCEPTION-IDENTITY (oracle §3.1) — deterministic via Cython except+:
+      std::out_of_range     -> builtins.IndexError
+      std::length_error     -> builtins.RuntimeError   (no specific map -> catch-all RuntimeError)
+      std::invalid_argument -> builtins.ValueError
+    The oracle compares the TRANSLATED Python exception type (canonical module.QualName,
+    subclass never matches), so the existing §3.1 exception-identity comparator works UNCHANGED
+    on C++ units: the "raised exception" it sees is the deterministically-mapped Python type.
+
+CONCLUSION (evidence over anticipated mechanism): the C++ enablement is (1) a build-profile
+addition (g++-13 --cplus + the same ASan/UBSan flags) and (2) a RUNTIME-ENV change (libstdc++
+preload, justified by [A]/[B]) — NOT new suppression-file lines. No libstdc++ leak/UBSan
+suppression was needed for the tested archetype; if a SPECIFIC corpus C++ unit surfaces a
+libstdc++ teardown leak in leak-audit, a justified `leak:` line is added THEN (evidence-grounded,
+per the original I-3 discipline), not speculatively.
+
+[D] COMPREHENSIVE RIG AUDIT (non-vacuous; human conditions 2+3). Probe
+    scripts/corpus/sanitizer/cpp_rig_probe.pyx + rig_audit.sh, image X'. Results:
+    (a) CLEAN operational (detect_leaks=0): exit=0, clean_stl=1999000, no ASan/UBSan FP.
+    (b) exception map: out_of_range->IndexError, length_error->RuntimeError, invalid_argument->ValueError.
+    (c) NON-VACUITY — rig CATCHES each real C++ bug (more than throws, per condition 2):
+          bug_oob  -> ASan heap-buffer-overflow      (STL vector bounds)   CAUGHT (exit 1)
+          bug_uaf  -> ASan heap-use-after-free        (iterator invalidation via realloc) CAUGHT
+          bug_vptr -> UBSan runtime error (vptr)      (wrong dynamic type / RTTI) CAUGHT
+    (d) LEAK POLICY (condition 3) — RESOLVED EMPIRICALLY (better than the detect_leaks=0 fallback):
+          detect_leaks=1 + LSAN_OPTIONS=suppressions=lsan_cpython.supp:
+            clean unit  -> 0 unsuppressed leaks (CPython fully suppressed; exit 0)
+            stl_leak()  -> LSan REPORTS the leak (Direct leak, operator new in _stl_leak) -> exit 1
+          => STL container leaks ARE directly detectable in a dedicated C++ leak-AUDIT pass.
+    PRODUCTION POLICY (documented in SANITIZER_POLICY.md): the FEASIBILITY GATE keeps detect_leaks=0
+    for all units (Phase-0 invariant; avoids CPython-residual false-infeasible); a DEDICATED C++
+    leak-audit pass (preflight/per-unit) runs detect_leaks=1 + lsan_cpython.supp so STL leaks are
+    actively caught (not only via the §3.4 memory-cap kill).
+
+REMAINING for condition 3: (i) wire the C++ build-profile (g++-13 --cplus + same ASan/UBSan flags)
++ the libstdc++ preload into src/motifbo/build/profiles.py with TDD; (ii) oracle test asserting the
+C++ exception-identity mapping; (iii) per-unit C++ sanitizer-clean for the corpus C++ units — a
+CONTINUING obligation at 1.2/preflight (NOT in the rig sign-off scope; analogous to the §3.3
+endpoint full-config guard); (iv) validation-auditor review; (v) HUMAN mini-I-3 sign-off scoped to
+the RIG (do NOT self-sign). Until the sign-off: C++ units are vendor-staged but do NOT count.

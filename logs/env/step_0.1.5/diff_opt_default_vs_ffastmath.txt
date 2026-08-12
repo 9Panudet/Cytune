@@ -1,0 +1,36 @@
+18c18
+<   -fassociative-math          		[disabled]
+---
+>   -fassociative-math          		[enabled]
+33c33
+<   -fcx-limited-range          		[disabled]
+---
+>   -fcx-limited-range          		[enabled]
+44c44
+<   -fexcess-precision=[fast|standard|16] 	[default]
+---
+>   -fexcess-precision=[fast|standard|16] 	fast
+48c48
+<   -ffinite-math-only          		[disabled]
+---
+>   -ffinite-math-only          		[enabled]
+114c114
+<   -fmath-errno                		[enabled]
+---
+>   -fmath-errno                		[disabled]
+139c139
+<   -freciprocal-math           		[disabled]
+---
+>   -freciprocal-math           		[enabled]
+183c183
+<   -fsigned-zeros              		[enabled]
+---
+>   -fsigned-zeros              		[disabled]
+209c209
+<   -ftrapping-math             		[enabled]
+---
+>   -ftrapping-math             		[disabled]
+253c253
+<   -funsafe-math-optimizations 		[disabled]
+---
+>   -funsafe-math-optimizations 		[enabled]

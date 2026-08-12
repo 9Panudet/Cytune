@@ -1,0 +1,13 @@
+# Step 1.1.1 — scipy/_min_spanning_tree by-file build+IMPORT-confirm (flat closure; X':phase1; 2026-06-21T22:38:39Z)
+tools: Python 3.12.3 | gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0 | Cython 3.2.5 | scipy 1.17.1 (image, provides cython_blas/lapack)
+unit: _min_spanning_tree  (reference directives: scipy bare -3, in-source @cython decorators honored)
+=== (1) POSITIVE: build from vendored closure + standalone IMPORT (by file) ===
+so-bytes: 241944
+exported: ['DTYPE', 'ITYPE', 'csr_matrix', 'is_pydata_spmatrix', 'minimum_spanning_tree', 'np', 'validate_graph']
+IMPORT-OK _min_spanning_tree
+=== (2) NEGATIVE CONTROL: hide the vendored unit .pyx -> build MUST fail ===
+/opt/venv/bin/cython: No such file or directory: '_min_spanning_tree.pyx'
+[negative-control] CYTHONIZE FAILED
+NEGATIVE CONTROL PASSED: build fails without the vendored unit .pyx.
+=== VENDORED-CLOSURE BUILD-CONFIRM: PASS (_min_spanning_tree: by-file IMPORT-OK; negative control fails as required) ===
+# EXIT=0

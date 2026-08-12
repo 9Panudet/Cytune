@@ -1,0 +1,1 @@
+(no diagnostics emitted by gcc 13.3.0 for -Ofast)

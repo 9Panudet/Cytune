@@ -1,0 +1,7 @@
+O0        -ffast-math 		
+O1        -ffast-math 		
+O2        -ffast-math 		
+O3        -ffast-math 		
+Os        -ffast-math 		
+Ofast     -ffast-math 		
+default   -ffast-math 		

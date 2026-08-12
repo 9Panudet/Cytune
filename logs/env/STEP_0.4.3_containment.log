@@ -1,0 +1,34 @@
+# STEP 0.4.3 — containment wrapper + OOM/timeout/segfault smoke fixtures (§3.4/§3.5)
+
+Grounding: §3.4 (per-candidate limits: --network=none, --memory=4g no-swap, 2GB tmpfs
+/sandbox wiped per candidate, compile timeout 120s, run timeout max(10x golden,5s)),
+§3.5 (process-level feasibility labels). Carried F9: wrapper reports labels only,
+asserts no feasibility (leak-audit exit codes must not feed feasibility).
+
+Architecture: host-side run_contained() launches each candidate as its own podman
+container with the §3.4 limits + a wall-clock timeout, classifies the outcome, and
+NEVER raises on candidate misbehaviour. A new container per candidate => fresh tmpfs
+(wiped automatically). OOM via State.OOMKilled with a SIGKILL-137 fallback.
+
+## in-container pure label tests (tests/test_containment_labels.py)
+7 passed — classify() maps ok/timeout/memory_cap_kill/crash(SEGV,ABRT,BUS,FPE,ILL)/
+nonzero_exit; run_timeout_s = max(10x,5s); §3.4 constants pinned (120s, 4096MB, 2048MB).
+
+## HOST smoke fixtures (real podman; scripts/containment_smoke.py)
+Reproduce: PYTHONPATH=src python3 scripts/containment_smoke.py
+
+[PASS] clean          expected=ok               got=ok               rc=0 oom=False t/o=False
+[PASS] nonzero_exit   expected=nonzero_exit     got=nonzero_exit     rc=3 oom=False t/o=False
+[PASS] timeout        expected=timeout          got=timeout          rc=137 oom=False t/o=True
+[PASS] oom            expected=memory_cap_kill  got=memory_cap_kill  rc=137 oom=True t/o=False
+[PASS] segfault       expected=crash            got=crash            rc=139 oom=False t/o=False
+
+all_pass=True  (orchestrator survived all 5 fixtures)
+
+Authoritative result: results/containment/{REPORT.md, containment_smoke.json}.
+Note: full crash-signal range covered by the pure unit test; host smoke exercises a
+real SIGSEGV end-to-end (in this CPython abort() also -> rc139, os.kill(SIGABRT) -> rc0,
+so a separate abort host-fixture adds confusion not coverage).
+
+## full suite
+218 passed in the pinned container; 0 stray motifbo-cand containers (rm -f cleanup).
