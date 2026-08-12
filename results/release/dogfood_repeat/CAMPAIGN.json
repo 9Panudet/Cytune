@@ -1,0 +1,31 @@
+{
+  "prereg": "results/prereg/PREREG_LAUNCH.md",
+  "k": 5,
+  "arms": [
+    "D",
+    "P"
+  ],
+  "anchors": [
+    "fleet_R_01_csr",
+    "fleet_R_02_pava",
+    "fleet_R_03_lda",
+    "fleet_R_04_binning",
+    "fleet_R_05_ppoly",
+    "fleet_R_06_floyd",
+    "fleet_R_07_cc",
+    "fleet_R_08_elkan",
+    "fleet_R_09_predictor"
+  ],
+  "arm_argv": {
+    "D": [],
+    "P": [
+      "--probe-as-screen"
+    ]
+  },
+  "git_head": "5ebd59213555c0f541cc45820a124a8d17832660",
+  "src_dirty": "",
+  "source_tree_sha256": "2de40eaffc3ab177ec214f69c958e4be541654d2f23ab6c896079ccf61600c80",
+  "cytune_version": "cytune 1.0.0 (research preview)",
+  "started_utc": "2026-08-11T21:38:56Z",
+  "free_bytes_at_launch": 12881375232
+}

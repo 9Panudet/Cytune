@@ -1,186 +1,98 @@
-# cytune
+# cytune — the research branch
 
-**Your Cython kernel is probably leaving 10–50 % on the table in compiler settings. cytune finds
-which settings, proves the answer still computes what you wrote, and refuses to recommend anything
-it cannot stand behind.**
+This branch carries **the study**: the pre-registrations, the reports, the manifests, and the
+negative results. It is here so that a claim made on `main` can be checked by someone who did not
+make it.
 
-Research preview. One machine, x86-64 Linux, rootless podman.
+The other two branches:
 
-```bash
-pip install cytune
-cytune init kernel.pyx                                 # writes a driver.py you can run
-cytune doctor                                          # is this machine ready?
-cytune tune kernel.pyx --driver driver.py              # the answer
-```
-
-That is the whole thing. Three commands, no configuration file, no prior knowledge.
-
-`init` writes the driver by reading your function signature. A driver is four names, and this is
-all of them:
-
-```python
-def make_inputs(seed):  ...   # build the arguments your kernel takes
-def call(mod, inputs):  ...   # mod.your_function(*inputs)
-def canon(result):      ...   # -> a numpy array, so two runs can be compared
-OUTPUT_CLASS = "float"        # or "int" / "bool" — "int" and "bool" buy a bit-exact check
-```
-
-**Check what `init` wrote before you trust the answer.** If it had to invent an input for you, that
-input is the workload every number describes. cytune refuses to tune when the inputs make your
-kernel's output constant — its correctness check would be unfalsifiable — but it cannot tell that
-an input is merely *unrepresentative*.
-
-In a hurry: `--target-ms 5 --preset quick` gives a rougher answer in about a minute.
-
-Want to see it work before pointing it at your own code? The package ships a kernel and a driver:
-
-```bash
-python -c "import cytune, os; print(os.path.dirname(cytune.__file__) + '/examples')"
-cytune tune <that path>/running_max.pyx --driver <that path>/running_max_driver.py
-```
+| branch | what is on it |
+|---|---|
+| **`main`** | the product, its user docs, and a self-contained `evidence/` |
+| **`dev`** | everything on main plus the development harnesses, the study-equivalence tests, release tooling, and `docs/system/` |
+| **`research`** | you are here |
 
 ---
 
-## The problem
+## What the research programme was
 
-`boundscheck`, `wraparound`, `cdivision`, `initializedcheck`, `nonecheck`, `-O2` vs `-O3`,
-`-march=native`, `-funroll-loops`. Everyone knows these matter. Almost nobody measures them,
-because measuring them properly means 1,728 builds, a quiet machine, and a way to check that each
-build still produces your answer.
+**Question.** Given a Cython kernel, which of 1,728 (directive × compiler-flag) configurations is
+fastest — and can a search find it cheaply enough to be worth running?
 
-So the usual approach is folklore: turn off boundscheck, use `-O3`, hope. Sometimes that is 2×
-faster. Sometimes `-O3` is *slower* than `-O2` for your kernel. Sometimes turning off boundscheck
-silently converts a latent off-by-one into an out-of-bounds read that your tests do not catch,
-because the garbage element happened not to change the answer.
+**Method.** A controlled benchmark of 149 kernels: 129 synthetic training kernels, 11 held out, and
+**9 taken from real library code**. Every kernel was measured **exhaustively** — all 1,728
+configurations — so the true optimum is known and a search's *regret* can be computed exactly rather
+than estimated.
 
-## What cytune does
+Four algorithms — random search, D-optimal design, Bayesian optimisation, and a motif-transfer
+method — were then compared by **offline replay against those frozen tables**, through a sealed
+ask–tell interface with a cheat-test proving no algorithm could see more than its budget. Everything
+was pre-registered before results were read.
 
-It builds your kernel about 35 different ways, times them on an isolated CPU core, checks every one
-against a golden output produced by your own comparison function, rebuilds the winner under
-AddressSanitizer, and hands you a certificate.
+## What it found, including the parts nobody wanted
 
-```
-VERDICT: IMPROVEMENT
-  1.967x faster than the reference configuration, verified at the endpoint tier and re-checked
-  against the oracle.
+**DOE wins; Bayesian optimisation does not earn its cost.** The Bayesian arm loses to D-optimal
+design in 18 of 20 cells and is **worse than random search on flat landscapes**.
 
-EMIT — paste this at the top of the .pyx:
-  # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=True, nonecheck=False
-```
+**Motif+BO passed its statistical gate and was not shipped.** p = 3.46e-17, Cliff's δ = 0.772 — and
+its warm-start sources were **9.7× enriched for siblings of the target's own template**, while the
+corpus it needs does not exist at the point of use. A win produced by leakage is not a win. This is
+the single most consequential negative result here, because it is the one where the statistics said
+ship.
 
-Or with `--apply`, it writes that header for you.
+**Routing adds nothing.** On held-out kernels a per-cell router equals always-DOE at
+B ∈ {8, 32, 64, 128} and is *worse* at B=16. cytune therefore routes to DOE unconditionally, and
+every certificate it emits says so.
 
-## What makes it different
+**The most interesting class does not occur in real code.** The synthetic generator produced 42
+kernels in the INT class (genuine directive × flag interaction). The nine real-code anchors produced
+**zero** — and those nine were already filtered as the most promising non-flat units available. Any
+algorithm whose advantage concentrates in INT may have an advantage unreachable on real user code.
 
-**It refuses to recommend a configuration that changes your output.** Every configuration is
-re-checked against a golden output, twice — once at the screening tier and again at the heavier
-verification tier, because passing a quick check is not a licence. A configuration that fails is
-*infeasible* no matter how fast it was.
+**1,296 cells were recorded correct while reading out of bounds.** The §1.4 sanitizer gate had never
+been invoked across ~149 kernels × 1,728 configurations. Three min/max-reduction kernels passed the
+output oracle at 432/432 each while executing a heap buffer overflow — a reduction absorbs one
+garbage element without changing its result. Their 13× "lever" *was* the out-of-bounds read.
+Remediated by overlay; the raw data is byte-identical and only the feasibility label is corrected on
+top. `logs/defects/D23.md`.
 
-**It refuses to recommend a configuration that reads memory it does not own.** Before emitting
-anything, cytune rebuilds that exact configuration under AddressSanitizer and UBSan and runs it. A
-report means refusal. And a gate that could not run is recorded as *not run* — never as a pass.
+**All six DOE-v2 engine variants failed on real code**, and the exercise was designed to be able to
+return that. `results/release/DOE_V2_REPORT.md`.
 
-**It says "no improvement" instead of inventing one.** The most common honest answer on real code
-is that your kernel is not directive-bound. Three separate mechanisms produce that answer, and any
-gain below `max(2 × measured noise, 2 %)` is not claimed at all. Exit code 2 means "nothing is
-reliably faster than what you have" — an answer, not a failure.
+**The ship bound was 6.7× tighter than the instrument.** Five repeated runs per arm measured the
+engine's own run-to-run spread at 6.711 pp, against a rule that judged engine changes at 1.0 pp.
+`results/release/LAUNCH_REPORT.md`.
 
-**It finds bugs.** `cytune audit` runs a fixed set of risky directive corners under a sanitizer and
-tells you if your kernel reads out of bounds. Same verdict every time, no timing involved. This is
-not hypothetical: in this project's own benchmark, 1,296 kernel-configuration pairs were recorded
-as *correct* by an output check while executing an out-of-bounds read — a reduction absorbs one
-garbage element without changing its result. The sanitizer found them. The output check could not.
-
-**And the one nobody else can say: its accuracy has been measured against exhaustively-known
-optima on real library code.**
-
-## The number, with its conditions
-
-Nine kernels taken from real libraries — sparse matrix-vector multiply, isotonic regression, LDA,
-Floyd-Warshall, connected components, k-means with the Elkan bound, piecewise polynomial
-evaluation, binning, a predictor. For each, **all 1,728 configurations were measured exhaustively**,
-so the best possible answer is known rather than estimated.
-
-cytune measures ~35 of the 1,728 and picks one. How much slower is its pick than the best pick it
-was allowed to make?
+## Where things are
 
 | | |
 |---|---|
-| **median across the nine kernels** | **1.409 %** (range 1.409–1.719 %) |
-| **worst kernel** | **5.412 %** (range 5.412–9.791 %) |
-| configurations measured | 313 total, ~35 per kernel |
+| `results/prereg/` | every pre-registration, each committed before the results it governs |
+| `results/PHASEP_REPORT.md` | the study report — all three research questions answered, all three negative |
+| `results/DEFENSE_SUMMARY.md` | one page: four buckets, guarantees and non-guarantees |
+| `results/release/DOE_V2_REPORT.md` | the engine re-evaluation, and why nothing shipped |
+| `results/release/LAUNCH_REPORT.md` | the repeated-measurement pass and the re-derived bound |
+| `results/fleet/FREEZE_MANIFEST_V2.json` | the 149 kernels, their sha256s, and their measured classes |
+| `PRODUCT_ROADMAP.md` | the spec the study was executed against |
+| `logs/defects/` | D3–D26, every post-mortem |
+| `scripts/phasep/` | the study harness |
 
-**Conditions, which are part of the number:** nine kernels · one machine (i3-10100F, quiesced) ·
-five repeated runs · default floating-point-strict policy, so 576 of the 1,728 were eligible.
-Ranges are across the five runs, because a single run is one draw and this project has measured
-runs of the *same unchanged engine* disagreeing by up to 6.7 percentage points on one kernel.
+## The frozen tables are not committed here
 
-Every figure above: [`evidence/repeated_dogfood.json`](evidence/repeated_dogfood.json).
+The 149 `table.jsonl` files — 1,728 measured rows each, **215 MB** — are **not** in this branch.
+`FREEZE_MANIFEST_V2.json` pins every one of them by sha256, so a copy can be verified byte-for-byte
+against what the study used.
 
-## Limitations — the same page, not a link
+Committing 215 MB into a repository whose `.git` is 3 MB is a publishing decision with a real and
+hard-to-reverse cost, and it belongs to a human rather than to the process that generated the data.
+The manifests, the reports and the code that produced them are all here; the bulk data is one
+decision away.
 
-**Nothing transfers to other hardware.** The recommendation is measured on *your* machine and is
-about your machine. `-march=native` in particular is not portable; `--portable-flags` restricts it.
+## How to read a negative result
 
-**A clean sanitizer run is not proof of memory safety.** It proves that on the inputs your driver
-generated, nothing was detected. Different inputs may reach different code.
+Every headline finding on this branch is something that did not work. That was the expected outcome
+and it was pre-registered as an acceptable one: *honest negatives — a class that will not populate,
+an algorithm that never wins, Motif adding nothing — are valid, reportable outcomes.*
 
-**The recommendation is not optimal, and the table above is what that costs.** cytune measures ~2 %
-of the space. It usually lands within about 1.4 % of the best allowed configuration and has been
-measured as far off as 9.8 %.
-
-**Timing claims are rig-dependent.** Without a quiesced host cytune still runs, and labels its
-numbers `portable` and indicative rather than decision-grade. It tells you which it used.
-
-**Your driver is inside the trust boundary.** If your comparison function says two different
-answers are the same, cytune will believe it.
-
-**The search engine's routing is an engineering default, not a validated per-kernel router.** The
-study behind cytune measured that per-kernel engine switching does *not* beat always-using-DOE on
-held-out kernels, and the tool says so on every certificate.
-
-The full, numbered list — eight guarantees and nine non-guarantees — is
-[`docs/GUARANTEES.md`](docs/GUARANTEES.md). It is written to be read by someone trying to catch us
-out.
-
-## The three answers, and what to do about each
-
-| exit | verdict | what to do |
-|---|---|---|
-| `0` | **improvement** | paste the header, or re-run with `--apply` |
-| `2` | **honest-flat** | nothing. Your kernel is not directive-bound — the time is going somewhere a compiler flag cannot reach. That is worth knowing, and it took two minutes |
-| `3` | **no-safe-improvement** | read the `WINNER REJECTED` / `OBSERVED BUT NOT RECOMMENDED` block on the certificate. Something faster existed and could not be claimed — often because the sanitizer reported on it, which means you have a bug |
-| `1` | error | bad arguments or an environment problem. `cytune doctor` names the fix |
-
-`0`, `2` and `3` all mean cytune finished and stands behind its answer.
-
-## Requirements
-
-x86-64 Linux · Python 3.9+ · podman (rootless is fine) · a Cython module with a driver.
-`cytune doctor` checks all of it and prints the fix line for anything missing;
-`cytune doctor --build-image` builds the pinned toolchain image and verifies its digest.
-
-The best results need a quiesced host (turbo off, performance governor, an isolated core). Without
-one, cytune runs in `portable` mode and labels its numbers as indicative.
-
-## Going deeper
-
-| | |
-|---|---|
-| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | the pipeline stage by stage, the driver contract, the certificate field by field. §13 is the complete flag/config/exit-code reference |
-| [`docs/GUARANTEES.md`](docs/GUARANTEES.md) | what is guaranteed and what explicitly is not |
-| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | when something goes wrong |
-| [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) | what is broken and known |
-| [`evidence/`](evidence/) | every number on this page, with its conditions and how to recompute it |
-
-**Other branches:** `dev` carries the development harnesses, the release tooling and a deep
-system-documentation set. `research` carries the study this is built on — the pre-registrations,
-the frozen benchmark, and the negative results, including the two algorithms that were measured and
-not shipped.
-
-## Status
-
-Research preview, version 1.0.0. It is used, it is tested (910 tests, a live end-to-end gate before
-every tag), and its own defect ledger is public. It has not been run by many people on many
-machines yet, and that is the main thing standing between "research preview" and "1.0".
+The shipped product is the residue: the one algorithm that won, with the routing installed as a
+negative, and a certificate that states what it does not prove.

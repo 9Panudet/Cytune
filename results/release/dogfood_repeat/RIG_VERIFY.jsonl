@@ -1,0 +1,10 @@
+{"arm": "D", "replicate": 1, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-11T21:38:56Z"}
+{"arm": "P", "replicate": 1, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-11T22:20:39Z"}
+{"arm": "D", "replicate": 2, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-11T23:00:51Z"}
+{"arm": "P", "replicate": 2, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-11T23:42:24Z"}
+{"arm": "D", "replicate": 3, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-12T00:22:39Z"}
+{"arm": "P", "replicate": 3, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-12T01:03:53Z"}
+{"arm": "D", "replicate": 4, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-12T01:43:54Z"}
+{"arm": "P", "replicate": 4, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-12T02:25:00Z"}
+{"arm": "D", "replicate": 5, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-12T03:05:11Z"}
+{"arm": "P", "replicate": 5, "ok": true, "note": "measure_wrap: state OK \u2014 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise", "utc": "2026-08-12T03:46:06Z"}

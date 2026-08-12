@@ -1,0 +1,2723 @@
+{
+ "schema": "phasep-freeze-manifest-v2",
+ "supersedes": "FREEZE_MANIFEST.json (v1) \u2014 NOT replaced; v1 stays write-once and its sha256 set is verified here, byte-for-byte",
+ "adds": "conformance flags: what each kernel may be USED FOR, which v1 could not express",
+ "classifier": {
+  "source": "scripts/phasep/a2_reclassify.py",
+  "sha256": "d778c3ed6bdd8d241176053f76871f87abffe813c560f42fb46fc63f396fd172",
+  "taxonomy": "A-2a v2 (FLAT/MID/LEVER-SEP/INT on the strict axis; orthogonal FM, FEAS flags)",
+  "flag_FEAS_predicate": "4 * n_infeasible >= n_total   (ERRATUM E4, integer-exact)",
+  "e4_evidence": "results/fleet/E4_ALIGNMENT_EVIDENCE.json"
+ },
+ "e4_alignment": "results/fleet/E4_ALIGNMENT_EVIDENCE.json (integer FEAS form, A-2h/E4)",
+ "sanitizer_overlay": "results/fleet/SANITIZER_INFEASIBLE_OVERLAY.json (D23 / A-9)",
+ "deviations": "results/fleet/DEVIATIONS_REGISTER.md",
+ "flag_definitions": {
+  "conformant": "usable for per-class inference",
+  "descriptive-only": "PREREG \u00a74 agreement_fail \u2014 excluded from per-class inference",
+  "sanitizer-corrected": "D23/A-9 \u2014 \u00a71.4 overlay changed feasibility labels and class",
+  "directive-partial": "DEV-3 \u2014 in-source directives leave 3-4 axes inert; excluded from directive-effect inference and routing-acceptance rows",
+  "scale-band-deviation": "DEV-4 \u2014 reference outside the 50-80 ms band; rows stand"
+ },
+ "n_v1_frozen": 129,
+ "n_h_manifest": 11,
+ "n_kernels": 149,
+ "flag_counts": {
+  "conformant": 123,
+  "descriptive-only": 24,
+  "sanitizer-corrected": 3,
+  "scale-band-deviation": 1,
+  "directive-partial": 2
+ },
+ "hash_drift": [],
+ "hash_drift_is_fatal": true,
+ "kernels": {
+  "fleet_FLAT_FM_06_fm_sum": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "54ca2abea8df71637036833fb2cc916beddf22de7c79a317f446b8b649d92890",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_07_fm_dot": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "3c0d6ee9f9d96d54ed7e351361851ee310e1783ef35403d4ad536c6f7287c067",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_08_fm_sumsq": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "238cb823f2a09cca1625cfc6f174bb598b9298097b7b63daf714b42394dfeca4",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_09_fm_abssum": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "387bc56cb86639653d3120584203c850d23acd0fb6a5a0f4d2a0cdd0c233c4e5",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_10_fm_altsum": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "0ba1c203d4d9da17c9a0b751a16d212036906bb75467962913cf5d24cf301368",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_11_fm_runmean": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "a48a6030767f240b5f3aa8a8d5146b93b3759d5159a17bba2305e0891bb6d219",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_12_fm_sum_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "a290e85acbd78de5d5006f1cc9d9e69ecbc1a7c6049e047a7f47ef9e847aa9e0",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_13_fm_dot_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d2bdcd8cea489b8682ed5a4775c7853f083b060c900cb84299860b08a74f1155",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_14_fm_sumsq_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "72b35d75778f8ae572bcb8099aaec37a973e4172471f59d6ed95911b195a253c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_15_fm_abssum_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "dbba21c3f539170599d92ae1d95e61abeda102adf24626d9f4efbc81d262f473",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_16_fm_altsum_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "fe328779330b63d75fc8142ed676a3c80a567b6e3dc1b328717bb36d7b152618",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_17_fm_runmean_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "35f7f6767e61ab961453c50d4bed6fc098a88a7e365a288720a90ecbf4c327e5",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_18_fm_sum_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "0e3c938c9d38b4c45b16ea359d9a745aa3bd87a4c58d9cccc8585f09b2f8363e",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_19_fm_dot_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "96a7f1657c504cbb02c60cf87c74b4ab6304b10291373a03dea37cb1dc5b22fa",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_20_fm_sumsq_r5": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "ed52bbdcbac334576c9b1d89156dc32967dd4e4912f78b7adc134425cfef0857",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_21_fm_abssum_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "2d563b79d3e2b183c10b31a72735e3b7bf27a260805292d9848d29aab9979525",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_22_fm_altsum_r10": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "7fcd56d38691f365ffa23dccd84c50b39f4652a0a6d6447aa6655212ba39191c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_23_fm_runmean_r4": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "cb823e0914fb45d70bea6d375629c3637e13ad04279a47f911cc03ceaa976817",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_24_fm_sum_r9": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "6628c00743c62033e920a380516d275d3e6888e6e23b4ac9c651f1aa57e0f3b4",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_25_fm_dot_r6": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "de3be787cad815fd8cb1e153cb86821d13dcbb9363d9ecd7bec8708391a12d36",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_26_fm_sumsq_r12": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "be0f2c94b05e5c37672fe95740ecd21cf23025e5e9f6b2dc6d0d190215bebce6",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_27_fm_abssum_r9": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "f522e1f0937ff753698e1f76c71ea2f66bca41a08271b9496162b3ce65b1933c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_28_fm_altsum_r13": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "fced8d10c352be440f304c9dfeaac4963413757ca725e58320d545f09654a37d",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_29_fm_runmean_r12": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "006e940b3edd22635364e9c041fad73dffa7c4ada5ced06e23c180285356e777",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_31_fm_dot_r11": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "341642f509ce0d0c5075cc7b2fae974f9cedeb1b535fc48e82dcd88267b2d2ce",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_H_201_fm_sum_r2": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "b66416e305f801742fcb22f067aea98c05fd454feb5bef59f1a361c31d27ebe1",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": "H-ext",
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_50_fm_sum": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "74e4f51bbab4ca4deff772a7005a006002035601488fabed6d4edbc675454323",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_51_fm_dot": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "af9123353a268080701d31cf00962c7da3e7a2705cedf3c0cc1e8ab643547f21",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_52_fm_sumsq": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "6b55bd253d825f9002db399c2c0414f16bad1a2aee06e6a598537a45069514d9",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_53_fm_sum_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d992fc93e88a354e65dd6b401abba1eaf14cc2deeb121d99db20af3d6a323ff1",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_54_fm_dot_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "9a0b63ed0d01d7bbc3162ccb947f6ebf30eb0a936722077143dd6654ac1b1e79",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_55_fm_sumsq_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "b58dcad3d4bc6e9eafeb6b94b6e13900cc275b1048ab827f81c69ce8bac04abd",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_57_fm_dot": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "aca3256ecac8c0da63e57a1da03c45384f56ac1701a1878a7d8b51609779251c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_58_fm_sumsq_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e0380a62f54db3b1c42c9f2ed0384cacd6b7cd02aa20867828630409bac25b5e",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_59_fm_sum_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "7b7747b70929a8713fd9d4dfddb26c3af6a68c8489305e088658bd015b000149",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_FLAT_FM_W2_61_fm_sumsq_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "7b139c727d3e3f80011451a3dbcac6538088d68415ff39d27813c482baac0f8c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_06_int_sum64": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "81aef63ae236a38d8b97b7b262464b634dfc9fe93dd78a65e9a01604abe785ab",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_07_int_min32": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "ec543225b377bcd82e0faf64b8fef929e54ef54c62792d2b58959554449ec4a3",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_08_int_sumsq": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "4bcf37c2730f3832eb389b82776132f116a29c3298dda3381c7db69b9b46b85e",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_09_int_max32": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "2a9ad63683c0bf77cf9c0f2bed12be114b054dcd56aacab6467305706e6e823c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_10_int_revsum": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "6b0d7e25c98bd328948f98f1c544b7e77e5a6d8f69d0fae00d19028c27d79441",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_11_int_horner64": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "09980fa6ae9460781710910b4170897dd67fb2b32196d8a33a9a546c63ecb5b6",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_12_int_horner32": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "2d3b0535fb84c81a7d9efd7b6c745a0c497675df1d2bd23fd04a62f4f3651b71",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_13_int_sum64": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "bb50ed47f12578f5886b4d103c7ee93899241ef91644a7884a1d955ca1080ad8",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_14_int_min32": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "988a17f16da4040d1bb870f8ce40c15299b22e609582068ae163e02e8cbfdf9d",
+   "flags": [
+    "descriptive-only",
+    "sanitizer-corrected"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": 432,
+   "class_corrected_to": "MID",
+   "deviation_ref": null
+  },
+  "fleet_INT_15_int_sumsq": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "fbf54ddf46bfb28c1b3882437615a9835854b4a6e9b625773829d25bc53a3d57",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_16_int_max32": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "3c9b94811ae814b0c850854f2e30a8ff670f3426672533a6fde981b30d8e488b",
+   "flags": [
+    "descriptive-only",
+    "sanitizer-corrected"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": 432,
+   "class_corrected_to": "MID",
+   "deviation_ref": null
+  },
+  "fleet_INT_17_int_revsum": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "06d7231c76bae714b041425f041aa0cde62f06c170e0ad385cb23e7710fef3af",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_18_int_horner64_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "425d94a0a7d9e11e61b5acf1e5c067473db02fda6d3a60575d7a2b4e82d8588a",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_19_int_horner32": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "4f16e1b0ad40ef8077c2252da8865f750953b96e2c5eb7c006e3e467a261a2b9",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_20_int_sum64_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e21773fb958f7a546b97f08a0415b8a9eebc74ff8d0e79c8a0ae63c916942d88",
+   "flags": [
+    "conformant",
+    "sanitizer-corrected"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": 432,
+   "class_corrected_to": "MID",
+   "deviation_ref": null
+  },
+  "fleet_INT_21_int_min32_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "1b8b840ec22bdd885f3de30a9b94cf42ac5ec4582599d883a2992918026f1e8e",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_22_int_sumsq_r10": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d0a1e55319cfa8e96b8ec0f29c9245b32277e7e21afd0e1ef0bbc41fe8d269ac",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_23_int_max32_r6": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "cd0df4139176698ad9a674ebd74e00a9e83bd1af3f63cec905592251013df089",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_24_int_revsum_r9": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "c0103c3f32dcf0f3a87f2e065d4497d77c0ef4c0b4c7c926e1b76b9a76dc44ee",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_H_200_int_horner32": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "3fffefaba8f290cedbd7f58f676059afde19b4777d50c3a19d6f44b7a8255456",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": "H-ext",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_H_201_int_horner64": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "5f86364800d16ec9f8ed445b33bb016098f9da3ba48e6c3776225025ac1ce454",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": "H-ext",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_INT_H_202_int_revsum": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "93bfbcf4ea552219ad9bd01aa6a362c41dbcd1602374b8446b56eaab3c112f8c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": "H-ext",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_06_lev_csr": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "605515e008f69c4c13cb73934194a7007adc1a93bb10327a3f255bd482a5c5b8",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_07_lev_modconst": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "68f93905acb671e5c67ab738cdfcbe6bc091dc017fa02e4dd12066e3f9a506b7",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_08_lev_sqrtmap": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "9a9f8202beb315e31bda564deee81117fdf734632f90a05f26ec72b1ea64227d",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_09_lev_clipmap": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "32acdc09ced97c4b294a100f5014cd08f5da4d1791e73d00220b505d8c03cb38",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_10_lev_strided": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "6c0b179e6e128af4877d8bce720b05522edf879dbfe5dca3def8cf93857e7d3c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_11_lev_axpy": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "85d9b29f2dd78e3850a4929021cffe60b3021696ac224324dbe2264a37e72c54",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_12_lev_csr": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "737e74f8c5bba981b2f5f27b9e606a5906b44d947cc3500d5f3e54c6482c0517",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_13_lev_modconst_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "ebd2cfa66bf99f3d5d1f3e0f31bd034f285aa31ac4eb398b7e414bbdb47f475d",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_14_lev_sqrtmap": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "dfd57a7857cf6a6c0c1ac0e9a6060c3480abfbc11ff50f6a64ccc2d2a3c6c144",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_15_lev_clipmap_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "6d6067cc7905a5db1c1c982fd3bda2caf2cbf550aa36e4d638be81bcf4e72573",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_16_lev_strided_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "c128eef89c7ab59cb8ecebe90b79c6590aa4b748a9c32a192def22ec2c0e32a4",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_17_lev_axpy": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "08964c2d5a238ce7a8fe3802656928964cce529a412c44c87e7fead78119364d",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_18_lev_csr_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e8b16591ed111e08267d3187c6039f3eb796d10656ae63149359fd1bc4e96c41",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_19_lev_modconst_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "98a0b96bd2f8ec429fbaebcc82715dd548f3c83483f5246e7c034ae4f7596558",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_20_lev_sqrtmap_r4": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "184e4df9e739f78a64572ab44f4a7755f77a273079624c95bda166084a0ccd45",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_21_lev_clipmap_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "94d5bb029ba6ef7255edf51a0944b22668320248d89cc2f86de5468c7c973eab",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_22_lev_strided_r7": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "db05ec93c42ece49860b27a796f9f6fde7c2c3fff3f5a5e77e977c838764a3a3",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_23_lev_axpy_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "b158ca81c48b322dd79d214ed4bf570fd88be9e4df7009d3e05f4e88f596900d",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_24_lev_csr_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "f52a207592ebf7ab5c5b6adb9abaae8ca5d1300ffde873ffd5c4d0860f3b7202",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_25_lev_modconst_r5": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "3ab2173770dc8d4fe65ffd825e45477c542684c2172778e5c039ba4c6a5ef8bb",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_26_lev_sqrtmap_r6": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d5e46266c744cd0665b4c0b7bb927bcfeed724e91e6a69885a57387722b7a95f",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_27_lev_clipmap_r11": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "614d3de26a0a56ca24f3e537355e0be7a53b724fa1fa4207f7a4c87f2a883846",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_28_lev_strided_r11": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "7c693295fe3d0fb42e835d7e68385990b9db4801a612487a034fb45eb6e9b188",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_29_lev_axpy_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "9b8fe471e9079bc6a0db503cd0be217be378989c876dda7597530b45a7601e39",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_30_lev_csr_r7": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "f7296e4a9c6467503f9aa44933624ad769c9575edff2d7a17a8d5cd8c5255586",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_32_lev_sqrtmap_r8": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "b5430dce0ecfc32bff3cd0bd36056ad60f399c2a93b4b75c010ab5bd4cd97a54",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_200_lev_modconst_r3": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "0642869c24655852bd01cce771f5f91da930979d5b7d69cafc7934a35632f367",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": "H-orig",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_201_lev_csr": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "204c1621d5e8f36c6b097d97b398e42f9b9b5216a573a0168e9afbbbb1abcdd1",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": "H-orig",
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_202_lev_modconst_r3": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "e51913aed5d44fc9bcf573229e297bd5c3ee13a55c1d8f4850d5ff2992bbfb7a",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": "H-orig",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_203_lev_csr_r1": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "74df699d27b7feb54e5a45ec37f35209177c2f6576ccd7d5673a12cbc2492ad8",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": false,
+   "provenance": "H-orig",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_50_lev_csr": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "1830a0e81b19e4a8ef0400c0720d756577fd473448190a4ade698ca53f0140ad",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_50_lev_modconst": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "c387841955358ddc629e40c842e36c1c01e2b19d3095241ae66cf7b5e00d3435",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_51_lev_csr": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "6c72897cad228cefbcdad287ef515d2b41fd87237e48989e7503a46e2c398e90",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_51_lev_modconst": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d81fe2719d76ad1151b0cc839976926d748d085ca14a1e94b3516fea02b01ddf",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_LEVER_SEP_W2_52_lev_axpy_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "a012047f24b46f0f0c2da6bdf14aa4d1ef6886a8998a9bf8608396cf5607314f",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_06_mid_gatherpoly": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "f96831b5cb8ec562eaa092c7e92737b435b514d7db3b490caedc2c17425cb414",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_07_mid_hist": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "3b75a4f2293209d7cbe7ce2a6e7b6b3e7b43265cd99efca5400bba2fb36f0d23",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_08_mid_branchy": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d887fe338600142123b558e3a1c117dd432ff84512aefeb2227316d97d7ce676",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_09_mid_stencil": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "976bd5d9fac95cf2c51c4902dd5ec2b82fe833aa00e30174889771f26fcbb510",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_10_mid_convert": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d47c64209c1a93b4025095cd6b531f1ced692335c4274e47e4f39411b569faa5",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_11_mid_gatherpoly_deep": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "17de41e1b43bf7485ffb3db8d2b9ae528ca395f5989acc4a84d9009ad6dd0d38",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_12_mid_gatherpoly": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d6f2955d990b3a7ab407fd65c367c778b68ccc12b70f2280ebbbd129266d8cd8",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_13_mid_hist_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "c3a907d8e27e6aa19567b20ae07e9fb67453a21e2b454457c641db40c04cc239",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_14_mid_branchy": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "f28eaa18f16a7ee8e57f7897b6777f4b42963ca203080265d9bb04643757f12b",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_15_mid_stencil_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "f43847fdd875d11308a56ae1d138cb7fe0d2c1b69b449edd1f748ec8d9fa7f1f",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_16_mid_convert_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e10c5826c5ab24506ce552adb5a2dec227f012fa80418d2f58b29ecaecd3693f",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_17_mid_gatherpoly_deep_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "94ea498219747306cfaa3c7221e56dcb0b979eea9b2e9ac17f1700f0806abb07",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_18_mid_gatherpoly_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "a9a65c5705acbf714f37534f716c25b90c448611f709bd465743fb15064dbbc4",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_19_mid_hist_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "d90915ee2ad19162f5b9933f51ca0fec9d9bc17217d03be79ba2cedb49e821fa",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_20_mid_branchy_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "7d5837a858bb8c33feb38c496ea2068526850eb1797f864913c818458c2c7b12",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_21_mid_stencil_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e889acbc77c0dd60288de3eddad6369405d6dd8bc52fabe7150544ed87347fb6",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_22_mid_convert_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "516aa8863e2ccec852d108786ffd6107c2e9167fa872d4c2761f16599b945ea8",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_23_mid_gatherpoly_deep_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "33385967da6480b3200e415b0f6b445d6a94db498bedcaa7a8b2a95d3659c148",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_24_mid_gatherpoly_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "768530e18edd50bef4c5b1c6548ce087a9f89f4c88e7cecdb792289aafc803a0",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_25_mid_hist_r5": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "64093f7d90e623cb359253b59f0b2e1659c42524bbaefff1f1214b6669c81d30",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_26_mid_branchy_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "9f23a311d259d47c357076b5077a18ec5308d010f3674b4874102132e240fd9b",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_27_mid_stencil_r7": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "50adc7c18305cc16ee95a11a81d28ac383bc87d06901e461751f1f8dc3f27e81",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_28_mid_convert_r5": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "191b41ce66d591bf3eaef2af6450608008aefdcac10c74f1bc453ac914c33033",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_29_mid_gatherpoly_deep_r7": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "db2cecd4ac4ae4665d7c05e8dad34b3121e1c70e32849241fa7b58aa9e59473f",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT+FM",
+   "cell_uncorrected": "FLAT+FM",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_30_mid_gatherpoly_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "9474c932697a43dddec21f27f767e689281c7aa12cfec42d0a42d0b677853494",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_31_mid_hist_r10": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "548f46da37c954cc739f8dd52093b74b286c4ca8a621e1b0140980f49d132580",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_32_mid_branchy_r6": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "7a658b56ef58bb392188eccf3750064e9b8b266ae087cf1c0e471961e49b09af",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_33_mid_stencil_r11": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "fb99218dd7cf187d15e402d64f2323523abaeb1475185971382abf8e88f6d838",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_34_mid_convert_r7": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "3d72ec90a20d647ef605a33506fedb99fea44d275eb9d9b835760f94e9a14345",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_200_mid_gatherpoly_r2": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "12c4a3ba70ccb3cb708d728b8c8ab09e80038912ee8e24083add277f8a449e4d",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": "H-orig",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_201_mid_hist_r4": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "32be194b5a52738974dbc2787c31fd3b4f9deab336fc1566b6e84c9cfaead65b",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": "H-orig",
+   "wave": null,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_202_mid_gatherpoly_r2": {
+   "role": "holdout-H",
+   "in_v1_freeze": false,
+   "table_sha256": "64fdfd2513e96fdf1f4a3adef337ab10ce1ca3c1c9c7ea96328924b8177db652",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": false,
+   "provenance": "H-orig",
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_50_mid_gatherpoly_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "4ae97b9147fd479e1961218dd0cb9095ee880d8e671909fd9f96ab174b820f06",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_50_mid_hist_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e3a461409e12dc63d5a008bf5d6e8a5ce01aa964606a6770f8ecbbfbf458bb2a",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_51_mid_gatherpoly": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e807555604991fdc41604b1989a51e6bc7a923085ea4a66bf0c6704fd557e1fc",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_51_mid_hist": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "fcb3a3e7d10d64302476975eea5216f972d789c9fef3eb0c9d7d71fc916d56e0",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_52_mid_gatherpoly_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "c597e6d54eb1fc5eb468b2d30f3a8addcf01549b071f43ef88c1cff92dc5c786",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_52_mid_hist_r3": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "1bc2dcdaca471e0f6f284a762469c593b3e0087ba045d3ff39ef480bb90fd648",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_53_mid_gatherpoly": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "ad9291402375382b6e8a1fe37b7e00c322bc9ce027b4347abbe6423be8468929",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_53_mid_hist_r4": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "65bd682b293d06080a30cacdf893820996d7fa35c88d2fc8ad460c50b99304ef",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_54_mid_gatherpoly_r1": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "09976a50f8de7a882b9781d776ec8259fff0bb1bb807420b7f170b2e2d9505a5",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": false,
+   "flag_FEAS": true,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_MID_W2_55_mid_hist_r4": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "e3c37102030273511b85f9ac1f111196ac255a15723dce929d74a0bda49b0b73",
+   "flags": [
+    "descriptive-only"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": false,
+   "provenance": null,
+   "wave": 2,
+   "flag_FM": true,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_NULL_06_null_chase": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "b010a2a12161c921f694273804a7cf8369b4397fc915623dbe99e4ca289d1a6b",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_NULL_07_null_inplace": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "6ca181d96d0b5ebbac16cc3a6834ada260c3af166c51dac6b32cc3e39f83d72d",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_NULL_08_null_chasepay": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "ca0e8abdf97dd40203176b6ca8a13754671ae6337cd5b3c3adfde590588e9e57",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_NULL_09_null_fpchain": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "b9e762edb8ca756ad7917c7c761f80f91b34bff8117da1ef9966c8c5fb23b8fe",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_NULL_10_null_chase_r2": {
+   "role": "training",
+   "in_v1_freeze": true,
+   "table_sha256": "337531547db785abb60c6dcae9b8d7e998571f1b4c1fdc45d097f367d1d8768c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "INT",
+   "cell_uncorrected": "INT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_R_01_csr": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "006e31efad6d55ce15d5d475c2c4ba0a0f55b59c9afa347c0b2c5ce96fedb77b",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_R_02_pava": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "65ec0200a64bdc5da69680c144c70c694da1c9ebc113b4c79f317276af80650e",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_R_03_lda": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "c98d309f975a732612b3bdc4d0e09ff130e5ea6ec6363e7739bdfb1f93b06619",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_R_04_binning": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "812a0d5b0393fa8a6f619c15a08a06432c9477435bea7db9405238a43773fce7",
+   "flags": [
+    "conformant",
+    "scale-band-deviation"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": "DEV-4"
+  },
+  "fleet_R_05_ppoly": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "557f7d95f20290792e4e7465325bc61ddaa684ef54ad8ca8cbaeb0560720a0da",
+   "flags": [
+    "directive-partial"
+   ],
+   "cell": "FLAT",
+   "cell_uncorrected": "FLAT",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": "DEV-3"
+  },
+  "fleet_R_06_floyd": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "48dd108aaf28560c4729602b35284742203979f676ed075b515e587f3772b783",
+   "flags": [
+    "directive-partial"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": "DEV-3"
+  },
+  "fleet_R_07_cc": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "46d7205264bd4d6ff8cca322f44aaa16817166d78df6e7fb1e012e575a04527b",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_R_08_elkan": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "f043f41b9011fbeb66e084be7e5ded4e01e5507c89b2b0c1f5d1d33bb075d25d",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "LEVER-SEP",
+   "cell_uncorrected": "LEVER-SEP",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  },
+  "fleet_R_09_predictor": {
+   "role": "R-anchor",
+   "in_v1_freeze": false,
+   "table_sha256": "9dcfd2086f5dbb37fde152b61dbe09428a7dd90cfff604959a6c64b76bb5bf5c",
+   "flags": [
+    "conformant"
+   ],
+   "cell": "MID",
+   "cell_uncorrected": "MID",
+   "agreement_binary_ok": true,
+   "provenance": null,
+   "wave": null,
+   "flag_FM": false,
+   "flag_FEAS": false,
+   "sanitizer_cells_overlaid": null,
+   "class_corrected_to": null,
+   "deviation_ref": null
+  }
+ },
+ "recompute": "podman run --rm --security-opt label=disable -v \"$PWD\":/w -w /w -e PYTHONPATH=/w/src localhost/motifbo-env:phase1 python3 scripts/phasep/freeze_manifest_v2.py"
+}

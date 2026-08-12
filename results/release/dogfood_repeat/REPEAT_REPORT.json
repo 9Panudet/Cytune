@@ -1,0 +1,1110 @@
+{
+ "arms": [
+  "D",
+  "P"
+ ],
+ "n_rows": 90,
+ "arm_D": {
+  "per_anchor": {
+   "fleet_R_01_csr": {
+    "regret": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "emitted": [
+     1392,
+     1392,
+     1392,
+     1392,
+     1392
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     404.3,
+     384.2,
+     387.5,
+     383.3,
+     385.7
+    ],
+    "k": 5,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "1392": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_02_pava": {
+    "regret": [
+     0.014089227868102183,
+     0.014089227868102183,
+     0.014089227868102183,
+     0.014089227868102183,
+     0.0171912440259403
+    ],
+    "emitted": [
+     1383,
+     1383,
+     1383,
+     1383,
+     1392
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     173.2,
+     171.6,
+     168.6,
+     168.1,
+     168.9
+    ],
+    "k": 5,
+    "median": 0.014089227868102183,
+    "min": 0.014089227868102183,
+    "max": 0.0171912440259403,
+    "spread_pp": 0.31020161578381167,
+    "config_counts": {
+     "1383": 4,
+     "1392": 1
+    },
+    "n_distinct_configs": 2,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_03_lda": {
+    "regret": [
+     0.009447808153054238,
+     0.009447808153054238,
+     0.009447808153054238,
+     0.009447808153054238,
+     0.009447808153054238
+    ],
+    "emitted": [
+     1392,
+     1392,
+     1392,
+     1392,
+     1392
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     145.4,
+     149.6,
+     145.1,
+     151.4,
+     145.3
+    ],
+    "k": 5,
+    "median": 0.009447808153054238,
+    "min": 0.009447808153054238,
+    "max": 0.009447808153054238,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "1392": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_04_binning": {
+    "regret": [
+     0.018499550830406886,
+     0.018499550830406886,
+     0.018499550830406886,
+     0.018499550830406886,
+     0.018499550830406886
+    ],
+    "emitted": [
+     198,
+     198,
+     198,
+     198,
+     198
+    ],
+    "cfg": [
+     49,
+     49,
+     49,
+     49,
+     49
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     268.9,
+     270.5,
+     265.8,
+     265.4,
+     268.5
+    ],
+    "k": 5,
+    "median": 0.018499550830406886,
+    "min": 0.018499550830406886,
+    "max": 0.018499550830406886,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "198": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 49,
+    "cfg_range": [
+     49,
+     49
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_05_ppoly": {
+    "regret": [
+     0.007771696912869164,
+     0.00801552321711907,
+     0.00801552321711907,
+     0.00801552321711907,
+     0.007771696912869164
+    ],
+    "emitted": [
+     1176,
+     1392,
+     1392,
+     1392,
+     1176
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     179.8,
+     181.7,
+     181.2,
+     180.9,
+     181.7
+    ],
+    "k": 5,
+    "median": 0.00801552321711907,
+    "min": 0.007771696912869164,
+    "max": 0.00801552321711907,
+    "spread_pp": 0.02438263042499056,
+    "config_counts": {
+     "1176": 2,
+     "1392": 3
+    },
+    "n_distinct_configs": 2,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_06_floyd": {
+    "regret": [
+     0.05404495494790629,
+     0.05404495494790629,
+     0.05404495494790629,
+     0.05404495494790629,
+     0.05404495494790629
+    ],
+    "emitted": [
+     786,
+     786,
+     786,
+     786,
+     786
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     163.6,
+     166.4,
+     172.2,
+     162.0,
+     162.7
+    ],
+    "k": 5,
+    "median": 0.05404495494790629,
+    "min": 0.05404495494790629,
+    "max": 0.05404495494790629,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "786": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_07_cc": {
+    "regret": [
+     0.007933865517061989,
+     0.007933865517061989,
+     0.007933865517061989,
+     0.007933865517061989,
+     0.007933865517061989
+    ],
+    "emitted": [
+     1371,
+     1371,
+     1371,
+     1371,
+     1371
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     224.8,
+     222.5,
+     212.7,
+     211.3,
+     213.4
+    ],
+    "k": 5,
+    "median": 0.007933865517061989,
+    "min": 0.007933865517061989,
+    "max": 0.007933865517061989,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "1371": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_08_elkan": {
+    "regret": [
+     0.05411972229607809,
+     0.09790880966323234,
+     0.05411972229607809,
+     0.05411972229607809,
+     0.05411972229607809
+    ],
+    "emitted": [
+     1389,
+     1392,
+     1389,
+     1389,
+     1389
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     672.4,
+     676.6,
+     670.5,
+     673.3,
+     661.7
+    ],
+    "k": 5,
+    "median": 0.05411972229607809,
+    "min": 0.05411972229607809,
+    "max": 0.09790880966323234,
+    "spread_pp": 4.378908736715426,
+    "config_counts": {
+     "1389": 4,
+     "1392": 1
+    },
+    "n_distinct_configs": 2,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_09_predictor": {
+    "regret": [
+     0.05096893560278426,
+     0.014998828229040306,
+     0.014998828229040306,
+     0.05096893560278426,
+     0.08210542334555537
+    ],
+    "emitted": [
+     1398,
+     1380,
+     1380,
+     1398,
+     1401
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     270.1,
+     269.5,
+     270.5,
+     270.2,
+     267.5
+    ],
+    "k": 5,
+    "median": 0.05096893560278426,
+    "min": 0.014998828229040306,
+    "max": 0.08210542334555537,
+    "spread_pp": 6.710659511651507,
+    "config_counts": {
+     "1398": 2,
+     "1380": 2,
+     "1401": 1
+    },
+    "n_distinct_configs": 3,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   }
+  },
+  "fleet_medians": {
+   "1": 0.014089227868102183,
+   "2": 0.014089227868102183,
+   "3": 0.014089227868102183,
+   "4": 0.014089227868102183,
+   "5": 0.0171912440259403
+  },
+  "median_of_medians": 0.014089227868102183,
+  "fleet_median_range": [
+   0.014089227868102183,
+   0.0171912440259403
+  ],
+  "worst_per_replicate": {
+   "1": 0.05411972229607809,
+   "2": 0.09790880966323234,
+   "3": 0.05411972229607809,
+   "4": 0.05411972229607809,
+   "5": 0.08210542334555537
+  }
+ },
+ "arm_P": {
+  "per_anchor": {
+   "fleet_R_01_csr": {
+    "regret": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "emitted": [
+     1392,
+     1392,
+     1392,
+     1392,
+     1392
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     365.6,
+     363.5,
+     370.2,
+     371.3,
+     371.2
+    ],
+    "k": 5,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "1392": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_02_pava": {
+    "regret": [
+     0.012456749952025614,
+     0.012456749952025614,
+     0.012456749952025614,
+     0.012456749952025614,
+     0.012456749952025614
+    ],
+    "emitted": [
+     1374,
+     1374,
+     1374,
+     1374,
+     1374
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     166.9,
+     170.6,
+     165.6,
+     164.5,
+     165.6
+    ],
+    "k": 5,
+    "median": 0.012456749952025614,
+    "min": 0.012456749952025614,
+    "max": 0.012456749952025614,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "1374": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_03_lda": {
+    "regret": [
+     0.006074202572764031,
+     0.006074202572764031,
+     0.0049751885118001216,
+     0.006074202572764031,
+     0.0049751885118001216
+    ],
+    "emitted": [
+     1389,
+     1389,
+     957,
+     1389,
+     957
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     146.9,
+     140.2,
+     142.4,
+     148.0,
+     154.3
+    ],
+    "k": 5,
+    "median": 0.006074202572764031,
+    "min": 0.0049751885118001216,
+    "max": 0.006074202572764031,
+    "spread_pp": 0.10990140609639099,
+    "config_counts": {
+     "1389": 3,
+     "957": 2
+    },
+    "n_distinct_configs": 2,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_04_binning": {
+    "regret": [
+     0.021110872817836412,
+     0.026635139112298534,
+     0.02299855898718106,
+     0.021748902360630318,
+     0.021748902360630318
+    ],
+    "emitted": [
+     465,
+     1323,
+     513,
+     105,
+     105
+    ],
+    "cfg": [
+     49,
+     49,
+     49,
+     49,
+     49
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     266.4,
+     264.4,
+     260.6,
+     269.6,
+     269.6
+    ],
+    "k": 5,
+    "median": 0.021748902360630318,
+    "min": 0.021110872817836412,
+    "max": 0.026635139112298534,
+    "spread_pp": 0.5524266294462121,
+    "config_counts": {
+     "465": 1,
+     "1323": 1,
+     "513": 1,
+     "105": 2
+    },
+    "n_distinct_configs": 4,
+    "cfg_median": 49,
+    "cfg_range": [
+     49,
+     49
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_05_ppoly": {
+    "regret": [
+     0.00801552321711907,
+     0.00801552321711907,
+     0.00801552321711907,
+     0.00801552321711907,
+     0.00801552321711907
+    ],
+    "emitted": [
+     1392,
+     1392,
+     1392,
+     1392,
+     1392
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     179.3,
+     186.4,
+     183.9,
+     179.9,
+     185.0
+    ],
+    "k": 5,
+    "median": 0.00801552321711907,
+    "min": 0.00801552321711907,
+    "max": 0.00801552321711907,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "1392": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_06_floyd": {
+    "regret": [
+     0.013238120734521353,
+     0.004396803434130181,
+     0.004396803434130181,
+     0.013238120734521353,
+     0.013238120734521353
+    ],
+    "emitted": [
+     363,
+     1659,
+     1659,
+     363,
+     363
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     152.2,
+     162.9,
+     161.5,
+     157.7,
+     157.4
+    ],
+    "k": 5,
+    "median": 0.013238120734521353,
+    "min": 0.004396803434130181,
+    "max": 0.013238120734521353,
+    "spread_pp": 0.8841317300391172,
+    "config_counts": {
+     "363": 3,
+     "1659": 2
+    },
+    "n_distinct_configs": 2,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_07_cc": {
+    "regret": [
+     0.005026552679448182,
+     0.006626374622616504,
+     0.007933865517061989,
+     0.00919144032580399,
+     0.009569628751391779
+    ],
+    "emitted": [
+     1479,
+     1587,
+     1371,
+     1392,
+     1383
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     213.0,
+     206.2,
+     209.7,
+     205.5,
+     203.6
+    ],
+    "k": 5,
+    "median": 0.007933865517061989,
+    "min": 0.005026552679448182,
+    "max": 0.009569628751391779,
+    "spread_pp": 0.4543076071943597,
+    "config_counts": {
+     "1479": 1,
+     "1587": 1,
+     "1371": 1,
+     "1392": 1,
+     "1383": 1
+    },
+    "n_distinct_configs": 5,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_08_elkan": {
+    "regret": [
+     0.003204670812068544,
+     0.003204670812068544,
+     0.003204670812068544,
+     0.003204670812068544,
+     0.003204670812068544
+    ],
+    "emitted": [
+     966,
+     966,
+     966,
+     966,
+     966
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     662.7,
+     663.6,
+     649.5,
+     657.6,
+     655.5
+    ],
+    "k": 5,
+    "median": 0.003204670812068544,
+    "min": 0.003204670812068544,
+    "max": 0.003204670812068544,
+    "spread_pp": 0.0,
+    "config_counts": {
+     "966": 5
+    },
+    "n_distinct_configs": 1,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   },
+   "fleet_R_09_predictor": {
+    "regret": [
+     0.015219569369418373,
+     0.015219569369418373,
+     0.015219569369418373,
+     0.015219569369418373,
+     0.014998828229040306
+    ],
+    "emitted": [
+     1596,
+     1596,
+     1596,
+     1596,
+     1380
+    ],
+    "cfg": [
+     33,
+     33,
+     33,
+     33,
+     33
+    ],
+    "verdict": [
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement",
+     "improvement"
+    ],
+    "wall": [
+     259.5,
+     257.3,
+     257.5,
+     256.0,
+     260.7
+    ],
+    "k": 5,
+    "median": 0.015219569369418373,
+    "min": 0.014998828229040306,
+    "max": 0.015219569369418373,
+    "spread_pp": 0.02207411403780668,
+    "config_counts": {
+     "1596": 4,
+     "1380": 1
+    },
+    "n_distinct_configs": 2,
+    "cfg_median": 33,
+    "cfg_range": [
+     33,
+     33
+    ],
+    "verdict_stable": true
+   }
+  },
+  "fleet_medians": {
+   "1": 0.00801552321711907,
+   "2": 0.006626374622616504,
+   "3": 0.007933865517061989,
+   "4": 0.00919144032580399,
+   "5": 0.009569628751391779
+  },
+  "median_of_medians": 0.00801552321711907,
+  "fleet_median_range": [
+   0.006626374622616504,
+   0.009569628751391779
+  ],
+  "worst_per_replicate": {
+   "1": 0.021110872817836412,
+   "2": 0.026635139112298534,
+   "3": 0.02299855898718106,
+   "4": 0.021748902360630318,
+   "5": 0.021748902360630318
+  }
+ },
+ "bound": {
+  "per_anchor_spread_pp": {
+   "fleet_R_01_csr": 0.0,
+   "fleet_R_02_pava": 0.31020161578381167,
+   "fleet_R_03_lda": 0.0,
+   "fleet_R_04_binning": 0.0,
+   "fleet_R_05_ppoly": 0.02438263042499056,
+   "fleet_R_06_floyd": 0.0,
+   "fleet_R_07_cc": 0.0,
+   "fleet_R_08_elkan": 4.378908736715426,
+   "fleet_R_09_predictor": 6.710659511651507
+  },
+  "S_pp": 6.710659511651507,
+  "S_median_pp": 0.0,
+  "S_fleet_pp": 0.31020161578381167,
+  "B_anchor_pp": 6.710659511651507,
+  "B_fleet_pp": 0.31020161578381167,
+  "bound_loosened": true,
+  "formula": "B_anchor = max(max_a spread_a, 1.0 pp); B_fleet = max(spread of fleet median, 0)"
+ },
+ "a3": {
+  "findings": [],
+  "table": [
+   {
+    "kernel": "fleet_R_01_csr",
+    "D_median": 0.0,
+    "P_median": 0.0,
+    "delta_pp": 0.0,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_02_pava",
+    "D_median": 0.014089227868102183,
+    "P_median": 0.012456749952025614,
+    "delta_pp": -0.1632477916076569,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_03_lda",
+    "D_median": 0.009447808153054238,
+    "P_median": 0.006074202572764031,
+    "delta_pp": -0.33736055802902065,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_04_binning",
+    "D_median": 0.018499550830406886,
+    "P_median": 0.021748902360630318,
+    "delta_pp": 0.3249351530223432,
+    "D_cfg": 49,
+    "P_cfg": 49,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_05_ppoly",
+    "D_median": 0.00801552321711907,
+    "P_median": 0.00801552321711907,
+    "delta_pp": 0.0,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_06_floyd",
+    "D_median": 0.05404495494790629,
+    "P_median": 0.013238120734521353,
+    "delta_pp": -4.0806834213384935,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_07_cc",
+    "D_median": 0.007933865517061989,
+    "P_median": 0.007933865517061989,
+    "delta_pp": 0.0,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_08_elkan",
+    "D_median": 0.05411972229607809,
+    "P_median": 0.003204670812068544,
+    "delta_pp": -5.091505148400954,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   },
+   {
+    "kernel": "fleet_R_09_predictor",
+    "D_median": 0.05096893560278426,
+    "P_median": 0.015219569369418373,
+    "delta_pp": -3.5749366233365887,
+    "D_cfg": 33,
+    "P_cfg": 33,
+    "delta_cfg": 0
+   }
+  ]
+ }
+}

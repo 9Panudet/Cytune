@@ -1,0 +1,85 @@
+  training: 129 kernels  [7s]
+  holdout-H: 11 kernels  [7s]
+  R-anchor: 9 kernels  [8s]
+  training: 129 kernels  [7s]
+  holdout-H: 11 kernels  [7s]
+  R-anchor: 9 kernels  [8s]
+
+=== ALL 149 ===
+ budget   D median   P median     delta   D worst   P worst   D cfg   P cfg
+ routed   1.2457%   0.1669%   -1.079p  41.801%  41.869%    5136    5136
+      8   1.5760%   0.5027%   -1.073p 155.905%  41.869%    3472    3472
+     16   1.8108%   0.2889%   -1.522p  41.801%  41.869%    4560    4560
+     17   1.3651%   0.2733%   -1.092p  80.661%  41.869%    4696    4696
+     24   1.0838%   0.0745%   -1.009p  41.869%  41.869%    5648    5648
+     32   0.2272%   0.0183%   -0.209p  41.801%  41.706%    6736    6736
+     40   0.0723%   0.0024%   -0.070p  41.706%  17.230%    7824    7824
+     64   0.0000%   0.0002%   +0.000p   5.913%  17.230%   11088   11088
+    128   0.0000%   0.0000%   +0.000p   4.870%   4.742%   19792   19792
+
+=== holdout-H (11) ===
+ budget   D median   P median     delta   D worst   P worst   D cfg   P cfg
+ routed   0.8194%   0.2439%   -0.576p   7.918%   5.633%     408     408
+      8   4.7172%   1.8361%   -2.881p  70.386%   5.633%     264     264
+     16   2.4628%   0.7468%   -1.716p   9.030%   5.633%     352     352
+     17   0.3544%   0.7468%   +0.392p  15.594%   5.633%     363     363
+     24   0.8194%   0.2439%   -0.576p  10.892%   5.633%     440     440
+     32   0.2704%   0.2439%   -0.027p   4.568%   5.633%     528     528
+     40   0.1989%   0.2439%   +0.045p   3.255%   5.633%     616     616
+     64   0.0000%   0.0000%   +0.000p   2.195%   0.512%     880     880
+    128   0.0000%   0.0000%   +0.000p   0.512%   0.512%    1584    1584
+
+=== R-anchors (9) ===
+ budget   D median   P median     delta   D worst   P worst   D cfg   P cfg
+ routed   1.2457%   0.4975%   -0.748p   5.412%   2.111%     304     304
+      8   1.2457%   0.8016%   -0.444p   8.211%   4.819%     216     216
+     16   1.2457%   0.4975%   -0.748p   5.412%   2.111%     288     288
+     17   1.2457%   0.4975%   -0.748p   5.576%   2.111%     297     297
+     24   0.9448%   0.0839%   -0.861p   8.211%   2.111%     360     360
+     32   0.5670%   0.0839%   -0.483p   5.097%   2.111%     432     432
+     40   0.3110%   0.0839%   -0.227p   1.850%   2.046%     504     504
+     64   0.0000%   0.0839%   +0.084p   1.850%   0.870%     720     720
+    128   0.0000%   0.0000%   +0.000p   1.850%   0.870%    1296    1296
+
+=== training (129) ===
+ budget   D median   P median     delta   D worst   P worst   D cfg   P cfg
+ routed   1.3107%   0.1360%   -1.175p  41.801%  41.869%    4424    4424
+      8   1.4669%   0.3910%   -1.076p 155.905%  41.869%    2992    2992
+     16   1.7506%   0.1793%   -1.571p  41.801%  41.869%    3920    3920
+     17   1.3686%   0.1793%   -1.189p  80.661%  41.869%    4036    4036
+     24   1.1379%   0.0520%   -1.086p  41.869%  41.869%    4848    4848
+     32   0.2002%   0.0050%   -0.195p  41.801%  41.706%    5776    5776
+     40   0.0643%   0.0018%   -0.063p  41.706%  17.230%    6704    6704
+     64   0.0000%   0.0002%   +0.000p   5.913%  17.230%    9488    9488
+    128   0.0000%   0.0000%   +0.000p   4.870%   4.742%   16912   16912
+
+=== B1 fleet gate, probe-as-screen vs the committed default baseline ===
+  F2: 1 finding(s)   e.g. worst-case regret 5.9126% -> 17.2299% (+11.317 pp, allowance 1.000 pp)
+  F3: 17 finding(s)   e.g. fleet_INT_15_int_sumsq: 1.3107% -> 27.6333% (+26.323 pp > 5.0 pp)
+  verdict: FAIL
+
+=== the 17 F3 cells in full ===
+   budget=routed fleet_INT_15_int_sumsq: 1.3107% -> 27.6333% (+26.323 pp > 5.0 pp)
+   budget=routed fleet_MID_30_mid_gatherpoly_r2: 1.6557% -> 9.9755% (+8.320 pp > 5.0 pp)
+   budget=     8 fleet_INT_14_int_min32: 3.4545% -> 31.8197% (+28.365 pp > 5.0 pp)
+   budget=     8 fleet_INT_15_int_sumsq: 1.1338% -> 27.6333% (+26.500 pp > 5.0 pp)
+   budget=     8 fleet_INT_16_int_max32: 3.3453% -> 31.7680% (+28.423 pp > 5.0 pp)
+   budget=     8 fleet_INT_20_int_sum64_r3: 2.9567% -> 31.6208% (+28.664 pp > 5.0 pp)
+   budget=     8 fleet_MID_W2_52_mid_hist_r3: 0.0000% -> 5.1644% (+5.164 pp > 5.0 pp)
+   budget=    16 fleet_INT_15_int_sumsq: 1.3107% -> 27.6333% (+26.323 pp > 5.0 pp)
+   budget=    16 fleet_MID_14_mid_branchy: 0.0000% -> 7.1143% (+7.114 pp > 5.0 pp)
+   budget=    17 fleet_INT_15_int_sumsq: 3.3863% -> 27.6333% (+24.247 pp > 5.0 pp)
+   budget=    24 fleet_INT_15_int_sumsq: 3.0085% -> 27.6333% (+24.625 pp > 5.0 pp)
+   budget=    24 fleet_MID_30_mid_gatherpoly_r2: 1.6557% -> 9.9755% (+8.320 pp > 5.0 pp)
+   budget=    32 fleet_MID_24_mid_gatherpoly_r2: 4.2436% -> 17.8574% (+13.614 pp > 5.0 pp)
+   budget=    32 fleet_MID_W2_202_mid_gatherpoly_r2: 0.3582% -> 5.6333% (+5.275 pp > 5.0 pp)
+   budget=    40 fleet_MID_24_mid_gatherpoly_r2: 4.2436% -> 17.2299% (+12.986 pp > 5.0 pp)
+   budget=    40 fleet_MID_W2_202_mid_gatherpoly_r2: 0.3582% -> 5.6333% (+5.275 pp > 5.0 pp)
+   budget=    64 fleet_MID_24_mid_gatherpoly_r2: 4.2436% -> 17.2299% (+12.986 pp > 5.0 pp)
+
+=== F2 ===
+   budget=    64 worst-case regret 5.9126% -> 17.2299% (+11.317 pp, allowance 1.000 pp)
+
+  distinct kernels harmed: 9   roles: ['holdout-H', 'training']
+  any R-anchors harmed? NONE
+  any holdout-H harmed? ['fleet_MID_W2_202_mid_gatherpoly_r2']
