@@ -320,9 +320,14 @@ def test_the_drift_check_is_not_vacuously_skipping():
     if not os.path.isdir(STUDY):
         pytest.skip("study tree absent (standalone install) — TIER 2 cannot be checked here; "
                     "TIER 1 has already compared every vendored file against the manifest")
-    missing = [rel for rel in list(WHOLE_FILE.values()) + list(DATA_FILES.values())
-               + [v[0] for v in PER_FUNCTION.values()]
-               if not os.path.exists(os.path.join(REPO, rel))]
+    # The study CODE tree (`scripts/phasep`, `src/motifbo`) is on `dev` and `research`; the study
+    # DATA (`results/`) is on `research` only. Lumping them made this test fail on `dev` for a
+    # file that is not supposed to be there — found by running the suite from a clean clone of each
+    # branch, which is the only way that distinction shows up.
+    sources = list(WHOLE_FILE.values()) + [v[0] for v in PER_FUNCTION.values()]
+    if os.path.isdir(os.path.join(REPO, "results")):
+        sources += list(DATA_FILES.values())
+    missing = [rel for rel in sources if not os.path.exists(os.path.join(REPO, rel))]
     assert not missing, (
         f"the study tree is present but these mapped sources are gone: {missing}. The vendored "
         f"copies are now unpinned — update the mapping or restore the sources.")

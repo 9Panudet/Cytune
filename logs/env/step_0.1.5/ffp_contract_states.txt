@@ -1,5 +1,0 @@
-default   -ffp-contract=[off|on|fast] 		fast
-c17       -ffp-contract=[off|on|fast] 		fast
-gnu17     -ffp-contract=[off|on|fast] 		fast
-O2        -ffp-contract=[off|on|fast] 		fast
-Ofast     -ffp-contract=[off|on|fast] 		fast
