@@ -8,6 +8,16 @@ Everything here was observed from the CLI. Where a behaviour was not exercised, 
 
 ## 0. Getting started: `cytune init`
 
+**Want to see it work first?** The package ships a kernel and a driver you can point cytune at
+before writing your own:
+
+```bash
+python -c "import cytune, os; print(os.path.dirname(cytune.__file__) + '/examples')"
+cytune tune <that path>/running_max.pyx --driver <that path>/running_max_driver.py \
+       --target-ms 5 --preset quick
+```
+
+
 ```
 cytune init KERNEL.pyx [--driver PATH] [--force]
 ```
