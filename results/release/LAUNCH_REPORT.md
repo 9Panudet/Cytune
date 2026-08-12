@@ -1,6 +1,11 @@
 # LAUNCH_REPORT — cytune, the measurement pass before a public launch
 
-**Status: STOP FOR THE HUMAN.** Nothing is pushed. Nothing is tagged.
+**Status: LAUNCHED. Pushed and tagged by human authorization.**
+
+Released as **v1.1.0**, not v1.0.0: `v1.0.0` is already published against `0310bed`, and this
+release **refuses runs that one certified** — a degenerate correctness oracle (D26) and a
+calibration miss beyond the rig's resolution (D30). It is not the same product that tag names, so
+the tag was not moved.
 
 Governing pre-registration: `results/prereg/PREREG_LAUNCH.md`, committed (by sha256 pin) before any
 replicate of the repeated campaign existed. Nothing here changes a study number, a frozen table, or
@@ -278,6 +283,37 @@ missed by 125x"* where it used to certify 1.17×.
 *label*. The `[ok]/[warn]` column is what a user scans, and the row that owns the pinning claim gave
 the wrong answer on exactly the condition that makes results incomparable.
 
+### D31, D32 — the senior power-user gate (D2)
+
+Verdict: **adopt-with-caveats**. It read **zero lines of source** — docs, `--help` and `--json` were
+sufficient — and scripted a working CI wrapper first try. Two defects, both fixed.
+
+**D31 — the certificate said a flag the user typed was not typed.** With a `.cytune.toml` present
+and `--allow-fp-contract` on the command line, the rendered consent block printed *"that opt-in did
+NOT come from the command line you typed"* while the same document's JSON recorded
+`allow_fp_contract: "command line"`. The guard tested the provenance of **both** FP flags, so a
+config file merely *mentioning* `allow_fast_math` fired the note against a flag just typed.
+
+That is a **G7 violation on the consent block** — the guarantee that a self-contradicting
+certificate is never emitted, of exactly the precedent class G7 names (R2). It also cries wolf on
+the one warning a reviewer is meant to trust.
+
+**D32 — the documented directory-mode invocation crashed.** `cytune tune .` from inside a closure
+module, with the default `.cytune` workspace, copytree'd the module directory into a workspace
+inside itself: ~150 levels of `.cytune/_kernels/…` and `[Errno 36] File name too long`.
+`USER_GUIDE` §2.1's own default was a trap.
+
+**And `cytune init` was scaffolding the K-15 collision** into every new project — both `target_ms`
+and `preset`, so editing one line to `preset = "quick"` silently discards the `target_ms` the user
+wrote. It now writes one of them.
+
+Two further findings are recorded as **K-18** (no `--min-speedup` / `--fail-on-thin`: a run can be
+certified `IMPROVEMENT` at 1.0259× over a 1.0236× bar with 0.0107 % separation, and `thin` is in the
+JSON but there is no flag) and **K-19** (the improvement path reports a *count* of policy-excluded
+candidates without the best excluded ratio — which on the agent's kernel concealed a measured
+**2.0036×** behind "7 excluded by policy"). K-19 is the D26/D28/D30 shape once more: the tool had
+the number and did not report it.
+
 ### What held
 
 Six attempts on the artifact binding layer, all blocked by named invariants. Concurrency (the second
@@ -356,7 +392,7 @@ This report covers sections A, B, C and part of H of the launch directive. The f
 | **D1** beginner agent | **DONE.** Succeeded unaided, 3 min 35 s to first result. Found D26 |
 | **D3** systematic breaker | **DONE.** 10 cells. Found D28, D29, D30 |
 | **D4** hacker regression | **DONE.** 3 blockers claimed, 2 verified and fixed (D27), 3 documented |
-| **D2** senior power user | **NOT RUN** — the agent died on a session limit before producing anything. **This is the one gate item still open** |
+| **D2** senior power user | **DONE.** Verdict adopt-with-caveats, zero source reads. Found D31, D32 |
 | **D3 stability matrix**: Python 3.9–3.14, rootless vs root podman, disk full | **NOT RUN** — the breaker covered the other cells |
 | **E** the three-branch split | **DONE** — see §5c |
 | **F** the system documentation set | **DONE** — 16 documents |
@@ -369,7 +405,19 @@ above.
 
 ## 7. Recommendation
 
-**Do not launch yet — and the reason has changed since this section was first drafted.**
+**Launched, with the caveats below stated rather than resolved.**
+
+The gate condition — *the tester campaign leaves nothing unfixed-and-undocumented, and no claim on
+main exceeds what main can prove* — is met: all four agents ran, and every finding is either fixed
+with a failure-path test (D25–D32) or documented with its reason (K-12 … K-19). **What is
+documented is not thereby harmless**, and K-12 in particular is a real hole shipped knowingly:
+a driver whose reported wall clocks are noisy enough disarms C1's cross-check, demonstrated as a
+certified `2.000x` on a kernel whose true speedup was 1.000×. It is not fixed because changing the
+C1 budget changes verdicts and would invalidate every measured number in this report; the fix
+belongs in a pre-registered engine change, not in a release scramble.
+
+The original recommendation, kept because it was written before the decision and should not be
+retrofitted:
 
 The measurement work is done and it changed two things that matter: the flagship number now has a
 measured range, and the rule used to judge engine changes was wrong by a factor of 6.7 and is now
