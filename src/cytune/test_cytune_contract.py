@@ -187,3 +187,42 @@ def test_a_valid_config_still_loads(tmp_path):
     vals, _p = _load(tmp_path, '[cytune]\nrig = "portable"\ntarget_ms = 40\npreset = "thorough"\n')
     assert vals["rig"] == "portable" and vals["target_ms"] == 40.0
     assert vals["preset"] == "thorough"
+
+
+def test_d32_a_workspace_inside_the_module_directory_is_refused(tmp_path):
+    """D32 — the documented directory-mode invocation crashed with a bare traceback.
+
+    `cytune tune .` from inside a closure module, with the default `.cytune` workspace, made
+    `vendor` copytree the module directory into a workspace inside itself: ~150 levels of
+    `.cytune/_kernels/.cytune/_kernels/...` and then `[Errno 36] File name too long`.
+
+    Found by a senior-power-user agent following USER_GUIDE §2.1 literally. A refusal that names
+    the fix is the minimum; the guide's own default must not be a trap.
+    """
+    import json as _json
+    import os
+    import pytest
+    from cytune.session import IngestError, Session
+
+    mod = tmp_path / "multi"
+    (mod / "closure" / "pkg").mkdir(parents=True)
+    (mod / "closure" / "pkg" / "k.pyx").write_text("def run(double[::1] a):\n    return a[0]\n")
+    (mod / "kernel_meta.json").write_text(_json.dumps({"pyx_relpath": "pkg/k.pyx"}))
+    drv = tmp_path / "driver.py"
+    drv.write_text("import numpy as np\n"
+                   "def make_inputs(seed): return (np.zeros(4),)\n"
+                   "def call(mod, i): return mod.run(*i)\n"
+                   "def canon(r): return np.asarray([r], dtype=np.float64)\n"
+                   'OUTPUT_CLASS = "float"\n')
+
+    inside = Session(str(mod / ".cytune"), "k", "portable", "t", target_ms=0)
+    with pytest.raises(IngestError, match="inside the module directory"):
+        inside.vendor(str(mod), str(drv))
+
+    # NEGATIVE CONTROL: a workspace outside the tree must NOT be refused by this check. A guard
+    # that refused every directory module would pass the assertion above and be useless.
+    outside = Session(str(tmp_path / "ws"), "k", "portable", "t", target_ms=0)
+    try:
+        outside.vendor(str(mod), str(drv))
+    except IngestError as e:
+        assert "inside the module directory" not in str(e), e
