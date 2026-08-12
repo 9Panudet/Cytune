@@ -4186,3 +4186,7 @@ for p in ['/work/_evil_probe.txt','/work/bindbreak4/_so/kernel_651.so','/work/bi
 2026-08-12T23:28:20Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-12T23:28:20Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-12T23:28:24Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:35:02Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:36:06Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:36:06Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:36:10Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
