@@ -48,7 +48,7 @@ several documents in this repo's history said "D1–D12" and were wrong.
 
 ## The classes, counted
 
-Twenty-three defects, six recurring shapes. The counts are what justify the mechanisms.
+Twenty-eight defects, seven recurring shapes. The counts are what justify the mechanisms.
 
 ### 1. "Each part is correct and the composition is dishonest" — **4** (D13, D14, D18, D24)
 
