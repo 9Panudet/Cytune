@@ -15,6 +15,23 @@ cytune tune kernel.pyx --driver driver.py              # the answer
 
 That is the whole thing. Three commands, no configuration file, no prior knowledge.
 
+`init` writes the driver by reading your function signature. A driver is four names, and this is
+all of them:
+
+```python
+def make_inputs(seed):  ...   # build the arguments your kernel takes
+def call(mod, inputs):  ...   # mod.your_function(*inputs)
+def canon(result):      ...   # -> a numpy array, so two runs can be compared
+OUTPUT_CLASS = "float"        # or "int" / "bool" — "int" and "bool" buy a bit-exact check
+```
+
+**Check what `init` wrote before you trust the answer.** If it had to invent an input for you, that
+input is the workload every number describes. cytune refuses to tune when the inputs make your
+kernel's output constant — its correctness check would be unfalsifiable — but it cannot tell that
+an input is merely *unrepresentative*.
+
+In a hurry: `--target-ms 5 --preset quick` gives a rougher answer in about a minute.
+
 Want to see it work before pointing it at your own code? The package ships a kernel and a driver:
 
 ```bash
@@ -133,7 +150,7 @@ out.
 |---|---|---|
 | `0` | **improvement** | paste the header, or re-run with `--apply` |
 | `2` | **honest-flat** | nothing. Your kernel is not directive-bound — the time is going somewhere a compiler flag cannot reach. That is worth knowing, and it took two minutes |
-| `3` | **no-safe-improvement** | read the REJECTED block. Something faster existed and could not be claimed — often because the sanitizer reported on it, which means you have a bug |
+| `3` | **no-safe-improvement** | read the `WINNER REJECTED` / `OBSERVED BUT NOT RECOMMENDED` block on the certificate. Something faster existed and could not be claimed — often because the sanitizer reported on it, which means you have a bug |
 | `1` | error | bad arguments or an environment problem. `cytune doctor` names the fix |
 
 `0`, `2` and `3` all mean cytune finished and stands behind its answer.

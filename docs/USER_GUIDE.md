@@ -49,7 +49,7 @@ per-config cost on *your* kernel — an estimate for the rest.
 Copies your `.pyx` and driver into the workspace, builds the reference configuration plus the probe
 design (17 builds), runs the reference to capture the **golden output**, and derives the **oracle**
 from it. It also **calibrates**: it rewrites the `REPS` knob in your driver so the reference lands
-near `--target-ms`. The numbers can move a lot (`calibrated REPS: 300 -> 1077`).
+near `--target-ms`. The numbers can move a lot (`calibrated REPS: 300 -> 1077`). The knob is named `REPS` or `SCALE`, whichever your driver defines — cytune prints the one it found, so §0's scaffolded `SCALE` and this example's `REPS` are the same mechanism.
 
 The reference is fixed — config 288: `boundscheck=True, wraparound=True, cdivision=False,
 initializedcheck=True, nonecheck=False` with `-O2 -march=x86-64 -ffp-contract=off`. Cython's safe

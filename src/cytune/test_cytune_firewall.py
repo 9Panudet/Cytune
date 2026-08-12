@@ -77,3 +77,38 @@ def test_the_firewall_check_does_not_flag_prose_about_the_firewall():
     """Negative control: docstrings may discuss fleet/holdout without tripping the check."""
     prose = '"""cytune never reads results/fleet, the holdout, or the r_anchor tables."""\nx = 1\n'
     assert scan_source(prose) == []
+
+
+def test_no_user_facing_string_points_at_a_path_the_user_does_not_have(): 
+    """A beginner tester found `results/PHASEP_REPORT.md §5` in `--help` and on every certificate.
+
+    `git ls-files results/` returns ZERO — `.gitignore` excludes the whole tree — so that citation
+    resolved for nobody, on any branch, ever. Shipped output that points at a file the reader
+    cannot open is worse than no citation: it reads as evidence and is a dead link.
+
+    This scans STRING LITERALS only. Comments and docstrings may still discuss `results/` — they
+    are addressed to a maintainer reading the source, who is on a branch that has it.
+    """
+    import ast
+    bad = []
+    for path in _product_sources():
+        if os.path.basename(path).startswith("test_"):
+            continue
+        tree = ast.parse(open(path).read())
+        docstrings = set()
+        for n in ast.walk(tree):
+            if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                body = getattr(n, "body", None) or []
+                if (body and isinstance(body[0], ast.Expr)
+                        and isinstance(body[0].value, ast.Constant)
+                        and isinstance(body[0].value.value, str)):
+                    docstrings.add(id(body[0].value))
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Constant) and isinstance(node.value, str)
+                    and id(node) not in docstrings and "results/" in node.value):
+                bad.append((os.path.basename(path), node.lineno, node.value[:90]))
+    assert not bad, (
+        "user-facing strings cite a path that is tracked on no branch: "
+        + "; ".join(f"{f}:{n} {t!r}" for f, n, t in bad)
+        + "\nPoint at something on the branch the reader is holding (docs/ or evidence/), or say "
+          "which branch carries it.")

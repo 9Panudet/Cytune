@@ -32,7 +32,7 @@ PROVENANCE = (
     "decide whether to search at all; they do not meaningfully choose between algorithms. "
     "Three of four kernel categories are underpowered (achieved power 0.708/0.776/0.708 against "
     "a 0.80 target) and the study ran 20 of a planned 200 repetitions. "
-    "See results/PHASEP_REPORT.md §5 and results/study/RQP2_ACCEPTANCE.json.")
+    "See docs/GUARANTEES.md N4; the study itself is on the `research` branch.")
 
 # ---------------------------------------------------------------------------------------------
 # P3 RESULT, and why the engine choice barely moved.
@@ -56,13 +56,16 @@ PROVENANCE = (
 #
 # So the routed engine stays DOE, which is what the interim policy already chose on other grounds.
 # The study did not change the recommendation; it supplied the evidence for it, and killed BO's
-# and Motif's claims to replace it. Full matrix: results/study/ROUTING_MATRIX.json.
+# and Motif's claims to replace it. The full matrix is with the study (`research` branch).
 #
 # POWER: only INT reaches the pre-registered n=26 floor (n=29, power 0.853). FLAT+FM (n=20, 0.708),
 # MID (n=24, 0.776) and LEVER-SEP (n=20, 0.708) are UNDERPOWERED at delta=0.4 and every certificate
 # says so.
 # ---------------------------------------------------------------------------------------------
-ROUTING_MATRIX = "results/study/ROUTING_MATRIX.json"
+# The full per-cell routing matrix lives with the study, on the `research` branch. It used to be
+# named here as a module constant; nothing in the package imported it, and it pointed at a path
+# tracked on no branch — a dead citation in shipped code. Deleted rather than repointed, because
+# A3 says dead code is deleted and not tolerated.
 POWERED_CELLS = ("INT",)
 UNDERPOWERED_CELLS = {"FLAT+FM": 0.708, "MID": 0.776, "LEVER-SEP": 0.708}
 

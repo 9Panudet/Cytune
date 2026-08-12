@@ -297,6 +297,33 @@ def tune(args):
     orc = g["oracle"]
     say(f"      oracle: class={orc['output_class']} deterministic={orc['deterministic']} "
         f"tolerance={json.dumps(orc['tolerance'])}")
+
+    # G1's positive control. The oracle is the whole of the correctness guarantee, and a
+    # constant-valued golden makes it unfalsifiable: every build matches, and the certificate
+    # reports "rejected as incorrect: 0 (0.0%)" as though that were evidence. cytune refuses
+    # rather than tuning against an oracle with no power, because the failure is silent and its
+    # output is a recommendation the user will paste into their source.
+    _op = g.get("oracle_power") or {}
+    if _op.get("degenerate"):
+        print(f"\ncytune: REFUSING TO TUNE — the correctness oracle has no power on this "
+              f"workload.\n"
+              f"  Your driver's canon() returned {_op['n']} values and every one of them is "
+              f"identical.\n"
+              f"  Nothing cytune measures could ever fail that check, so G1 — 'it will not "
+              f"recommend a\n"
+              f"  configuration that produces wrong output' — would be vacuous, and a verdict "
+              f"built on it\n"
+              f"  would be worthless.\n\n"
+              f"  Almost always this is the driver, not the kernel. Check make_inputs(): if "
+              f"cytune init\n"
+              f"  invented a scalar for you, two of them may have collided (a clip with lo == hi "
+              f"returns a\n"
+              f"  constant). Give the kernel inputs that make its output vary, and run again.",
+              file=sys.stderr)
+        return certify.EXIT_ERROR
+    if _op.get("checked") and _op.get("n_distinct"):
+        say(f"      oracle power: {_op['n_distinct']} distinct values over {_op['n']} — the "
+            f"correctness check can fail, so passing it means something")
     if g.get("calibrated"):
         c = g["calibrated"]
         if c.get("reused"):
@@ -862,7 +889,7 @@ def main(argv=None):
         description=f"Tune Cython directives + GCC flags for a module, and certify the result. "
                     f"{version_banner()}. The routing policy is an engineering default grounded "
                     f"in the Phase-P study, not a validated per-cell router "
-                    f"(see results/PHASEP_REPORT.md §5).")
+                    f"(see docs/GUARANTEES.md N4).")
     ap.add_argument("--version", action="version", version=version_banner())
     sub = ap.add_subparsers(dest="cmd", required=True, parser_class=_Parser)
 
@@ -943,7 +970,7 @@ def main(argv=None):
     d.add_argument("--json", action="store_true", help="machine-readable check results")
     d.add_argument("--build-image", dest="build_image", action="store_true",
                    help="build the pinned toolchain image and verify its digest against the one "
-                        "every number in results/ was measured on. Refuses if they differ. Use "
+                        "every published number was measured on. Refuses if they differ. Use "
                         "this when the `pinned image` check above is BLOCKING, or when the "
                         "`sanitizer gate` check reports that the image is not the pinned one")
     d.set_defaults(func=doctor)

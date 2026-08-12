@@ -54,7 +54,7 @@ def _check_image():
                 if have_cf else
                 f" — but {CONTAINERFILE} is missing, so run this from a complete checkout")
         fix += (f". The expected image ID starts {EXPECTED_IMAGE_ID}; a different ID means your "
-                f"toolchain differs from the one every number in results/ was measured on. The "
+                f"toolchain differs from the one every published number was measured on. The "
                 f"whole toolchain is pinned in that image, and an unpinned toolchain makes "
                 f"results incomparable between runs.")
         return BLOCKING, False, f"pinned image {IMAGE} is absent", fix
@@ -224,7 +224,7 @@ def build_image(args=None):
     print(f"cytune: the build SUCCEEDED but produced a different image.\n"
           f"  built    : {got or 'unresolved'}\n"
           f"  expected : {rig.PINNED_IMAGE_DIGEST}\n\n"
-          f"  This is not a pass. Every number under results/ was measured in the expected image,\n"
+          f"  This is not a pass. Every published number was measured in the expected image,\n"
           f"  and the §1.4 sanitizer gate treats a clean verdict from any other image as NOT\n"
           f"  authoritative — the 'safe' wording is withheld and --apply refuses (H6).\n\n"
           f"  Usually this means an upstream package moved. cytune will still run; it will say on\n"

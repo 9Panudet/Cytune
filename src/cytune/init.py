@@ -116,12 +116,25 @@ def _split_args(text):
     return out
 
 
-def _make_input_expr(arg, size_name="N"):
-    """The numpy expression for one argument, or None when it must be a TODO."""
+def _make_input_expr(arg, size_name="N", scalar_ordinal=0):
+    """The numpy expression for one argument, or None when it must be a TODO.
+
+    `scalar_ordinal` makes repeated scalars of the same type DISTINCT. Every float-ish scalar used
+    to be `1.0`, so `clip(x, lo, hi)` scaffolded `lo == hi == 1.0` and the kernel returned a
+    constant array. A first-time user hit that on the first kernel they wrote: the constant output
+    left the correctness oracle unable to fail, and the run reported IMPROVEMENT 1.079x on a
+    kernel that is flat. Two invented values that happen to be equal is not a corner case; it is
+    the default for any kernel taking a low and a high.
+
+    The oracle-power control in `session.oracle_power()` catches the CONSEQUENCE. This removes the
+    most likely CAUSE. Both, because a user can write a degenerate driver by hand too.
+    """
     if not arg["known"]:
         return None
     if arg["ndim"] == 0:
         lit = _SCALARS[arg["type"]][0]
+        if scalar_ordinal and lit in ("1.0", "128"):
+            lit = (f"{1.0 + scalar_ordinal}" if lit == "1.0" else f"{128 + scalar_ordinal}")
         return lit
     shape = "N" if arg["ndim"] == 1 else ", ".join(["N"] * arg["ndim"])
     dtype = arg["dtype"]
@@ -200,10 +213,13 @@ def scaffold_driver(pyx_path, scale=None):
 
     lines, names = [], []
     unknown = 0
+    n_scalar = 0
     for a in args:
         if a.get("has_default") and not a["known"]:
             continue
-        expr = _make_input_expr(a)
+        expr = _make_input_expr(a, scalar_ordinal=n_scalar)
+        if a["known"] and a["ndim"] == 0:
+            n_scalar += 1
         names.append(a["name"])
         if expr is None:
             unknown += 1

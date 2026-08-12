@@ -618,7 +618,51 @@ class Session:
         res = self._run(cmd, "golden")
         if not res.get("ok"):
             raise IngestError(f"{res.get('error')} — {res.get('hint', '')}")
+        res["oracle_power"] = self.oracle_power()
         return res
+
+    def oracle_power(self):
+        """Can the correctness oracle tell a right build from a wrong one on THIS workload?
+
+        G1 rests entirely on comparing each build's canonical output against the golden. If the
+        golden is a constant array, that comparison cannot fail: every build, correct or not,
+        matches. The certificate then reports `rejected as incorrect: 0 (0.0%)` — which reads as
+        evidence and is arithmetically forced.
+
+        Found by a first-time user, and by them alone, on the FIRST kernel they wrote. Their
+        `clip(x, lo, hi)` took two `double` scalars; `cytune init` invented `1.0` for both, so
+        `lo == hi`, so every output element was exactly 1.0. The run reported IMPROVEMENT 1.079x
+        and `--apply` wrote a boundscheck=False header into their source. Fixing one line of the
+        scaffold turned the same kernel, same machine, same flags into HONEST-FLAT.
+
+        This is a positive control on the oracle, of exactly the kind this project demands of
+        every other instrument: a planted lever must be detectable, a known-flat kernel must read
+        flat. The oracle had none.
+
+        Deliberately NOT a check on constancy alone: a reduction legitimately returns one number,
+        and refusing those would refuse a whole class of real kernels. What is degenerate is a
+        MULTI-ELEMENT output whose every element is identical.
+
+        Reads the golden the vendored rig already wrote. It does not touch `_vendor/campaign.py`,
+        which is hash-pinned to the study source and may not diverge from it.
+        """
+        path = os.path.join(self.odir, "golden.npy")
+        if not os.path.exists(path):
+            return {"checked": False, "reason": "no golden.npy"}
+        try:
+            import numpy as np
+            g = np.load(path, allow_pickle=False)
+        except Exception as e:                       # a golden we cannot read is not a verdict
+            return {"checked": False, "reason": f"golden unreadable: {e}"}
+        n = int(g.size)
+        if n <= 1:
+            return {"checked": True, "degenerate": False, "n": n,
+                    "note": "single-valued output (a reduction); constancy is not degeneracy here"}
+        try:
+            distinct = int(np.unique(g).size)
+        except Exception as e:
+            return {"checked": False, "reason": f"golden not comparable: {e}"}
+        return {"checked": True, "degenerate": distinct <= 1, "n": n, "n_distinct": distinct}
 
     KEYFILE = "cache_key.json"
 
