@@ -167,7 +167,44 @@ def assert_certificate_coherent(cert, emitted_flags=None, gate_result=None, exit
         if (cert.get("sanitizer_gate") or {}).get("clean") is False:
             _violation("I1.8", "verdict is improvement but the emitted config's sanitizer gate "
                                "REPORTED. G2 forbids emitting it at all.")
+
+    # ------------------------- I1.11  the headline number agrees with the measurements beside it
+    _assert_speedup_recomputes(cert)
     return True
+
+
+# G6 says "every number recomputes". Until this existed, nothing checked the one number a user
+# actually acts on against the two it is computed from — and BOTH are recorded in the same
+# document, four keys away. I1.8 only asked whether a speedup was PRESENT.
+#
+# Found by the G1-G7 control sweep asking, of each guarantee in turn, "does a deliberately wrong
+# input make it fire?". For G6 the answer was that no input could: there was nothing to fire.
+#
+# It is true by construction today (`certify.build_certificate` divides the same two values it
+# records), which is exactly the argument for the check rather than against it. K-14 is the same
+# shape and is still open: `assert_emission_bound` returns the hash it bound and the caller
+# discards it, so a one-line drift in cli.py would put a different config's numbers in the
+# document with every invariant green. Enforcing what is currently true by construction is how a
+# construction stops being load-bearing.
+_SPEEDUP_REL_TOL = 1e-9
+
+
+def _assert_speedup_recomputes(cert):
+    m = cert.get("measurement") or {}
+    claimed = cert.get("speedup")
+    win, ref = m.get("winner_endpoint_ns"), m.get("reference_endpoint_ns")
+    # No claim, or no measurements to check it against — the flat and withheld-speedup paths, and
+    # a portable dry document. Nothing here can be decided, so nothing here is asserted.
+    if claimed is None or not win or not ref:
+        return
+    expect = ref / win
+    if abs(claimed - expect) > _SPEEDUP_REL_TOL * max(1.0, abs(expect)):
+        _violation("I1.11",
+                   f"the certificate claims {claimed!r}x but its own endpoint measurements give "
+                   f"{expect!r}x (reference {ref} ns / emitted {win} ns). The headline number and "
+                   f"the numbers it is derived from are in the SAME document and disagree — the "
+                   f"speedup is describing a different pair of measurements from the ones printed "
+                   f"under it.")
 
 
 def assert_document_valid(doc):

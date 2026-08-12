@@ -5,7 +5,126 @@ All notable changes to cytune. The compatibility promise is in
 
 ---
 
-## Unreleased — the launch pass: a measured range, four standing gates, and two defects found by testers
+## ADVISORY — 1.0.0 is known-defective
+
+**If you have a certificate produced by cytune 1.0.0, treat it as unverified until you re-run.**
+
+1.0.0 is published and cannot be unpublished. The tester campaign that gated 1.1.0 found six defects
+that were already in it, and **four of them make 1.0.0 give a confident wrong answer rather than an
+error**. 1.1.0 refuses all six, which means its answer *supersedes* a 1.0.0 certificate rather than
+confirming it.
+
+This section exists because this project's own rule is that a claim known to be unsound cannot be
+left standing unmarked. A certificate is a document people keep and forward; the release that
+produced it is not allowed to go on looking sound because the newer one is fine.
+
+| | what 1.0.0 did | what 1.1.0 does |
+|---|---|---|
+| **D26** | `cytune init` scaffolded the same value for every float scalar, so a two-bound kernel (`clip(x, lo, hi)`) got `lo == hi` and a **constant output**. The correctness oracle then had no power to fail: every build "passed". The run certified `IMPROVEMENT 1.079x` on a flat kernel and `--apply` wrote `boundscheck=False` into the user's source. | refuses when the golden output cannot discriminate; repeated scalars no longer collide |
+| **D28** | a re-run in an existing workspace reused the **previous** kernel's calibrated workload after the module changed, so the numbers describe a workload the edited kernel never ran | the module hash invalidates the calibration |
+| **D30** | a calibration miss of **215×** was reported as success — `calibrated … reference ~5.0 ms` above `reference 0.023 ms`, under `IMPROVEMENT 1.1709x`. Both numbers were in the same document and nothing subtracted them | refuses below 1 ms, warns beyond 3× |
+| **D29** | `cytune doctor` printed `[ok]` for the pinned-image check when the image's **digest did not match**. A user could believe their toolchain was pinned when it was not | digest mismatch is `DEGRADED`, `ok=False` |
+| **D27** | a sanitizer gate reporting `ran=False, clean=True` was checked by nothing and licensed by everything — including `--apply` | one predicate (`gate_is_trustworthy`) answers the question everywhere |
+| **D31** | with a `.cytune.toml` present, typing `--allow-fp-contract` on the command line made the certificate state that the opt-in did **not** come from the command line — a false statement in the floating-point **consent** block | the provenance check tests only the flag actually opted into |
+
+**What to do**
+
+1. **Re-run under 1.1.0.** Its verdict replaces the 1.0.0 one. 1.1.0 prints a notice when it finds a
+   1.0.0 certificate in the workspace it is about to overwrite.
+2. **If you ran `--apply` under 1.0.0, check your source for a `# cython:` directive header you did
+   not write.** `--apply --in-place` leaves a `.cytune-backup` beside the file it edited. D26's path
+   ends with checks-off directives written into a kernel whose speedup was never real, and the
+   directives are real even when the speedup is not.
+3. `cytune audit <module.pyx> --driver d.py` is the deterministic memory-safety check, and it does
+   not depend on any of the above.
+
+Also fixed, not a wrong-number risk: **D32**, the guide's own documented `cytune tune .` invocation
+crashed with `[Errno 36] File name too long` when run from inside a closure module.
+
+---
+
+## 1.1.1 — the launch closeout: the advisory above, and four controls that did not exist
+
+No new features and no engine change. Four closures, and one defect found by executing a claim
+nobody had executed.
+
+### The 1.0.0 advisory is now enforced at runtime, not only written down
+
+A run that finds a certificate from 1.0.0 or earlier in the workspace it is about to overwrite says
+so, names the three defects that make that document untrustworthy, and tells the user to check their
+source for a `# cython:` header they did not write. `certify.version_advisory` is a pure function of
+the document, so what it says is testable without a run
+(`test_cytune_version_advisory.py`, 12 tests, including the anti-vacuity check that the *shipping*
+version never triggers it).
+
+### The guarantee control sweep — four missing controls, three on the oldest guarantees
+
+Every entry in `GUARANTEES.md` was asked the same question: **does a deliberately wrong input make
+it fire?** The table of answers is now part of that document.
+
+- **G1** — nothing had ever called the oracle predicate `_vendor/measure_child._feasible` with a
+  wrong answer. Not one test in the repository referenced it. Its evidence line named tests of the
+  orchestration *around* the oracle, which is precisely how D26 got a certified `IMPROVEMENT` out of
+  an oracle that could not fail. Seven tests now drive it: wrong by one element, outside tolerance,
+  wrong shape, NaN where the golden has a number, each with its negative control.
+- **G2** — every test of the sanitizer gate fed it a hand-built verdict dict, so all of them would
+  still pass if `SAN_TOKENS` matched nothing a real sanitizer prints. It is now checked against
+  verbatim ASan and UBSan output, embedded so the control cannot go vacuous on a checkout without
+  `evidence/`.
+- **G5** — the whole-space subset sweep proved today's flags narrow and gave no evidence the
+  comparison would notice one that widened. It now has a widening stand-in that must be caught.
+- **G6** — *"every number recomputes"* was enforced by **nothing**. The headline speedup was never
+  compared against the two endpoint medians recorded four keys away in the same document; I1.8 asked
+  only whether a speedup was present. **New invariant I1.11** recomputes it and refuses the
+  certificate on disagreement. The `RAW:` line was also overclaiming — it named `table.jsonl` as the
+  source of "every number above" when the endpoint tier is not in that file — and now says which
+  numbers come from where.
+
+### The interpreter range is measured instead of asserted
+
+`requires-python = ">=3.9"` covered six interpreters, of which exactly one had ever run this code.
+`scripts/release/pymatrix.sh` runs the shipped tree's suite on CPython 3.9.25, 3.10.20, 3.11.15,
+3.12.13, 3.13.15 and 3.14.7: **786 passed, 19 skipped, 0 failed — identical on all six.**
+
+It found **D33** on its first pass. `test_failure_path_sanitizer_check_passes_when_the_image_is_present`
+stubbed `doctor._run` but not `sanitize_gate.is_pinned_image()`, which shells out to podman on its
+own — so the test had been reading the developer's image store for its entire life, and
+`pytest -q src/cytune` did **not** pass on a machine that had not built the toolchain. Fixed, plus
+the H6 branch it had been standing in front of (an image that exists and is not the pinned one) now
+has a test.
+
+### The fleet gate could not run on the branch that needs it
+
+Re-running the smoke gate for this closeout printed `NOT RUN` for **B1**, the fleet replay — the
+gate built in 1.1.0 because the nine live anchors are validation and not coverage, and the one that
+caught a 516 % worst case no anchor contains.
+
+The two freeze artifacts it needs (88 KB) had been force-added to `research` **only**, so a checkout
+of `dev` deleted them from the working tree and the gate degraded to a yellow line whose own advice
+read *"run it on `dev` or `research`"* — on `dev`. Both files are now on `dev`, `smoke.sh` tests for
+both, and its NOT-RUN message tells the reader to check for a deleted file before believing the
+branch. B1 subsequently ran: **149 kernels × 9 budgets, every cell byte-identical to the committed
+baseline.**
+
+This is the third time a missing input has turned a gate into a pass-shaped message (B2's vendor
+check, D25's dead script, now this). `docs/system/15_BRANCH_HAZARD.md` says so in those words.
+
+### Stated rather than fixed
+
+`docs/KNOWN_ISSUES.md` gains an explicit table of the environments this release was and was not run
+in, plus **K-20** (podman as root is untested — "rootless is fine" was the wrong way round; rootless
+is the only mode ever exercised) and **K-21** (disk exhaustion mid-run is untested).
+
+### Also
+
+`docs/CONTRIBUTING.md` now names five pre-release gates, including a **fresh-agent tester pass** as
+a gate rather than a courtesy. The argument is the 1.1.0 ratio: four new standing gates found 0, the
+900-test suite found 0, three strangers found 5 in an afternoon — two of them by using the tool
+normally.
+
+---
+
+## 1.1.0 — the launch pass: a measured range, four standing gates, and defects found by testers
 
 ### The flagship number now has a range
 
@@ -140,6 +259,18 @@ independent audit made to the report itself: `results/release/DOE_V2_REPORT.md`.
 ---
 
 ## 1.0.0 — API freeze, and artifact binding
+
+> ### ⚠ THIS RELEASE IS KNOWN-DEFECTIVE
+>
+> Six defects found after it shipped make 1.0.0 capable of certifying a **confident wrong answer**,
+> including an `IMPROVEMENT` verdict on a kernel whose correctness oracle could not fail (D26) and a
+> `doctor` that reported `[ok]` on an unpinned toolchain (D29). 1.1.0 refuses all six.
+>
+> **Re-run under 1.1.0**, and if you ran `--apply` under 1.0.0, check your source for a `# cython:`
+> header you did not write. Full list and user action: the **ADVISORY** at the top of this file.
+>
+> Everything below remained true of 1.0.0 when it was written. It is kept unedited — the defects
+> above were not known then, and rewriting the entry would hide when they were found.
 
 The first release with a frozen public interface. Two structural changes: the product now ships
 standalone, and **every claim it makes is tied to the bytes that produced it**.

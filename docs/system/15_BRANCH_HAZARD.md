@@ -23,6 +23,35 @@ you had **uncommitted** edits to it under `main`, those are gone with it.
 This is exactly what happened during the split: `LAUNCH_REPORT.md` was force-added on `research`,
 the branch was switched back to `main`, and the file vanished mid-edit.
 
+## The instance that matters most: it disarmed a standing gate
+
+Everything above is about losing a *document*. On 2026-08-13 the same mechanism was found to have
+been silently disabling **B1, the fleet replay gate**, on `dev`.
+
+`fleet_gate.py` needs two small freeze artifacts — `results/fleet/FREEZE_MANIFEST_V2.json` (71 KB)
+and `results/fleet/SANITIZER_INFEASIBLE_OVERLAY.json` (16 KB). Both had been force-added to
+**`research` only**, so a checkout of `dev` deleted them from the working tree. `smoke.sh` then took
+its `else` branch and printed:
+
+```
+NOT RUN  B1 fleet gate — results/fleet is absent on this branch.
+         Run it on `dev` or `research` before tagging.
+```
+
+…on `dev`. **The gate's own advice named the branch it could not run on**, and the yellow line reads
+like a property of the branch layout rather than of a deleted file. `dev` is where engine changes
+are made, and B1 is the gate that catches engine regressions the nine live anchors cannot see — it
+found a 516 % worst case that no anchor contained. It could not run where it was needed.
+
+Fixed two ways: both manifests are now force-added to `dev` as well (88 KB total, against the
+215 MB of tables they pin, which stay uncommitted), and `smoke.sh` tests for **both** files and
+tells the reader to check for a deleted file before believing the branch.
+
+**The general lesson.** The hazard is not "documents disappear". It is that *a missing input turns a
+gate into a pass-shaped message*, and this project has now paid for that shape three times: B2's
+vendor check skipping forever on a product-only branch, D25's script dead on import, and this. When
+a gate reports NOT RUN, find out **why** before accepting it.
+
 ## What to do
 
 **Recover a deleted document:**

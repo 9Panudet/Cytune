@@ -245,6 +245,15 @@ def tune(args):
 
     sess = Session(workspace, name, mode, detail, target_ms=eff["target_ms"])
 
+    # The 1.0.0 advisory. This run is about to overwrite `certificate.json`, so this is the last
+    # moment the previous run's document exists -- and if it came from a release whose defects this
+    # one refuses, the user needs to know their old answer is superseded rather than confirmed.
+    # Printed here, above the stages, because a user who reads only the first screen still sees it.
+    _adv = certify.prior_certificate_advisory(sess.odir)
+    if _adv:
+        say(_adv)
+        say()
+
     # ---------------------------------------------------------------- 1. ingest
     say("[1/6] ingest — vendoring module + driver")
     src = sess.vendor(args.module, args.driver)

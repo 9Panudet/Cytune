@@ -31,7 +31,7 @@ the version number describes the INTERFACE. Dropping the label at 1.0.0 would be
 of quiet upgrade-by-implication this project exists to refuse. See docs/GUARANTEES.md N5.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 SCHEMA_VERSION = "1.0"
 RELEASE_LABEL = "research preview"
 

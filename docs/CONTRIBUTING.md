@@ -32,6 +32,86 @@ Two suites you should run deliberately when you touch the relevant thing:
 
 ---
 
+## The pre-release gates
+
+Three things run before a tag, in this order. None is optional and none substitutes for another.
+
+### 1. The live smoke gate
+
+`scripts/release/smoke.sh`. 526 unit tests were green while the rig returned `rc=127`; a suite that
+cannot catch that is not a release gate by itself.
+
+### 2. The fleet replay
+
+`scripts/release/fleet_gate.py` — the shipped engine over all 149 frozen tables × 9 budgets against
+a committed baseline. It exists because the nine live anchors are **validation, not coverage**:
+reintroducing the D-2 defect produces 106 fleet findings and **none on an anchor**.
+
+### 3. A fresh-agent tester pass
+
+**Three testers who have not read this codebase**: a beginner following the documented three-command
+path, a systematic breaker working the stability matrix, and an adversary aimed at whichever
+defence the release built. Their findings are a gate: each one is either fixed with a failure-path
+test or written into `KNOWN_ISSUES.md` with its reason. **No finding may be left in neither state.**
+
+This is a gate rather than a nice-to-have because of the ratio the 1.1.0 pass measured:
+
+| | found |
+|---|---|
+| four new standing gates, each with a control proving it can fail | **0** |
+| 900 automated tests | **0** |
+| three fresh testers, one afternoon | **5** |
+
+Two of the five — D26 and D28 — are reached by *using the tool normally*, not by attacking it. None
+was reachable by reading the code with the intention of confirming it works, which is the thing a
+person who wrote the code cannot stop doing. The gates are still worth having: each catches a class
+this project has already suffered, and each would catch its recurrence silently and forever. But a
+gate can only catch the class it was built for, and a stranger is the only instrument that finds
+the class nobody has named yet.
+
+Run the testers against the **documented** surface — `README.md`, `docs/`, `--help` — not against
+the source. The 1.1.0 senior power-user pass read zero lines of source and still found two defects;
+that constraint is what makes the result a statement about the product rather than about the code.
+
+### 4. The guarantee control sweep
+
+Ask of **every** entry in `GUARANTEES.md`, one at a time: *does a deliberately wrong input make this
+fire?* Not "is there a test named after it" — a test that drives the honest path is a negative
+control and proves only that the guarantee does not fire spuriously.
+
+The sweep's table lives in [GUARANTEES.md](GUARANTEES.md#every-guarantees-control). It found four
+missing controls at 1.1.0, **three of them on the two oldest guarantees on the page**:
+
+- **G1** — nothing had ever called the oracle predicate with a wrong answer. Its evidence line named
+  tests of the orchestration *around* the oracle. D26 is what that cost.
+- **G2** — every test of the sanitizer gate fed it a hand-built verdict dict, so all of them would
+  still pass if `SAN_TOKENS` matched nothing a sanitizer actually prints.
+- **G5** — the whole-space subset sweep proved today's flags narrow, and nothing proved the
+  comparison would notice a flag that widened.
+- **G6** — "every number recomputes" was a pointer on the certificate and no check anywhere. The
+  headline speedup was never compared against the endpoint measurements four keys away in the same
+  document. That is now invariant I1.11.
+
+The lesson generalises: **a guarantee gets its failure-path test the day it is written and then
+stops being re-examined while the code underneath it moves.** Re-run the sweep every release, not
+only when a guarantee changes.
+
+### 5. The interpreter matrix
+
+`scripts/release/pymatrix.sh` — the shipped tree's suite on CPython 3.9 through 3.14, in throwaway
+containers. `requires-python = ">=3.9"` is a claim about six interpreters, and until 1.1.0 exactly
+one of them had ever run this code.
+
+It is cheap (about eleven minutes, no rig, no pinned image) and it earns its place: its first pass
+found **D33** — a test that stubbed one of the two things it depended on and had therefore been
+reading the developer's own image store for its entire life, which meant `pytest -q src/cytune`
+did not pass on a machine that had not built the toolchain yet.
+
+**When you add a supported version, run it before you write it down.** That is the whole content of
+this section.
+
+---
+
 ## Adding a flag — and the G5 obligation
 
 **G5: no flag may loosen G1 (oracle), G2 (sanitizer) or G3 (honest-flat).** A new flag is not done
