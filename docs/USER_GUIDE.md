@@ -679,8 +679,22 @@ discarded 626 measured rows to exactly that on 2026-07-24.
 
 ### 13.7 Why `--probe-as-screen` is off by default
 
-It measured better nearly everywhere in offline replay across the frozen tables. It is off by
-default because the improvement is smaller than one live run can resolve: two runs of the *same
-unchanged engine* disagreed by 3.597 pp on one anchor, and a default should not be changed on a
-difference the instrument cannot see. The full evidence, and the repeated-measurement protocol
-that settles it, are in `results/release/LAUNCH_REPORT.md`.
+**It is better on average and worse in the tail, and the tail is on kernels the live validation
+set does not contain.**
+
+Measured, five runs per arm on the nine real-code anchors: it improves median regret from 1.409 %
+to 0.802 %, improves the worst anchor from 9.791 % to 2.664 %, measures exactly the same number of
+configurations, and is *more stable* run to run. On that evidence alone it should be the default.
+
+Then the fleet-wide replay — all 149 frozen kernels at nine budgets — says no. Nine kernels regress
+past 5 percentage points, one by **+28.4 pp**, and the worst case at budget 64 goes from 5.9 % to
+17.2 %. **None of the nine is a live anchor.** The affected kernels are mostly the interaction-heavy
+`INT` class and some `MID` gather kernels, and the mechanism is visible: without the second screen
+the walk's main-effect fit is seeded by the 17-point probe alone, which on those landscapes ranks
+the space wrongly and the walk then follows that ranking all the way down.
+
+So the second screen is insurance against a tail that a median hides and that nine anchors cannot
+see. Keeping it is choosing a worse average for a better worst case, deliberately.
+
+If your kernels look like the ones it helps — and the safest way to find that out is to run both
+and compare — the flag is there. The full evidence is in `results/release/LAUNCH_REPORT.md`.

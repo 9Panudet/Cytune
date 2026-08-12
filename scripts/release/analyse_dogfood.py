@@ -110,7 +110,7 @@ def analyse_cert(kid, cert_path, wall_s=None):
         "emitted_config": emitted,
         "emitted_is_reference": emitted == REF,
         "configs_measured": cert.get("budget", {}).get("total_measured"),
-        "wall_s": walls.get(kid),
+        "wall_s": wall_s,
         "cytune_reported_speedup": cert.get("speedup"),
         "sanitizer_gate": (cert.get("sanitizer_gate") or {}).get("verdict"),
         # 1.0.0 provenance, absent from the rc-era certificates and reported as None for them.

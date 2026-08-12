@@ -891,10 +891,12 @@ def main(argv=None):
                    help="restrict the recommendation to -march=x86-64 so the emitted flags are "
                         "safe on machines other than this one (default: off)")
     t.add_argument("--probe-as-screen", dest="probe_as_screen", action="store_true",
-                   help="EXPERIMENTAL, off by default. Skip the second D-optimal screen design "
-                        "and spend the whole tuning budget on the predicted-best walk — the "
-                        "17-config probe is already a D-optimal screen. It measured better but "
-                        "did not clear its pre-registered acceptance rule, so it is opt-in")
+                   help="off by default. Skip the second D-optimal screen design and spend the "
+                        "whole tuning budget on the predicted-best walk — the 17-config probe is "
+                        "already a D-optimal screen. Measured, it gives a BETTER median and a "
+                        "WORSE tail: the second screen is insurance against kernels whose "
+                        "landscape the probe alone ranks wrongly. See USER_GUIDE §13.7 for the "
+                        "numbers and the conditions")
     t.add_argument("--wait", dest="wait", action="store_true",
                    help="if another cytune measurement holds this machine, queue behind it "
                         "instead of refusing. Two runs measuring at once produce wrong numbers "
