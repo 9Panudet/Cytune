@@ -738,6 +738,17 @@ class Session:
                     shutil.rmtree(p, ignore_errors=True)
             # A timing taken from a binary that no longer exists cannot be reused either.
             self._drop_table(stale)
+            # ...and NEITHER CAN THE CALIBRATION. D28: `_merge_key` below writes the NEW module
+            # hash, and `reusable_knob` runs AFTER it (cli.py:264 then cli.py:296), comparing the
+            # new key against the record this line just overwrote. It therefore always matched,
+            # and an edited kernel silently reused the previous kernel's calibrated workload —
+            # printing "module ... unchanged" eight lines under "the module source changed", and
+            # certifying a 23.3 ms reference against a `--target-ms 5` the run never honoured.
+            # Calibration is a property of (module, driver, target_ms, image, rig mode); the
+            # module just changed, so it is stale by that definition and is dropped here rather
+            # than left for a comparison that cannot see it.
+            key = {**key, "knob_value": None}
+            stale["invalidated_calibration"] = True
         self._merge_key(key)
         return stale
 

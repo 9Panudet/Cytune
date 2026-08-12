@@ -44,6 +44,20 @@ def check_applicable(cert):
             f"  A clean result from an unpinned image is not a pass — cytune has no way to know "
             f"that image runs the same sanitizer rig.\n"
             f"  Unset CYTUNE_SANITIZER_IMAGE and re-run.")
+    if gate.get("ran") is False and gate.get("clean") is True:
+        raise ApplyRefused(
+            f"refusing to apply: the §1.4 gate reports clean=True but says it did "
+            f"NOT run (ran=False).\n"
+            f"  A gate that did not run cannot be clean. That combination means the verdict "
+            f"describes nothing,\n"
+            f"  and none of the checks that tie a gate to a configuration are performed for it.\n"
+            f"  This is a cytune defect if you see it — please report the certificate.")
+    if gate.get("authoritative") is False:
+        raise ApplyRefused(
+            f"refusing to apply: the §1.4 gate did not attest which source tree it built, so "
+            f"cytune cannot\n"
+            f"  tie its CLEAN verdict to the code you are about to change.\n"
+            f"  {gate.get('warning', '')}")
     if gate.get("clean") is not True:
         raise ApplyRefused(
             f"refusing to apply: the §1.4 sanitizer gate on the emitted config is "

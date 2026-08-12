@@ -61,8 +61,21 @@ def _check_image():
     rc, out, _e = _run(["podman", "image", "inspect", IMAGE, "--format", "{{.Id}}"])
     if rc != 0:
         return BLOCKING, True, IMAGE, ""
-    match = "" if out.startswith(EXPECTED_IMAGE_ID) else f" != expected {EXPECTED_IMAGE_ID}…"
-    return BLOCKING, True, f"{IMAGE} ({out[:12]}…{match})", ""
+    if not out.startswith(EXPECTED_IMAGE_ID):
+        # D29. This used to return ok=True with " != expected …" appended to the LABEL, so the
+        # column a user actually scans said [ok] on the exact condition that makes results
+        # incomparable. The check that owns the pinning claim gave the wrong answer, on a row
+        # whose whole purpose is that claim.
+        return (DEGRADED, False,
+                f"{IMAGE} is {out[:12]}…, NOT the pinned {EXPECTED_IMAGE_ID}…",
+                f"Your toolchain is not the one every published number was measured on, so your "
+                f"numbers are not comparable with them — and, because the whole toolchain is "
+                f"pinned in the image, not necessarily with your own earlier runs either.\n"
+                f"REBUILD IT: {BUILD_COMMAND}\n"
+                f"Then re-run `cytune doctor` and check this row reads the expected id. "
+                f"`cytune doctor --build-image` does the build and verifies the digest for you, "
+                f"refusing if it differs.")
+    return BLOCKING, True, f"{IMAGE} ({out[:12]}…)", ""
 
 
 def _check_entry_point():

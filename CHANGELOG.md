@@ -5,6 +5,67 @@ All notable changes to cytune. The compatibility promise is in
 
 ---
 
+## Unreleased — the launch pass: a measured range, four standing gates, and two defects found by testers
+
+### The flagship number now has a range
+
+Ninety live runs — nine real-code kernels × five replicates × two arms, arms interleaved, fresh
+workspace each, rig re-verified before every replicate, 6.79 h.
+
+**Median regret 1.409 % (range 1.409–1.719 %), worst kernel 5.412 % (range 5.412–9.791 %), 313
+configurations measured.** Every document now quotes the range; a single-run figure is one draw.
+
+**The per-anchor ship bound was 6.7× tighter than the instrument.** Measured run-to-run spread is
+**6.711 pp** against a rule that judged engine changes at 1.0 pp. The bound is re-derived from
+measurement (`results/prereg/PREREG_LAUNCH.md` §3) and could only loosen — that direction was fixed
+in advance.
+
+### Four standing gates
+
+- **fleet replay** — all 149 frozen tables × 9 budgets against a committed baseline, offline, ~9 s.
+  Its positive control is the real D-2 defect: reintroducing it produces 106 findings, **none on a
+  live anchor**.
+- **vendor manifest** — 23 hash pins ship as data, so the drift check cannot skip on a product-only
+  branch (it skipped 12 of 14 items before). It also pins `SAN_TOKENS`, which decides what counts as
+  a sanitizer report and was previously pinned by nothing while a docstring claimed otherwise.
+- **measurement lock** — a machine-wide lock for the whole run. Two concurrent runs used to produce
+  wrong numbers with no warning. `--wait` queues.
+- **path registry** — production's 24 verify/emit paths as data; the composition sweep fails if a
+  required path is never exercised.
+
+### Defects found by the tester campaign
+
+**D26 — the correctness oracle could not fail.** `cytune init` scaffolded `1.0` for every
+float scalar, so a `clip(x, lo, hi)` kernel got `lo == hi`, a constant output, and an oracle that no
+build could fail. The run certified `IMPROVEMENT 1.079x` on a flat kernel and `--apply` accepted it.
+Found by a first-time-user agent on the first kernel it wrote. cytune now refuses when the oracle
+has no power, and repeated scalars no longer collide.
+
+**D27 — the sanitizer gate's checks and its licence keyed on different fields.** `ran=False,
+clean=True` was checked by nothing and licensed by everything. One predicate now answers the
+question, used by the safety wording, by coherence, and by `--apply`.
+
+**D25 — the composition-level regression check had not run since a rename.** Dead on import for an
+entire release. Now in the pre-tag gate, plus a static check over every committed script.
+
+### CLI
+
+`tune` runs doctor's blocking checks itself. A plain-language "WHAT TO DO" line prints above the
+certificate. The complete surface — 4 commands, 27 flags, 10 config keys, exit codes — is one
+section of the user guide, with a test that fails on an undocumented flag.
+
+`--probe-as-screen` is **settled and stays off by default**: better median (1.409 % → 0.802 %),
+better worst anchor (9.791 % → 2.664 %), same cost — and nine fleet kernels regress past 5 pp, one
+by 28 pp, none of them a live anchor. The second screen is insurance against a tail.
+
+### Known and not fixed
+
+`docs/KNOWN_ISSUES.md` K-12 (C1's noise floor is estimated from the driver's own wall clocks, and a
+noisy driver can disarm the check), K-13, K-14. The certificate's attestation no longer claims C1
+catches *any* fabricated speedup, because a demonstration falsified that sentence.
+
+---
+
 ## Unreleased — four defects found in the search, three fixed, and an engine change that did not earn its way in
 
 The DOE engine was replayed against the project's own 149 frozen kernel tables under a
