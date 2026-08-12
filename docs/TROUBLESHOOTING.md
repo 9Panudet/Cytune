@@ -43,7 +43,7 @@ Seven checks, two tiers of failure:
 | `pinned image` | `localhost/motifbo-env:phase1` exists; prints its ID and whether it matches the reference | **BLOCKING.** `podman build -f Containerfile -t localhost/motifbo-env:phase1 .` |
 | `sanitizer gate` | the ASan+UBSan gate can run | **DEGRADED.** Tuning continues but the emitted config is not memory-checked; the certificate records `NOT RUN`, which is not a pass. |
 | `measurement rig` | `measure_wrap.sh` verifies the host asserts | **DEGRADED.** Falls back to portable; small speedups become indistinguishable from noise. `sudo scripts/host_prep.sh`. |
-| `python` | host Python ≥ 3.9 | **BLOCKING.** |
+| `python` | host Python ≥ 3.9 | **BLOCKING.** The suite is run on CPython 3.9 – 3.14 before every release, so the bound is measured rather than assumed — see `KNOWN_ISSUES.md`, "the environments this release was actually run in". |
 | `entry point` | `cytune` is on PATH | info only — the module form works regardless. |
 | `workspace` | the workspace directory exists or can be created | **BLOCKING** if not writable. |
 

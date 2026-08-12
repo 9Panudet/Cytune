@@ -4,7 +4,9 @@
 which settings, proves the answer still computes what you wrote, and refuses to recommend anything
 it cannot stand behind.**
 
-Research preview. One machine, x86-64 Linux, rootless podman.
+Research preview. One machine, x86-64 Linux, rootless podman. Every number below carries its
+conditions, and [`CHANGELOG.md`](CHANGELOG.md) opens with an advisory: **if you have a certificate
+from cytune 1.0.0, re-run it** — that release could certify a speedup it should have refused.
 
 ```bash
 pip install cytune
@@ -157,9 +159,15 @@ out.
 
 ## Requirements
 
-x86-64 Linux · Python 3.9+ · podman (rootless is fine) · a Cython module with a driver.
+x86-64 Linux · CPython 3.9–3.14 · **rootless** podman · a Cython module with a driver.
 `cytune doctor` checks all of it and prints the fix line for anything missing;
 `cytune doctor --build-image` builds the pinned toolchain image and verifies its digest.
+
+The Python range is measured, not assumed: the shipped test suite is run on CPython 3.9.25, 3.10.20,
+3.11.15, 3.12.13, 3.13.15 and 3.14.7 before a release, with identical results on all six
+([`evidence/python_matrix.json`](evidence/python_matrix.json)). **Running podman as root is
+untested** — every measurement in this project was made rootless, and that is a statement about what
+was exercised rather than about what works ([`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) K-20).
 
 The best results need a quiesced host (turbo off, performance governor, an isolated core). Without
 one, cytune runs in `portable` mode and labels its numbers as indicative.

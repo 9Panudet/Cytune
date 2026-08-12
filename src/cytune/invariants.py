@@ -78,6 +78,12 @@ REGISTRY = [
      coherence.assert_render_is_a_function_of_the_document, "cli.tune, before writing or printing",
      "test_cytune_render.py::test_i1_10_a_rendering_of_another_document_is_refused"),
 
+    ("I1.11", "the claimed speedup equals the endpoint measurements recorded beside it, so the "
+              "number a user acts on is checked against the numbers it is derived from (G6)",
+     coherence._assert_speedup_recomputes, "cli.tune, via assert_certificate_coherent",
+     "test_cytune_guarantee_controls.py::test_i1_11_a_speedup_that_contradicts_its_own_"
+     "measurements_is_refused"),
+
     # ------------------------------------------------------------------------- I2: emission
     ("I2.1", "a candidate that does not clear the emit margin is demoted to the reference BEFORE "
              "the certificate is built, or the build refuses (P2 at its source)",

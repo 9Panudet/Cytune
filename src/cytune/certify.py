@@ -9,6 +9,8 @@ Host-side and numpy-free (theta is safe to import; classify/algorithms are not).
 """
 from __future__ import annotations
 import json
+import os
+import re
 
 from ._vendor import theta
 from . import routing
@@ -1160,6 +1162,78 @@ def next_step(cert):
     return "WHAT TO DO: read the verdict below; cytune has no short answer for this outcome."
 
 
+# ------------------------------------------------------------------ the 1.0.0 defect advisory
+#
+# 1.0.0 is published and cannot be unpublished. It could certify `IMPROVEMENT` on evidence 1.1.0
+# refuses outright, so a 1.0.0 certificate in a user's hands may be a confident wrong answer:
+#
+#   D26  `cytune init` scaffolded the same value for every float scalar, so a two-bound kernel
+#        (`clip(x, lo, hi)`) got `lo == hi`, a constant output, and an oracle no build could fail.
+#        G1 was vacuous for that run and `--apply` accepted the result.
+#   D28  a re-run in an existing workspace reused the PREVIOUS kernel's calibrated workload after
+#        the module changed, so the numbers describe a workload the edited kernel never ran.
+#   D30  a calibration miss of 215x was reported as success; the requested and achieved workloads
+#        were both in the document and nothing subtracted them.
+#
+# This project's own rule is that a claim known to be unsound cannot be left standing unmarked, and
+# a certificate is a document people keep and forward. So a 1.1.0 run that MEETS one says so.
+V1_ADVISORY_CEILING = (1, 0, 0)
+
+
+def _version_tuple(s):
+    """(major, minor, patch) from a cytune version string, or None if it does not parse.
+
+    Tolerant of pre-release suffixes on purpose: `1.0.0rc1` is 1.0.0-era and carries the same
+    defects. Deliberately returns None rather than guessing on anything it cannot place -- the
+    advisory is a statement about specific released versions, and a warning fired at a version
+    nobody has shipped yet would be this project's own overclaim, one layer down.
+    """
+    if not isinstance(s, str):
+        return None
+    head = re.match(r"\d+(?:\.\d+)*", s.strip())
+    if not head:
+        return None
+    parts = [int(p) for p in head.group(0).split(".")][:3]
+    return tuple(parts + [0] * (3 - len(parts)))
+
+
+def version_advisory(cert):
+    """Text warning that this certificate came from a known-defective release, or None.
+
+    A pure function of the document, like `next_step`, so what it says is testable without a run
+    and cannot depend on anything the certificate does not carry.
+    """
+    v = _version_tuple((cert or {}).get("cytune_version"))
+    if v is None or v > V1_ADVISORY_CEILING:
+        return None
+    ver = cert.get("cytune_version")
+    return (
+        f"NOTICE: this workspace holds a certificate from cytune {ver}, a release now known to be\n"
+        f"  defective. {ver} could certify a speedup on a kernel whose correctness oracle had no\n"
+        f"  power to fail (D26), could reuse a calibration its own module hash had invalidated\n"
+        f"  (D28), and could report a workload it never achieved as success (D30). This version\n"
+        f"  refuses all three, so its answer supersedes that certificate rather than confirming it.\n"
+        f"  * If you ran `--apply` under {ver}, check your .pyx for a `# cython:` directive header\n"
+        f"    you did not write. `--apply --in-place` leaves a .cytune-backup beside it.\n"
+        f"  * Detail: CHANGELOG.md, \"1.0.0 is known-defective\".")
+
+
+def prior_certificate_advisory(odir):
+    """`version_advisory` for a certificate an earlier run left in this workspace, or None.
+
+    The ONE place cytune reads a certificate back off disk. An unreadable or malformed file is not
+    an advisory and must never abort the run that found it: the user came here to tune a kernel,
+    and a leftover document from a previous version is the least trustworthy thing in the
+    directory. Silence is the correct answer when we cannot tell what we are looking at.
+    """
+    path = os.path.join(odir, "certificate.json")
+    try:
+        with open(path) as f:
+            return version_advisory(json.load(f))
+    except (OSError, ValueError):
+        return None
+
+
 def render(cert):
     """Human-readable certificate — what the user actually reads in the terminal."""
     L = []
@@ -1479,7 +1553,16 @@ def render(cert):
         para(att["audience"])
         add("")
 
-    add("RAW: every number above recomputes from " + cert["sources"]["table"])
+    # G6, stated at the precision it actually holds. This line used to read "every number above
+    # recomputes from <table>", and the endpoint tier is NOT in that table -- the headline speedup
+    # and the separation are computed from the sub-measures recorded in this document's own
+    # `measurement` block. One file was named as the source of numbers it does not contain, in the
+    # sentence whose whole job is to say where the numbers came from. Found by the G1-G7 control
+    # sweep; the arithmetic on the endpoint side is now checked by invariant I1.11 rather than
+    # merely pointed at.
+    add("RAW: the screen-tier measurements recompute from " + cert["sources"]["table"])
+    add("     the endpoint numbers, the speedup and the separation recompute from the "
+        "`measurement` block of certificate.json (invariant I1.11 checks the ratio).")
     add(f"EXIT CODE: {cert.get('exit_code')}  "
         f"(0 improvement, 2 honest-flat, 3 no-safe-improvement, 1 error)")
     add("=" * 78)

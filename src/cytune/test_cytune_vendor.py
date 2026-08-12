@@ -317,14 +317,26 @@ def test_the_drift_check_is_not_vacuously_skipping():
     Note what this test can and cannot do: it guards TIER 2 only. Tier 1 needs no such guard
     because it cannot skip — that is the entire point of the manifest.
     """
-    if not os.path.isdir(STUDY):
-        pytest.skip("study tree absent (standalone install) — TIER 2 cannot be checked here; "
-                    "TIER 1 has already compared every vendored file against the manifest")
+    # D34: key on the mapped SOURCES, never on the directory. `git checkout main` deletes every
+    # tracked file under `scripts/phasep/` and leaves the DIRECTORY behind, because `__pycache__`
+    # is untracked and git will not remove a non-empty directory. So `os.path.isdir(STUDY)` reads
+    # True on a branch that carries none of the study code, and this guard demanded ten files that
+    # are not supposed to be there — a false FAILURE, where the fleet gate's version of the same
+    # mistake was a false pass. A directory-existence check is not a check that the directory has
+    # anything in it.
+    sources = list(WHOLE_FILE.values()) + [v[0] for v in PER_FUNCTION.values()]
+    assert len(sources) >= 10, (
+        f"the source mapping itself has emptied out ({len(sources)} entries) — with nothing to "
+        f"look for, BOTH branches below are vacuous and this guard guards nothing.")
+    present = [rel for rel in sources if os.path.exists(os.path.join(REPO, rel))]
+    if not present:
+        pytest.skip("study tree absent (standalone install, or a product-only branch) — TIER 2 "
+                    "cannot be checked here; TIER 1 has already compared every vendored file "
+                    "against the manifest")
     # The study CODE tree (`scripts/phasep`, `src/motifbo`) is on `dev` and `research`; the study
     # DATA (`results/`) is on `research` only. Lumping them made this test fail on `dev` for a
     # file that is not supposed to be there — found by running the suite from a clean clone of each
     # branch, which is the only way that distinction shows up.
-    sources = list(WHOLE_FILE.values()) + [v[0] for v in PER_FUNCTION.values()]
     # Include the DATA pins only when the study DATA tree is actually POPULATED on this branch.
     # Keying on `os.path.isdir("results")` was not enough: a working tree switched from `research`
     # to `dev` keeps an empty-ish `results/` full of untracked leftovers while the one tracked file

@@ -12,6 +12,47 @@ their evidence are in
 
 ## Open
 
+### The environments this release was actually run in
+
+Stated because "supported" and "exercised" are different words and this page is where the difference
+belongs. Everything in the left column was run; everything in the right column was not, and no claim
+anywhere in this repository may exceed it.
+
+| | exercised | not run |
+|---|---|---|
+| **host Python** | **CPython 3.9.25, 3.10.20, 3.11.15, 3.12.13, 3.13.15, 3.14.7** — the shipped suite on each, **786 passed / 19 skipped / 0 failed, identical on all six** | anything below 3.9; PyPy or any non-CPython |
+| **container runtime** | rootless podman | **podman as root**; docker; any other OCI runtime |
+| **hardware** | one Intel i3-10100F, x86-64 Linux | everything else — see **N3**, this is the big one |
+| **disk** | normal operation | **disk exhaustion mid-run** (see K-21) |
+| **filesystem** | ext4, unicode and spaces in paths | network filesystems, case-insensitive filesystems |
+
+The Python row was measured, not assumed: `pyproject.toml` claimed `requires-python = ">=3.9"` while
+every run in the launch pass used 3.14.5, so five of the six supported versions had never executed a
+line of this code. Running them found **D33** — see below.
+Raw: [`../evidence/python_matrix.json`](../evidence/python_matrix.json), with the six full pytest
+logs and the script (`scripts/release/pymatrix.sh`) on the `dev` branch.
+
+**K-20 — podman as root is untested, and `rootless is fine` was the wrong way round.** Every
+measurement in this repository was made with rootless podman. Running the pinned image as root is
+not known to break anything and is not known to work; in particular the measurement lock's path
+(`/var/lock/cytune/` falling back to `/tmp/`) and the workspace's ownership after a root container
+writes into it have not been exercised. *Why not fixed:* it is a real test matrix cell, not a code
+change, and running it properly means a second machine rather than a `sudo` on this one.
+
+**K-21 — disk exhaustion mid-run is untested.** A tuning run writes builds, artifacts, a golden and
+a growing `table.jsonl`. What happens when the filesystem fills between the build phase and the
+measure phase has never been observed. The failure is expected to be loud (an `OSError` from a
+write), and "expected to be" is the whole reason this entry exists. *Why not fixed:* simulating it
+faithfully needs a size-capped filesystem, which is a rig change.
+
+**D33 — a test that read the host instead of the code, found by running the Python matrix.**
+`test_failure_path_sanitizer_check_passes_when_the_image_is_present` stubbed `doctor._run` but not
+`sanitize_gate.is_pinned_image()`, which shells out to podman on its own. It therefore passed on the
+development machine because the pinned image happens to be there, and **failed on every machine
+without it** — which is every machine a new contributor starts from, and all six interpreters in the
+matrix. Fixed: both dependencies are stubbed, and the H6 branch it was shadowing (an image that
+exists but is not the pinned one) now has a test of its own.
+
 ### Limitations that will not be "fixed" — they are the honest shape of the product
 
 **The routing policy is an engineering default, not a validated router.** Measured, not
