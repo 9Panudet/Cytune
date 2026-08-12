@@ -13,6 +13,7 @@ not in the table below, it is a defect and should be reported as one.
 | "it finds latent out-of-bounds bugs your tests cannot see" | `example_sanitizer_report.log` | a real AddressSanitizer report from the gate, on a kernel whose own correctness oracle passed |
 | "four document schemas, machine-readable" | `schemas.json` | the certificate, audit, doctor and dry-run schemas |
 | "it is tested by people trying to break it" | `adversarial_campaign.md` | what four testers found, including the five defects they found and the six issues still open |
+| "CPython 3.9–3.14", and the claim that the range is measured rather than assumed | `python_matrix.json` | the shipped suite on all six interpreters, with exact patch versions and pass/skip/fail counts. It found D33 on its first run |
 | the guarantees | `../docs/GUARANTEES.md` | on this branch; the **non**-guarantees N1–N9 are in the same file and are not optional reading |
 
 ## Three things about these numbers that a careful reader should check first

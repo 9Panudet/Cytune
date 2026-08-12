@@ -28,8 +28,9 @@ anywhere in this repository may exceed it.
 
 The Python row was measured, not assumed: `pyproject.toml` claimed `requires-python = ">=3.9"` while
 every run in the launch pass used 3.14.5, so five of the six supported versions had never executed a
-line of this code. Running them found **D33** — see below. Raw:
-`results/release/pymatrix/`. Recompute: `scripts/release/pymatrix.sh`.
+line of this code. Running them found **D33** — see below.
+Raw: [`../evidence/python_matrix.json`](../evidence/python_matrix.json), with the six full pytest
+logs and the script (`scripts/release/pymatrix.sh`) on the `dev` branch.
 
 **K-20 — podman as root is untested, and `rootless is fine` was the wrong way round.** Every
 measurement in this repository was made with rootless podman. Running the pinned image as root is
