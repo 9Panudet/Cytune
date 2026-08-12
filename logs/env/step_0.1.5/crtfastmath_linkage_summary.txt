@@ -1,2 +1,0 @@
-executable link: crtfastmath mentions = 1
-shared-obj link: crtfastmath mentions = 0
