@@ -1,0 +1,60 @@
+# cytune §1.4 sanitizer gate — config 1584
+# verdict: SANITIZER_REPORT  tokens: ['AddressSanitizer', 'SUMMARY: AddressSanitizer', 'buffer-overflow']
+# The ERROR line, the faulting access and the stack trace are at the TOP.
+
+=================================================================
+==19==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x7fb4df41d7f8 at pc 0x7fb4e05a36ae bp 0x7ffed476e710 sp 0x7ffed476e700
+READ of size 8 at 0x7fb4df41d7f8 thread T0
+    #0 0x7fb4e05a36ad in __pyx_pf_6kernel_run /tmp/tmp02dd_uor/c/kernel_00010.c:15912
+    #1 0x7fb4e05a36ad in __pyx_pw_6kernel_1run /tmp/tmp02dd_uor/c/kernel_00010.c:15809
+    #2 0x7fb4e056e56b in __Pyx_CyFunction_Vectorcall_FASTCALL_KEYWORDS /tmp/tmp02dd_uor/c/kernel_00010.c:22876
+    #3 0x5db531 in _PyEval_EvalFrameDefault (/usr/bin/python3.12+0x5db531) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #4 0x5d58ba in PyEval_EvalCode (/usr/bin/python3.12+0x5d58ba) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #5 0x608b51  (/usr/bin/python3.12+0x608b51) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #6 0x6b5262  (/usr/bin/python3.12+0x6b5262) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #7 0x6b4fc9 in _PyRun_SimpleFileObject (/usr/bin/python3.12+0x6b4fc9) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #8 0x6b4dfe in _PyRun_AnyFileObject (/usr/bin/python3.12+0x6b4dfe) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #9 0x6bce64 in Py_RunMain (/usr/bin/python3.12+0x6bce64) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #10 0x6bc94c in Py_BytesMain (/usr/bin/python3.12+0x6bc94c) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+    #11 0x7fb4fe6d41c9  (/lib/x86_64-linux-gnu/libc.so.6+0x2a1c9) (BuildId: 8e9fd827446c24067541ac5390e6f527fb5947bb)
+    #12 0x7fb4fe6d428a in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x2a28a) (BuildId: 8e9fd827446c24067541ac5390e6f527fb5947bb)
+    #13 0x657b04 in _start (/usr/bin/python3.12+0x657b04) (BuildId: 7aa38bef4bcd63064ecbd05a66f6120026526b74)
+
+0x7fb4df41d7f8 is located 8 bytes before 1600000-byte region [0x7fb4df41d800,0x7fb4df5a4200)
+allocated by thread T0 here:
+    #0 0x7fb4feaec9c7 in malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:69
+    #1 0x7fb4fb4e0467 in default_malloc (/opt/venv/lib/python3.12/site-packages/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x175467) (BuildId: bfa53d32166701475a4a24c5d531888045f88ab7)
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow /tmp/tmp02dd_uor/c/kernel_00010.c:15912 in __pyx_pf_6kernel_run
+Shadow bytes around the buggy address:
+  0x7fb4df41d500: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x7fb4df41d580: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x7fb4df41d600: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x7fb4df41d680: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x7fb4df41d700: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+=>0x7fb4df41d780: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa[fa]
+  0x7fb4df41d800: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7fb4df41d880: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7fb4df41d900: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7fb4df41d980: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x7fb4df41da00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==19==ABORTING

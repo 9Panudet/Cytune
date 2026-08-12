@@ -1,0 +1,248 @@
+{
+ "cytune-certificate/1.0": {
+  "schema": {
+   "__enum__": "{'cytune-certificate/1.0'}"
+  },
+  "cytune_version": "str",
+  "module": "str",
+  "verdict": {
+   "__enum__": "{'no-safe-improvement', 'improvement', 'honest-flat'}"
+  },
+  "exit_code": "int",
+  "summary": "str",
+  "routing_label": "str",
+  "speedup": [
+   "int",
+   "float",
+   "null"
+  ],
+  "emitted_config": {
+   "__optional__": true,
+   "__nullable__": true,
+   "config_id": "int",
+   "factors": "object",
+   "directive_header": "str",
+   "cython_x_flags": "str",
+   "gcc_flags": "str"
+  },
+  "emitted_config_unsafe": {
+   "__optional__": true,
+   "__type__": "bool"
+  },
+  "sanitizer_gate": {
+   "clean": [
+    "bool",
+    "null"
+   ],
+   "verdict": {
+    "__optional__": true,
+    "__type__": [
+     "str",
+     "null"
+    ]
+   },
+   "ran": {
+    "__optional__": true,
+    "__type__": "bool"
+   }
+  },
+  "sanitizer_gate_ran": {
+   "__optional__": true,
+   "__type__": "bool"
+  },
+  "correctness": {
+   "oracle_class": [
+    "str",
+    "null"
+   ],
+   "tolerance": [
+    "object",
+    "null"
+   ],
+   "configs_measured": [
+    "int",
+    "float",
+    "null"
+   ],
+   "configs_rejected_infeasible": [
+    "int",
+    "float",
+    "null"
+   ],
+   "golden_sha256": [
+    "str",
+    "null"
+   ]
+  },
+  "measurement": {
+   "rig_mode": {
+    "__enum__": "{'quiesced', 'portable'}"
+   },
+   "rig_statement": "str",
+   "endpoint_protocol": "str",
+   "winner_endpoint_ns": [
+    "int",
+    "float",
+    "null"
+   ],
+   "reference_endpoint_ns": [
+    "int",
+    "float",
+    "null"
+   ]
+  },
+  "emission_policy": {
+   "allow_fast_math": "bool",
+   "allow_fp_contract": "bool",
+   "portable_flags": "bool"
+  },
+  "fp_semantics": {
+   "fast_math_permitted": "bool",
+   "fma_contraction_permitted": "bool",
+   "fma_contraction_implied_by_fast_math": "bool"
+  },
+  "routing": "object",
+  "budget": "object",
+  "sources": "object",
+  "glossary": "object",
+  "provenance": {
+   "__optional__": true,
+   "__nullable__": true,
+   "emitted_artifact_sha256": [
+    "str",
+    "null"
+   ],
+   "endpoint_artifact_sha256": [
+    "str",
+    "null"
+   ],
+   "toolchain_image_digest": [
+    "str",
+    "null"
+   ],
+   "configs_measured": [
+    "int",
+    "float",
+    "null"
+   ]
+  },
+  "factor_degeneracy": {
+   "__optional__": true,
+   "__nullable__": true,
+   "n_distinct_artifacts": [
+    "int",
+    "float",
+    "null"
+   ],
+   "n_directive_combos_built": "int",
+   "n_distinct_generated_sources": "int",
+   "directives_inert": "array",
+   "total_collapse": "bool"
+  },
+  "attestation": {
+   "__optional__": true,
+   "__nullable__": true,
+   "attests": "str",
+   "does_not_attest": "str",
+   "audience": "str"
+  },
+  "search": {
+   "__optional__": true,
+   "__nullable__": true,
+   "engine": "str",
+   "design_key": [
+    "str",
+    "null"
+   ],
+   "second_screen": "bool",
+   "prior": "str"
+  }
+ },
+ "cytune-dry-run/1.0": {
+  "schema": {
+   "__enum__": "{'cytune-dry-run/1.0'}"
+  },
+  "cytune_version": "str",
+  "dry_run": {
+   "__enum__": "{True}"
+  },
+  "verdict": {
+   "__enum__": "{None}"
+  },
+  "module": "str",
+  "exit_code": "int",
+  "would_measure_configs": "int",
+  "estimated_seconds": [
+   "int",
+   "float",
+   "null"
+  ],
+  "rig_mode": {
+   "__enum__": "{'quiesced', 'portable'}"
+  },
+  "emission_policy": "object",
+  "probe_features": "object",
+  "routing": "object",
+  "note": "str"
+ },
+ "cytune-audit/1.0": {
+  "schema": {
+   "__enum__": "{'cytune-audit/1.0'}"
+  },
+  "cytune_version": "str",
+  "command": {
+   "__enum__": "{'audit'}"
+  },
+  "module": "str",
+  "verdict": {
+   "__enum__": "{'defects-found', 'clean', 'incomplete'}"
+  },
+  "exit_code": "int",
+  "summary": "str",
+  "scope": "str",
+  "risk_set_size": "int",
+  "n_reported": "int",
+  "n_clean": "int",
+  "n_not_run": "int",
+  "directive_verdicts": "object",
+  "results": {
+   "__array_of__": {
+    "name": "str",
+    "config_id": "int",
+    "outcome": {
+     "__enum__": "{'not-run', 'reported', 'clean', 'build-fail', 'raised'}"
+    },
+    "why": "str",
+    "directives": "object",
+    "clean": [
+     "bool",
+     "null"
+    ],
+    "verdict": [
+     "str",
+     "null"
+    ],
+    "tokens": "array"
+   }
+  }
+ },
+ "cytune-doctor/1.0": {
+  "schema": {
+   "__enum__": "{'cytune-doctor/1.0'}"
+  },
+  "cytune_version": "str",
+  "ok": "bool",
+  "exit_code": "int",
+  "checks": {
+   "__array_of__": {
+    "name": "str",
+    "ok": [
+     "bool",
+     "null"
+    ],
+    "tier": "str",
+    "detail": "str"
+   }
+  }
+ }
+}

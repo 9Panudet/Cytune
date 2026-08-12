@@ -3653,3 +3653,12 @@ for p in ['/work/_evil_probe.txt','/work/bindbreak4/_so/kernel_651.so','/work/bi
 2026-08-12T07:35:04Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-12T07:35:04Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-12T07:35:08Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T07:39:55Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T07:40:52Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T07:40:52Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T07:40:56Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T07:41:09Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T08:24:17Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T08:25:26Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T08:25:26Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T08:25:30Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise

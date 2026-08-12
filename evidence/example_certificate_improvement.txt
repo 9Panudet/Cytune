@@ -1,0 +1,137 @@
+==============================================================================
+cytune certificate — fleet_R_01_csr   [1.0.0]
+  routing: engineering default grounded in the Phase-P study (DOE beat BO in 18 of 20 cells);
+  NOT a validated per-cell router — RQ-P2 measured that routing does not beat always-DOE on
+  held-out kernels
+==============================================================================
+
+VERDICT: IMPROVEMENT
+  1.967x faster than the reference configuration, verified at the endpoint tier and re-checked
+  against the oracle.
+
+EMIT — paste this at the top of the .pyx:
+  # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=True, nonecheck=False
+
+  ...or pass to cythonize:
+  -X boundscheck=False -X wraparound=False -X cdivision=True -X initializedcheck=True -X nonecheck=False
+
+GCC flags:
+  -O3 -march=x86-64 -fno-unroll-loops -ffp-contract=off
+
+MEASURED SPEEDUP: 1.9674x
+  reference 65.090 ms  ->  emitted 33.084 ms
+  median-of-3 sub-measures at K=30, escalating to at most 5 while CV > 0.05
+  separation: every winner sub-measure beat every reference sub-measure, by 48.69%
+  wall-clock corroboration: PASS — 36.1 ms of the claimed gain is unaccounted for by the parent process's own clock, and it had to stay under 480.1 ms
+  emit margin: gain had to exceed 0.0200 — max(2 x combined endpoint CV = 0.0112, tau = 0.02) = 0.0200
+               (product rule, not a pre-registered study threshold)
+
+CORRECTNESS CERTIFICATE
+  oracle class          : float
+  tolerance             : {"rtol": 1e-09, "atol": 1e-12}
+  basis                 : numpy.allclose(rtol, atol) against the golden output; the reference config's output was bit-identical across repeated runs, so the tolerance sits at the pre-registered floor rather than being widened to fit observed drift
+  determinism gate      : bit-identical over 5 reference reps -> True
+  configs measured      : 33
+  rejected as incorrect : 0 (0.0% of measured)
+  endpoint re-check     : the emitted config was re-measured at the endpoint tier; each of its 3-5 sub-measures is a fresh process whose FIRST repetition is canonicalised and checked against the golden output. A config that passes the screen but fails here is never emitted. Repetitions after the first in each process are timed but not output-checked.
+  emittable candidates  : 12 of 33 feasible (21 excluded by policy: fast_math=12, fp_contract=9)
+
+SANITIZER GATE (on the config being emitted)
+  CLEAN — config 1392 was rebuilt under ASan+UBSan and ran with no report.
+  A clean gate is not proof of memory safety: it means no error was detected on the inputs your
+  driver generated, for this one configuration.
+
+RIG MODE
+  quiesced: quiesced — host asserts verified by measure_wrap (measure_wrap: state OK — no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise)
+
+PROVENANCE — what these claims are bound to
+  emitted artifact      : f846190f3473 (timed: f846190f3473)
+  toolchain image       : d45e33b08bad
+  sanitizer image       : d45e33b08bad
+  rig fingerprint       : no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+  measured              : 33 configs, 33 distinct binaries from 15 distinct generated sources (22 directive combinations)
+  no effect on this kernel: initializedcheck — flipping these never changed the generated C
+
+FACTOR DEGENERACY — directives that do nothing to THIS kernel
+  initializedcheck never changed the generated C in any pair of configurations this run built
+  that differed only in it. Turning them off cannot make your kernel faster, and cytune did not
+  claim it would. the generated C is hashed per directive combination; a directive is INERT when
+  every pair of built combinations differing only in it produced byte-identical C. Only
+  combinations this run actually built are compared.
+
+ROUTING
+  rule R4 -> doe (engine: DOE)
+  probe spread 3.6632 >= 1.5 with IF_probe 0.0149 < 0.25 — looks like a separable lever
+  routing: engineering default grounded in the Phase-P study (DOE beat BO in 18 of 20 cells); NOT a validated per-cell router — RQ-P2 measured that routing does not beat always-DOE on held-out kernels
+
+FLOATING-POINT CONSENT: strict (default). No config that changes floating-point
+  semantics — neither -ffast-math nor FMA contraction — was eligible for emission.
+  every floating-point-semantics change is opt-in (--allow-fast-math for -ffast-math,
+  --allow-fp-contract for FMA contraction). Opting in changes what is TRIED and what may be
+  EMITTED; it never changes what is ACCEPTED — such a config is emitted only if it passes the
+  same oracle as everything else
+
+WHY THE PROBE NUMBER AND THE SPEEDUP DIFFER
+  delta_probe 3.6632   ->   endpoint speedup 1.9674
+  delta_probe is a SCREENING-tier ratio: one fast measurement of each of 17 configs, slowest
+  over fastest, and the fastest is a sample minimum so it is biased low. The speedup is an
+  ENDPOINT-tier median-of-3 at K=30 of the emitted config against the reference, and it had to
+  clear the separation test and the emit margin. They are measured differently and only the
+  endpoint number is claimed. delta_probe being much larger is normal and is not evidence of a
+  lost speedup — it is what a noisy sample minimum looks like.
+
+GLOSSARY — every term above, defined here so you need no other document
+    IF_probe: interaction fraction — how much of the probe's variation is NOT explained by
+    independent single-factor effects. Low means the factors act separately. 'NA (degenerate)'
+    means too few feasible probe rows to fit it at all.
+    delta_probe: ratio of the slowest to the fastest FEASIBLE config in the 17-config probe
+    screen. A screening-tier number: it is routinely larger than the final endpoint-tier
+    speedup, because the screen is one fast measurement per config.
+    emit margin: max(2 x combined endpoint CV, tau). The bar a speedup must clear, computed from
+    THIS run's own measured noise, so a noisy rig demands a bigger gain.
+    endpoint tier: median-of-3 sub-measures at K=30 repetitions, escalating to at most 5 while
+    CV > 0.05. The measurement of record; the screen tier is not.
+    rule R0..R5: which routing rule fired. R0 abort, R1 honest-flat, R2 degenerate probe, R3
+    interaction-dominated, R4 separable lever, R5 modest spread.
+    separation: every winner sub-measure was faster than every reference sub-measure. Not a
+    p-value — a direct statement over the repeated measurements.
+    tau: 0.02 — this rig's measured ~2% timing noise floor, and the hard lower bound on the emit
+    margin. A gain smaller than tau is never claimed no matter how clean the run.
+    the reference: config 288: Cython's safe defaults (boundscheck and wraparound ON) with -O2
+    -march=x86-64 -ffp-contract=off. What cytune falls back to.
+    wall-clock corroboration: an independent check on the reported speedup, using a clock the
+    measured process cannot reach. The parent times each sub-measure from outside; the winner
+    and the reference run the same driver with the same repetitions on the same inputs, so the
+    time NOT spent in the timed region must be the same for both apart from the warmup calls. A
+    driver that misreports its own elapsed time breaks that equality. PASS means the discrepancy
+    stayed inside a budget derived from this run's own measured process-to-process spread.
+    §1.4 sanitizer gate: the emitted config is rebuilt under AddressSanitizer +
+    UndefinedBehaviorSanitizer and run. A report makes it unemittable regardless of whether its
+    output was correct.
+
+WHAT THIS CERTIFICATE ATTESTS
+  IT ATTESTS that cytune built, oracle-checked, sanitizer-gated and timed the configuration
+  named above, in the pinned toolchain, and that every claim here is bound to the hashes in
+  PROVENANCE.
+
+  IT DOES NOT ATTEST that the timings are what the kernel really takes. The measurement child
+  loads the user's own driver into the process that owns the clock, so the reported medians are
+  as trustworthy as that driver. cytune corroborates them against the parent process's wall
+  clock (see timing_corroboration): that catches ANY claimed speedup on a kernel that is really
+  flat, and catches an inflated claim up to a true speedup of roughly 1.2x-2.3x depending on the
+  size of the claim. It does NOT catch a large real gain being inflated further, and it cannot
+  catch a driver that genuinely does different work for different configurations.
+
+  IT DOES NOT ATTEST that the binary the measurement imported is the one hashed above. The
+  hashes bind the FILE cytune built and pointed the endpoint tier at, checked before and after
+  the measurement and against a read-only artifact tree. They do not bind against a driver that
+  hijacks its own interpreter's module loader — it is loaded first, so it can import something
+  else while the file on disk is untouched. No hash reaches that; it is the same trust boundary
+  as the clock.
+
+  this is evidence to whoever controls the driver. It is NOT evidence to a third party who does
+  not trust that driver.
+
+RAW: every number above recomputes from /home/beimfedora/Documents/Motif+BO/results/release/dogfood_repeat/runs/D1/fleet_R_01_csr/fleet_R_01_csr/table.jsonl
+EXIT CODE: 0  (0 improvement, 2 honest-flat, 3 no-safe-improvement, 1 error)
+==============================================================================

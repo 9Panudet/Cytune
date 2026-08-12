@@ -1,0 +1,114 @@
+{
+ "what": "cytune's answer measured against exhaustively-known optima on nine real-code Cython kernels. Every one of the 1,728 configurations was measured for each kernel, so the true optimum is known rather than estimated; regret is how much slower cytune's pick is than the best pick it was allowed to make.",
+ "conditions": {
+  "kernels": 9,
+  "kernel_source": "real library code (sparse matvec, isotonic regression, LDA, Floyd-Warshall, connected components, k-means Elkan, piecewise polynomial, binning, a predictor)",
+  "replicates_per_arm": 5,
+  "arms": [
+   "D",
+   "P"
+  ],
+  "machine": "one machine: i3-10100F, 16 GB, quiesced (turbo off, performance governor, cpu3 isolated, THP madvise)",
+  "commit": "5ebd59213555c0f541cc45820a124a8d17832660",
+  "source_tree_sha256": "2de40eaffc3ab177ec214f69c958e4be541654d2f23ab6c896079ccf61600c80",
+  "measured_utc": "2026-08-11T21:38:56Z",
+  "policy": "FP-strict default: no -ffast-math, no -ffp-contract=fast. 576 of 1,728 emittable."
+ },
+ "headline_default_arm": {
+  "median_regret": 0.014089227868102183,
+  "median_regret_range": [
+   0.014089227868102183,
+   0.0171912440259403
+  ],
+  "worst_anchor_per_replicate": {
+   "1": 0.05411972229607809,
+   "2": 0.09790880966323234,
+   "3": 0.05411972229607809,
+   "4": 0.05411972229607809,
+   "5": 0.08210542334555537
+  },
+  "configs_measured_per_pass": 313
+ },
+ "per_anchor_default_arm": {
+  "fleet_R_01_csr": {
+   "median": 0.0,
+   "min": 0.0,
+   "max": 0.0,
+   "spread_pp": 0.0,
+   "n_distinct_configs_emitted": 1,
+   "configs_measured": 33
+  },
+  "fleet_R_02_pava": {
+   "median": 0.014089227868102183,
+   "min": 0.014089227868102183,
+   "max": 0.0171912440259403,
+   "spread_pp": 0.31020161578381167,
+   "n_distinct_configs_emitted": 2,
+   "configs_measured": 33
+  },
+  "fleet_R_03_lda": {
+   "median": 0.009447808153054238,
+   "min": 0.009447808153054238,
+   "max": 0.009447808153054238,
+   "spread_pp": 0.0,
+   "n_distinct_configs_emitted": 1,
+   "configs_measured": 33
+  },
+  "fleet_R_04_binning": {
+   "median": 0.018499550830406886,
+   "min": 0.018499550830406886,
+   "max": 0.018499550830406886,
+   "spread_pp": 0.0,
+   "n_distinct_configs_emitted": 1,
+   "configs_measured": 49
+  },
+  "fleet_R_05_ppoly": {
+   "median": 0.00801552321711907,
+   "min": 0.007771696912869164,
+   "max": 0.00801552321711907,
+   "spread_pp": 0.02438263042499056,
+   "n_distinct_configs_emitted": 2,
+   "configs_measured": 33
+  },
+  "fleet_R_06_floyd": {
+   "median": 0.05404495494790629,
+   "min": 0.05404495494790629,
+   "max": 0.05404495494790629,
+   "spread_pp": 0.0,
+   "n_distinct_configs_emitted": 1,
+   "configs_measured": 33
+  },
+  "fleet_R_07_cc": {
+   "median": 0.007933865517061989,
+   "min": 0.007933865517061989,
+   "max": 0.007933865517061989,
+   "spread_pp": 0.0,
+   "n_distinct_configs_emitted": 1,
+   "configs_measured": 33
+  },
+  "fleet_R_08_elkan": {
+   "median": 0.05411972229607809,
+   "min": 0.05411972229607809,
+   "max": 0.09790880966323234,
+   "spread_pp": 4.378908736715426,
+   "n_distinct_configs_emitted": 2,
+   "configs_measured": 33
+  },
+  "fleet_R_09_predictor": {
+   "median": 0.05096893560278426,
+   "min": 0.014998828229040306,
+   "max": 0.08210542334555537,
+   "spread_pp": 6.710659511651507,
+   "n_distinct_configs_emitted": 3,
+   "configs_measured": 33
+  }
+ },
+ "instrument": {
+  "note": "Regret is DISCRETE: it changes only when the search emits a different configuration. Five of nine kernels emitted the same configuration in all five runs.",
+  "worst_per_anchor_spread_pp": 6.710659511651507,
+  "median_per_anchor_spread_pp": 0.0,
+  "fleet_median_spread_pp": 0.31020161578381167
+ },
+ "recompute": "scripts/release/run_repeat.py then scripts/release/analyse_repeat.py (dev branch)",
+ "full_report": "results/release/LAUNCH_REPORT.md (research branch)"
+}
