@@ -218,6 +218,134 @@ codes) · 23 invariants · 24 registered paths. **Nothing was cut** — every fl
 
 ---
 
+## 5b. The tester campaign — five defects, four of them wrong-number class
+
+Three of four agents reported (the fourth died on a session limit). **Five defects, four of which
+produce a confident wrong answer rather than an error** — the directive's own definition of a launch
+blocker. All five fixed; six further findings documented.
+
+### D26 — the correctness oracle could not fail (beginner agent, 14 minutes)
+
+`clip(double[::1] x, double lo, double hi)`, the first kernel the tester wrote. `cytune init`
+scaffolds `1.0` for every float-ish scalar, so `lo == hi`, so the output is constant.
+
+| driver | verdict | exit |
+|---|---|---|
+| exactly as `cytune init` wrote it | **IMPROVEMENT, 1.0790x** | 0 |
+| one line fixed (`lo=-2.0, hi=2.0`) | HONEST-FLAT, 1.0000x | 2 |
+
+`init` said `DRIVER CONTRACT: passes`; `doctor` said READY; the certificate said `rejected as
+incorrect: 0 (0.0%)`; the gate was CLEAN; **`--apply` accepted it** and wrote a `boundscheck=False`
+header into the user's source.
+
+The proximate cause is one line of `init.py`. The real cause: **G1 had no positive control.** A
+constant golden makes the comparison unfalsifiable, and `rejected as incorrect: 0 (0.0%)` is then
+arithmetic printed where evidence goes. Fixed at both depths; validated live both ways.
+
+### D27 — the gate's checks and its licence keyed on different fields (adversarial agent)
+
+Every *check* on the sanitizer gate was conditioned on `gate["ran"]`; every *licence* on
+`gate["clean"]`. A gate carrying `ran=False, clean=True` was checked by nothing and licensed by
+everything. The adversary rendered `CLEAN — config 7 … ran with no report` on a certificate emitting
+config 0, and then **reproduced D-3 exactly** — the reference emitted carrying the demoted
+candidate's verdict, under the words "best safe choice".
+
+Same family: `gate["authoritative"]` was written in three places and read in **none**, so the
+warning `binding.py` embeds in the certificate — *"the 'safe' wording is withheld and --apply
+refuses"* — was false in the same document that carried it. The test that appeared to cover it
+asserted the flag was set and stopped.
+
+Fixed by one predicate, `certify.gate_is_trustworthy`, used by all three consumers. 14 tests.
+
+### D28, D29, D30 — the systematic breaker
+
+Ten stability-matrix cells; two wrong numbers and one wrong verdict.
+
+**D28** — after you edit your kernel and re-run into the same workspace, cytune reused the
+*previous* kernel's calibration. `invalidate_stale_builds` writes the new module hash, and
+`reusable_knob` runs afterwards and compares against the record that line just overwrote, so it
+always matched. The narration contradicted itself eight lines apart: *"cache invalidated because the
+module source changed"*, then *"reusing the calibrated REPS … module … unchanged"*. A user who asked
+for 5 ms got 23.3 ms with `target_ms: 5.0` on the certificate. **This is the normal edit-then-retune
+loop**, and the reference is the denominator of every speedup in the document.
+
+**D30** — on a kernel whose single call is ~16 ns: `calibrated REPS: 1 → 1431 (reference ~5.0 ms)`
+printed, and the same document measured the reference at **0.023 ms**, under `IMPROVEMENT 1.1709x`.
+Now refuses below 1 ms and warns beyond 3×. Live: the breaker's kernel exits 1 with *"calibration
+missed by 125x"* where it used to certify 1.17×.
+
+**D29** — `doctor` returned `[ok]` for any image that exists, appending a digest mismatch to the
+*label*. The `[ok]/[warn]` column is what a user scans, and the row that owns the pinning claim gave
+the wrong answer on exactly the condition that makes results incomparable.
+
+### What held
+
+Six attempts on the artifact binding layer, all blocked by named invariants. Concurrency (the second
+run refused, naming the holder; eight subsequent runs serialised). Interruption at build and at
+measure, then resume — both inside the clean band. Unicode and spaces throughout. Hostile
+`.cytune.toml`, all rejected before the lock. A constant `canon()` refused (D26's fix, confirmed
+independently). A non-deterministic `canon()` refused. And a planted monotonic time-drift lever
+**defeated by per-sub-measure process isolation** — a real negative control passing.
+
+### Documented rather than fixed
+
+`docs/KNOWN_ISSUES.md` K-12 … K-17. The important one is **K-12**: C1's noise floor is a MAD
+estimate over n=3 wall clocks **the driver's own process reported**, with no minimum-sample guard,
+so a noisy driver inflates the budget, trips the no-power cutoff, and gets its claim certified with
+`NOT CHECKED` beside it. Demonstrated: `IMPROVEMENT 2.000x` on a kernel whose true speedup was
+1.000×.
+
+**Not fixed because changing the C1 budget changes verdicts, and every number in this report was
+measured with the current formula.** `docs/CONTRIBUTING.md` sets the bar for an engine change —
+pre-registration, offline evaluation, the fleet gate — and this has not had it. What *was* fixed is
+the false sentence: the attestation claimed C1 "catches ANY claimed speedup on a kernel that is
+really flat", which the demonstration falsifies.
+
+### What the campaign says about the 900-test suite
+
+**Five defects in a few hours, by three agents with no stake in the answer, on a codebase that had
+just passed 900 tests and gained four standing gates.** None was reachable by reading the code with
+the intention of confirming it works.
+
+Two are not even adversarial. D26 is what you reach by **using the tool normally on a kernel with
+two bounds**. D28 is what you reach by **editing your kernel and running again**.
+
+Three — D26, D28, D30 — share one shape, and it is the shape to watch for next: **the tool had both
+numbers and never compared them.** The golden was in hand and nothing asked whether it could
+discriminate. The module hash had just changed and nothing asked whether the calibration survived
+it. The requested and achieved workloads were in the same document and nothing subtracted them.
+
+## 5c. E — the branch split, prepared and verified
+
+| branch | tracked files | suite, from a **fresh clone** | carries |
+|---|---:|---|---|
+| **main** | 109 | **753 passed, 16 skipped** | `src/cytune`, its test suite, six user docs, `evidence/` |
+| **dev** | 695 | **907 passed, 31 skipped** | everything on main + `scripts/`, `tests/`, `logs/defects/`, `docs/system/` |
+| **research** | 727 | **908 passed, 30 skipped** | everything on dev + 32 study documents |
+
+`main`'s suite passing from a clone with no `scripts/`, no `tests/` and no `results/` is the first
+**real** test of the one-way dependency rule; every previous check of it was simulated.
+
+**Nothing is pushed.** The 149 frozen tables (215 MB) are deliberately **not** committed:
+`FREEZE_MANIFEST_V2.json` pins every one by sha256, and committing 215 MB into a 3 MB `.git` is a
+publishing decision that belongs to a human.
+
+### Three defects in the split itself, found by verifying it
+
+1. **Force-adding gitignored documents on `research` means switching back to `main` deletes them
+   from the working tree.** `LAUNCH_REPORT.md` vanished mid-edit three times, including while this
+   section was being written. `docs/system/15_BRANCH_HAZARD.md` documents it with the recovery
+   command.
+2. **Merging `main` into `dev` carried `main`'s reduction with it** — 590 files deleted from `dev`
+   by a commit whose entire purpose was to remove them from `main`. The same hazard in a different
+   costume, walked into within an hour of writing it down. Restored; the workflow rule is now
+   explicit: **`main` is derived from `dev` by removal and must never be merged back.**
+3. **Tests that pass on the full tree and fail from a clean clone** — the shipped example was
+   documented only in `main`'s README; the vendor vacuity guard lumped the study *code* tree with
+   the study *data* tree, failing on `dev` and, for the mirror reason, on `research`. All fixed.
+   None was visible from a working tree that has everything, which is exactly why E5 asks for the
+   clean-clone check.
+
 ## 6. What is NOT done, stated plainly
 
 This report covers sections A, B, C and part of H of the launch directive. The following are
@@ -225,11 +353,14 @@ This report covers sections A, B, C and part of H of the launch directive. The f
 
 | item | status |
 |---|---|
-| **D1–D4** the tester campaign (beginner, senior power user, systematic breaker, hacker regression) | **NOT RUN.** The agent budget for this session was exhausted (weekly limit) partway through the first scouting fan-out. Three of eight scouts died and were replaced by direct inspection |
-| **D3 stability matrix** — concurrency, interruption/resume, disk full, read-only workspace, unicode paths, Python 3.9–3.14, rootless vs root podman, image absent/mismatched, clock changes | **NOT RUN**, except *concurrency*, which is now covered live by smoke step 5b |
-| **E** the three-branch split | **NOT DONE** |
-| **F** the system documentation set | **PARTIAL** — `00_SUMMARY`, `01_REPO_MAP`, `02_PIPELINE`, `12_HISTORY` written; 11 documents outstanding |
-| **G** the sales README on main | **NOT WRITTEN** |
+| **D1** beginner agent | **DONE.** Succeeded unaided, 3 min 35 s to first result. Found D26 |
+| **D3** systematic breaker | **DONE.** 10 cells. Found D28, D29, D30 |
+| **D4** hacker regression | **DONE.** 3 blockers claimed, 2 verified and fixed (D27), 3 documented |
+| **D2** senior power user | **NOT RUN** — the agent died on a session limit before producing anything. **This is the one gate item still open** |
+| **D3 stability matrix**: Python 3.9–3.14, rootless vs root podman, disk full | **NOT RUN** — the breaker covered the other cells |
+| **E** the three-branch split | **DONE** — see §5c |
+| **F** the system documentation set | **DONE** — 16 documents |
+| **G** the sales README on main | **DONE**, with a tracked `evidence/` beside it |
 
 No claim in this report depends on any of them. They are the remaining work, not caveats on what is
 above.
@@ -238,23 +369,41 @@ above.
 
 ## 7. Recommendation
 
-**Do not launch yet.** The measurement work is done and it changed two things that matter: the
-flagship number now has a measured range, and the rule used to judge engine changes was wrong by a
-factor of 6.7 and is now derived from the instrument. The four standing gates are in and each is
-demonstrably able to fail.
+**Do not launch yet — and the reason has changed since this section was first drafted.**
 
-But the directive's launch gate requires the tester campaign to leave nothing unfixed-and-
-undocumented, and the tester campaign has not run. Section 6 is the honest list.
+The measurement work is done and it changed two things that matter: the flagship number now has a
+measured range, and the rule used to judge engine changes was wrong by a factor of 6.7 and is now
+derived from the instrument. The four standing gates are in, each with a control proving it can
+fail.
 
-**What is ready to be relied on now:**
+Then the tester campaign found **five defects in a few hours**, four of which produce a confident
+wrong answer, on a codebase that had just passed 900 tests and four new gates. Two of them are
+reached by using the tool normally, not by attacking it.
 
-- the flagship number, as a range: **median regret 1.409 % (range 1.409–1.719 %), worst anchor
-  5.412 % (range 5.412–9.791 %), 313 configurations measured**, on nine real-code kernels against
-  exhaustively-known optima, one machine, five repetitions per arm;
-- `B_anchor = 6.711 pp` as the per-anchor live bound, and `B_fleet = 0.310 pp`;
-- `--probe-as-screen` settled: **off by default**, for a documented, measured tail reason.
+That is not an argument against launching; it is an argument that **the tester campaign was the
+missing gate**, and it has now run three quarters of the way. The remaining work is small and named:
+run the senior power-user agent, and re-run the live smoke gate against the five fixes.
 
-**The single most important thing this pass produced** is not a number. It is that the same claim —
-*nine live anchors are validation, not coverage* — was demonstrated twice from opposite directions:
-once by reintroducing D-2 and watching 106 findings appear with none on an anchor, and once by a
-change that every live anchor endorsed and the fleet refused.
+### What is ready to be relied on now
+
+- the flagship number, as a range: **median regret 1.409 % (1.409–1.719 %), worst anchor 5.412 %
+  (5.412–9.791 %), 313 configurations measured** — nine real-code kernels against exhaustively-known
+  optima, one machine, five repetitions per arm;
+- **`B_anchor` = 6.711 pp** as the per-anchor live bound, `B_fleet` = 0.310 pp;
+- `--probe-as-screen` settled: **off by default**, for a measured tail reason;
+- three branches cut and verified from a fresh clone, nothing pushed.
+
+### The three things worth remembering from this pass
+
+**Nine live anchors are validation, not coverage.** Demonstrated twice from opposite directions:
+reintroducing D-2 produced 106 fleet findings with **none on an anchor**, and a change every live
+anchor endorsed was refused by the fleet for regressions on kernels no anchor contains.
+
+**A rule finer than the instrument is not conservative, it is arbitrary.** The 1.0 pp bound decided
+the fate of six engine variants and was 6.7× tighter than the run-to-run spread it was judging them
+against.
+
+**The gates caught nothing new; the testers caught five things in an afternoon.** Every mechanism in
+§4 was built to catch a class this project had already suffered, and each does. Every defect in §5b
+was found by someone using or attacking the tool from outside. Both are worth having, and the ratio
+is worth remembering when deciding where the next hour goes.
