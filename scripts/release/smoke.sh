@@ -35,18 +35,27 @@ step 0 "offline gates (B1 fleet replay, B2 vendor manifest, B4 path registry)"
 tail -1 "$WORK/gates.txt" | sed 's/^/  /'
 pass "vendor manifest, path registry and measurement lock hold"
 
-if [ -f "$REPO/results/fleet/FREEZE_MANIFEST_V2.json" ]; then
+# The guard tests BOTH freeze artifacts, because testing one of them is how this step went NOT RUN
+# on `dev` without anyone noticing. `FREEZE_MANIFEST_V2.json` and `SANITIZER_INFEASIBLE_OVERLAY.json`
+# were force-added to `research` only, so on `dev` -- the branch engine changes are actually made on
+# -- a checkout DELETED them from the working tree and B1 silently degraded to a yellow line. That
+# is the branch hazard of `docs/system/15_BRANCH_HAZARD.md` disarming a standing gate, which is
+# worse than the hazard it was written about. Both files are ~88 KB and now live on `dev` too.
+if [ -f "$REPO/results/fleet/FREEZE_MANIFEST_V2.json" ] \
+   && [ -f "$REPO/results/fleet/SANITIZER_INFEASIBLE_OVERLAY.json" ]; then
   "$REPO/.venv/bin/python" "$REPO/scripts/release/fleet_gate.py"       --report "$WORK/fleet_gate.md" > "$WORK/fleet.txt" 2>&1
   FRC=$?
   tail -12 "$WORK/fleet.txt" | sed 's/^/  /'
   [ "$FRC" -eq 0 ] || fail "B1 fleet gate: an engine regression the nine anchors would not show"
   pass "B1 fleet gate: 149 frozen tables x 9 budgets, no regression past its bound"
 else
-  # NOT a silent skip. On a product-only branch the frozen tables are on `research`, and the
-  # correct report is that this machine cannot run the gate -- not that the gate passed.
-  printf '  \033[33mNOT RUN\033[0m B1 fleet gate — results/fleet is absent on this branch.\n'
-  printf '           Run it on `dev` or `research` before tagging. A gate that cannot run here\n'
-  printf '           has NOT passed here.\n'
+  # NOT a silent skip. On `main` the frozen tables are not there at all, and the correct report is
+  # that this machine cannot run the gate -- not that the gate passed.
+  printf '  \033[33mNOT RUN\033[0m B1 fleet gate — the freeze artifacts are absent here.\n'
+  printf '           Run it on `dev` or `research`, on a machine that has results/fleet/*/table.jsonl\n'
+  printf '           (215 MB, deliberately uncommitted). A gate that cannot run here has NOT\n'
+  printf '           passed here — and check for a DELETED file before believing the branch: this\n'
+  printf '           line appeared on `dev` because a checkout removed a research-only manifest.\n'
 fi
 
 if [ -f "$REPO/results/cli_v0/ws" ] || [ -d "$REPO/results/cli_v0/ws" ]; then

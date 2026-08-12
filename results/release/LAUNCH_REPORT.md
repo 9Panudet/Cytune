@@ -1,6 +1,7 @@
 # LAUNCH_REPORT — cytune, the measurement pass before a public launch
 
-**Status: LAUNCHED. Pushed and tagged by human authorization.**
+**Status: LAUNCHED (v1.1.0, pushed and tagged by human authorization).
+Closeout complete 2026-08-13 — see §6b. Prepared as v1.1.1; not pushed, not tagged.**
 
 Released as **v1.1.0**, not v1.0.0: `v1.0.0` is already published against `0310bed`, and this
 release **refuses runs that one certified** — a degenerate correctness oracle (D26) and a
@@ -384,8 +385,24 @@ publishing decision that belongs to a human.
 
 ## 6. What is NOT done, stated plainly
 
-This report covers sections A, B, C and part of H of the launch directive. The following are
-**incomplete**, and the launch gate is therefore **not met**:
+> **Three layers, labelled by time.** This section was written while D2, E, F and G were still
+> outstanding; the table was then updated in place as each landed, and the prose above it was not.
+> That left a paragraph saying the gate was **not met** directly above a table in which every row
+> read DONE — **the P2/R2 defect class in a document**: two components each correct, disagreeing,
+> with nothing whose job it was to notice. The layers are kept, because when a thing was true is
+> part of the record. The prose is corrected.
+
+**Layer 1 — written 2026-08-12, before D2 ran, kept verbatim:**
+
+> This report covers sections A, B, C and part of H of the launch directive. The following are
+> **incomplete**, and the launch gate is therefore **not met**.
+
+**Layer 2 — 2026-08-12, at the launch.** Every section of the directive is DONE. **One cell inside
+D3 was not run**, and it is in the table as NOT RUN rather than omitted; the gate was met with that
+cell stated rather than closed.
+
+**Layer 3 — 2026-08-13, the closeout.** That cell has now been half closed and half converted into
+a written limitation. Nothing else in this table changed.
 
 | item | status |
 |---|---|
@@ -393,13 +410,84 @@ This report covers sections A, B, C and part of H of the launch directive. The f
 | **D3** systematic breaker | **DONE.** 10 cells. Found D28, D29, D30 |
 | **D4** hacker regression | **DONE.** 3 blockers claimed, 2 verified and fixed (D27), 3 documented |
 | **D2** senior power user | **DONE.** Verdict adopt-with-caveats, zero source reads. Found D31, D32 |
-| **D3 stability matrix**: Python 3.9–3.14, rootless vs root podman, disk full | **NOT RUN** — the breaker covered the other cells |
+| **D3 stability matrix**, Python 3.9–3.14 | **RUN 2026-08-13.** All six interpreters, 786 passed / 19 skipped / 0 failed, identical. Found **D33** |
+| **D3 stability matrix**, rootless vs root podman | **NOT RUN, and now written down as such** — rootless is the only mode ever exercised. `KNOWN_ISSUES` **K-20** |
+| **D3 stability matrix**, disk full | **NOT RUN, and now written down as such** — `KNOWN_ISSUES` **K-21** |
 | **E** the three-branch split | **DONE** — see §5c |
 | **F** the system documentation set | **DONE** — 16 documents |
 | **G** the sales README on main | **DONE**, with a tracked `evidence/` beside it |
 
-No claim in this report depends on any of them. They are the remaining work, not caveats on what is
-above.
+No claim in this report depends on the two remaining cells. They are stated limitations, not
+caveats on anything above.
+
+---
+
+## 6b. The closeout — four named items, 2026-08-13
+
+Released as **v1.1.1**. The four items were: mark 1.0.0 as known-defective (it is public and its
+certificates can be wrong), make this report agree with itself, turn the tester pass into a standing
+gate and sweep every guarantee for a positive control, and reconcile the untested matrix cells.
+
+### 6b.1 The 1.0.0 advisory
+
+1.0.0 is published and cannot be unpublished. **Six defects found after it shipped were already in
+it, and four make it give a confident wrong answer rather than an error** — D26 (an oracle no build
+could fail, ending in `--apply` writing `boundscheck=False` into user source), D28, D30, D29, plus
+D27 and D31. `CHANGELOG.md` opens with the advisory and its 1.0.0 entry is marked in place and
+otherwise left unedited. `certify.version_advisory` is the runtime half: a run that meets a ≤ 1.0.0
+certificate in the workspace it is about to overwrite names the defects and tells the user to check
+their source for a `# cython:` header they did not write.
+
+### 6b.2 The G1–G7 control sweep — four missing controls, three on the oldest guarantees
+
+The question, asked of each guarantee in turn: *does a deliberately wrong input make it fire?*
+
+| | what was missing |
+|---|---|
+| **G1** | **not one test in the repository called `_vendor/measure_child._feasible`.** The correctness oracle had never been handed a wrong answer. Its evidence line named tests of the orchestration *around* it. That is exactly what D26 cost |
+| **G2** | every sanitizer-gate test fed a hand-built verdict dict, so all of them would pass if `SAN_TOKENS` matched nothing a real sanitizer prints |
+| **G5** | the whole-space subset sweep proved today's flags narrow; nothing proved the comparison would notice one that widened |
+| **G6** | *"every number recomputes"* was enforced by **nothing**. The headline speedup was never checked against the endpoint medians four keys away in the same document. Now **invariant I1.11**. The `RAW:` line was also naming `table.jsonl` as the source of numbers that are not in it |
+
+The sweep's table is now part of `docs/GUARANTEES.md`, and re-running it is a release step in
+`docs/CONTRIBUTING.md` alongside the fresh-agent tester pass — whose justification is this pass's
+own ratio: **four new standing gates found 0, 900 tests found 0, three strangers found 5 in an
+afternoon**, two of them by using the tool normally.
+
+### 6b.3 Two more defects, both found by running something on a branch it had not been run on
+
+**D33** — `requires-python = ">=3.9"` covered six interpreters and one had ever executed this code.
+Running the other five found a test that stubbed one of the *two* things it depended on and had
+therefore been reading the developer's own image store for its entire life. `pytest -q src/cytune`
+did not pass on a machine that had not built the toolchain — which is every machine a contributor
+starts from.
+
+**D34** — one root cause, found twice in an hour, in opposite directions. A checkout deletes the
+tracked files a branch does not carry and **leaves the directory** when anything untracked is inside
+it. Two gates asked "is the tree here?" by asking "does the directory exist?":
+
+- **B1, the fleet gate, had not been running on `dev`** — both freeze artifacts were force-added on
+  `research` only, so a checkout removed them and `smoke.sh` printed `NOT RUN`, on the branch its
+  own message recommended, for the gate that exists because *nine anchors are validation and not
+  coverage*. **Failed open.** Fixed; B1 then ran on `dev`: 149 kernels × 9 budgets, every cell
+  byte-identical to baseline.
+- **the vendor drift guard failed shut on `main`**, demanding ten study files that are not supposed
+  to be on that branch, because `scripts/phasep/` survives as a shell holding a `__pycache__`.
+
+The false failure was investigated in seconds. The false pass had been a yellow line in a wall of
+green. That asymmetry is the finding.
+
+### 6b.4 Gates re-run for the closeout
+
+| | |
+|---|---|
+| live smoke gate | **PASSED**, with B1 green inside it for the first time on `dev` |
+| B1 fleet replay | **PASS** — 149 × 9, every cell identical to the committed baseline |
+| suites | `dev`/`research` **972 passed, 2 skipped**; `main` **792 passed, 13 skipped** |
+| interpreter matrix | **786 passed, 19 skipped, 0 failed** on each of CPython 3.9.25 → 3.14.7 |
+
+No study number, frozen table or audit verdict changed. The engine did not change — the fleet gate's
+zero movement in every one of 9 × 149 cells is the evidence for that, not an assertion.
 
 ---
 
@@ -415,6 +503,16 @@ a driver whose reported wall clocks are noisy enough disarms C1's cross-check, d
 certified `2.000x` on a kernel whose true speedup was 1.000×. It is not fixed because changing the
 C1 budget changes verdicts and would invalidate every measured number in this report; the fix
 belongs in a pre-registered engine change, not in a release scramble.
+
+**Updated 2026-08-13, after the closeout (§6b).** The gate condition still holds, and two things
+about it are now stronger than they were: the tester pass is a *standing* gate rather than a thing
+that happened once, and every guarantee has been asked whether a wrong input makes it fire — four
+answers were no, and those four controls now exist. K-12 is unchanged and still shipped knowingly.
+
+*Everything below this line was written on 2026-08-12, before the decision to launch and before the
+closeout. It is kept unedited. Where it names remaining work, that work has since been done — the
+senior power-user agent ran (§5b, D31/D32) and the smoke gate was re-run twice — and the sentence is
+left standing rather than quietly updated, because when a thing was true is part of the record.*
 
 The original recommendation, kept because it was written before the decision and should not be
 retrofitted:

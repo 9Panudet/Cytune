@@ -25,9 +25,22 @@ guessing a tolerance.
 
 **Exercised.** *live:* on `t3_oob`, 12 of 41 measured configs were rejected as incorrect and none
 reached the output (`runs/t3_oob/certificate.json` → `correctness.configs_rejected_infeasible`).
+*test:* the oracle predicate itself — `_vendor/measure_child._feasible` — is handed a wrong answer
+and must refuse it, in both classes and in both directions:
+`test_cytune_guarantee_controls.py::test_g1_an_integer_output_that_is_wrong_by_one_element_is_infeasible`,
+`..._a_float_output_outside_tolerance_is_infeasible`, `..._a_differently_shaped_output_is_infeasible_...`,
+`..._a_nan_where_the_golden_has_a_number_is_infeasible`, each with its negative control.
 *test:* `test_cytune_plan.py` drives `confirm_winner` on an endpoint failure and asserts the
 fallback; `test_cytune_product_fixes.py::test_f4_endpoint_rejection_is_also_not_flat_...` asserts
 the verdict that results.
+
+> **Those `_feasible` tests are new, and the reason is worth stating.** Until the launch pass this
+> entry cited only the orchestration around the oracle — the fallback when a config fails, the
+> verdict that results. **Nothing had ever called the oracle with a wrong answer and checked that
+> it said no.** D26 is what that costs: a scaffolded driver produced a constant output, so no build
+> could fail the check, and cytune certified `IMPROVEMENT 1.079x` on a flat kernel. G1 is also
+> guarded at its other end now — `session.oracle_power` refuses a golden that cannot discriminate
+> (`test_cytune_oracle_power.py`). See the control sweep below.
 
 ### G2 — It will not recommend a configuration the sanitizer reported on
 
@@ -173,8 +186,54 @@ gate that had not run. Both are fixed at their source.
 
 ### G6 — Every number recomputes
 
-Every certificate carries a `RAW:` pointer to the `table.jsonl` it was computed from, plus a
-machine-readable `certificate.json`. Sanitizer reports are written out in full next to it.
+Every certificate carries a `RAW:` pointer to the `table.jsonl` the screen tier was measured into,
+plus a machine-readable `certificate.json`. Sanitizer reports are written out in full next to it.
+
+**Two corrections from the control sweep, because this entry was the weakest on the page.**
+
+*The pointer named the wrong file for half the numbers.* It read "every number above recomputes
+from `<table.jsonl>`" — and the endpoint tier is not in that table. The headline speedup, the
+sub-measures and the separation are computed from the `measurement` block of the certificate
+itself. One file was named as the source of numbers it does not contain, in the sentence whose only
+job is to say where the numbers came from.
+
+*And nothing checked the arithmetic.* A pointer is a promise about provenance, not a check. The
+speedup a user acts on was never compared against the two endpoint medians recorded four keys away
+in the same document; I1.8 asked only whether a speedup was *present*. **Invariant I1.11** now
+recomputes it and refuses the certificate on disagreement.
+
+**Exercised.** *test:* `test_cytune_guarantee_controls.py::test_i1_11_a_speedup_that_contradicts_
+its_own_measurements_is_refused` and `..._is_reached_through_the_real_entry_point`, which tampers
+with one field of an otherwise honest certificate built by the production builder — with
+`..._an_honest_certificate_passes_the_real_entry_point` as the control.
+
+---
+
+## Every guarantee's control
+
+The question asked of each entry above, one at a time: **does a deliberately wrong input make it
+fire?** A guarantee with only negative controls — evidence that it passes honest input — is the
+vacuous-test class this project has now paid for four times (R2, D-3, D26).
+
+| | the wrong input that must make it fire | control | |
+|---|---|---|---|
+| **G1** | a build whose output is wrong by one element, outside tolerance, the wrong shape, or NaN where the golden has a number | `test_cytune_guarantee_controls.py::test_g1_*` (4 positive, 3 negative) | **new** |
+| **G1** | a golden that cannot discriminate at all, so no build could fail | `test_cytune_oracle_power.py` (13) | new in 1.1.0 (D26) |
+| **G2** | a config the sanitizer reports on, emitted or fallen back to | *live:* `t3_oob`; `test_g2_a_reporting_emitted_config_is_never_called_safe` | existing |
+| **G2** | real sanitizer output that `SAN_TOKENS` fails to match — the gate would return CLEAN and every hand-built-dict test would still pass | `test_cytune_guarantee_controls.py::test_g2_the_token_set_actually_matches_real_sanitizer_output` | **new** |
+| **G2b** | the out-of-bounds fixture, six consecutive times | *live:* `results/release/audit_runs/`, 6/6 | existing |
+| **G3** | a gain that is real arithmetic but inside the run's own noise | `test_borderline_gain_inside_a_noisy_margin_is_refused`, `test_marginal_gain_is_reported_as_flat_not_as_a_speedup`, `test_overlapping_endpoint_measurements_are_not_certified_as_a_speedup` | existing |
+| **G4** | a contraction config that is **5× faster** and must still not be chosen | `test_f19_fp_contract_is_excluded_from_emission_by_default` | existing |
+| **G5** | a policy that *widens* the candidate set | `test_cytune_guarantee_controls.py::test_g5_the_subset_check_fires_on_a_policy_that_widens` | **new** |
+| **G6** | a speedup that contradicts the measurements printed beneath it | I1.11 + `test_i1_11_*` (5) | **new — G6 was enforced by nothing** |
+| **G7** | a violation of each of the ten I1 checks in turn | `test_cytune_coherence.py`, `test_cytune_render.py` | existing |
+| **G8** | a swapped artifact, a re-tagged image, total directive degeneracy, an ungated rig row | `test_cytune_binding.py::test_i4_1..4` | existing |
+
+Four of the twelve rows did not exist before the launch pass, and **three of those four are on the
+two oldest guarantees on this page.** The pattern is not that new code is untested; it is that a
+guarantee gets its failure-path test when it is written and then stops being re-examined while the
+code underneath it moves. The sweep is now part of the release ritual —
+[CONTRIBUTING.md](CONTRIBUTING.md#the-pre-release-gates).
 
 ---
 
@@ -400,7 +459,7 @@ never what is emitted.
 | G3 | says "no improvement" rather than inventing one; and no longer says it when something was refused | **exercised** — live + test |
 | G4 | both FP-semantics axes are opt-in | **exercised** — test drives a 5×-faster forbidden config; live opt-in run archived |
 | G5 | no flag can loosen G1/G2/G3 | **exercised** — whole-space subset test, the preset-table test, + `--apply` refusal tests |
-| G6 | every number recomputes from raw | **exercised** |
+| G6 | every number recomputes from raw | **exercised** — I1.11 recomputes the speedup from the endpoint measurements beside it. Before the launch pass this was a pointer and no check, and the pointer named the wrong file for the endpoint numbers |
 | G7 | a self-contradicting certificate is never emitted | **exercised** — nine invariants, each with a firing test; found two live holes when written |
 | N1 | clean ≠ safe; **not-run ≠ pass** | **the not-run path is now demonstrated end-to-end** |
 | N2 | best-in-budget, not optimal | by construction |

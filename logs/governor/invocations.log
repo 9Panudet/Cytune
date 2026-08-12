@@ -1,3 +1,74 @@
+              setup_code='args = (0.200,)', reps=10, warmup=3, cycles=True)
+    echo '=== OPT-INVARIANCE: golden(-O2) output ===';
+    python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05;
+    echo '=== OPT-INVARIANCE: o3x8664(-O3) output ===';
+    python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/o3x8664/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05;
+    echo '=== G5 DETERMINISM: golden, 5 fresh setups ===';
+    python /probe/corpus/gate_runner.py determinism csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05 5;
+  ]
+    echo "### PAVA timed-recallable ###"
+    python /probe/corpus/gate_runner.py recallable _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=2000000
+    echo "### dbscan timed-recallable ###"
+    python /probe/corpus/gate_runner.py recallable dbscan_inner /so/_dbscan_inner/golden/_dbscan_inner.so n=200000,avg_deg=10
+  ]
+    python /probe/corpus/gate_runner.py recallable  _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=2000000
+    python /probe/corpus/gate_runner.py determinism _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=2000000 5
+  ]
+    python /probe/corpus/gate_runner.py recallable  dbscan_inner /so/_dbscan_inner/golden/_dbscan_inner.so n=200000,avg_deg=10
+    python /probe/corpus/gate_runner.py determinism dbscan_inner /so/_dbscan_inner/golden/_dbscan_inner.so n=200000,avg_deg=10 5
+  ]
+    h=hashlib.sha256()
+    for i in oi:
+        a=np.ascontiguousarray(args[i]); h.update(str(a.dtype).encode()); h.update(a.tobytes())
+    return h.hexdigest()[:16]
+    t0=time.perf_counter_ns(); fn(*args); ts.append((time.perf_counter_ns()-t0)/1e6); hs.append(oh())
+    for n in 1000000 5000000 10000000 20000000 40000000; do
+      python /probe/corpus/gate_runner.py scale-probe _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=$n 7
+    done]
+    for _ in range(3): fn(X,wt)
+    s=[]
+    for _ in range(9):
+        t0=time.perf_counter_ns(); fn(X,wt); s.append(time.perf_counter_ns()-t0)
+    return statistics.median(s)/1e6
+    for _ in range(3): fn(X,w)
+    s=[time.perf_counter_ns() for _ in range(1)]; s=[]
+    for _ in range(9):
+        t0=time.perf_counter_ns(); fn(X,w); s.append(time.perf_counter_ns()-t0)
+    return statistics.median(s)/1e6
+    t(Xs), t(XA), t(XA)/t(Xs), t(XB), t(XB)/t(Xs)))
+    for _ in range(3): fn(X,w)
+    s=[]
+    for _ in range(9):
+        t0=time.perf_counter_ns(); fn(X,w); s.append(time.perf_counter_ns()-t0)
+    return statistics.median(s)/1e6
+    for ns in 8000000 8400000 8800000; do
+      python /probe/corpus/gate_runner.py scale-probe csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=$ns,n_features=200,density=0.05 7
+    done]
+    echo '--- opt-inv golden(-O2) ---'; python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 | grep -oE '"output_sha256": "[a-f0-9]{12}|"input_fingerprint": "[a-f0-9]{12}';
+    echo '--- opt-inv o3x8664(-O3) ---'; python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/o3x8664/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 | grep -oE '"output_sha256": "[a-f0-9]{12}';
+    echo '--- G5 determinism (5 fresh) ---'; python /probe/corpus/gate_runner.py determinism csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 5 | grep -oE '"all_identical": (true|false)';
+    echo '--- crit-3 @ golden scale, -O3 native ---'; python /probe/corpus/crit3_probe.py csr_mean_variance_axis0 /so/o3native/sparsefuncs_fast.so 8 8650000 200 0.05 | grep -oE 'KERNEL-SHARE.*%|per-call=[0-9.]*ms';
+  ]
+    e={}; exec(cd.UNITS["lloyd_iter_chunked_dense"]["setup"]({"n_samples":ns,"n_features":nf,"n_clusters":nc}),e)
+    a=tuple(e["args"])
+    for _ in range(3): fn(*a)
+    s=[]
+    for _ in range(9):
+        t0=time.perf_counter_ns(); fn(*a); s.append(time.perf_counter_ns()-t0)
+    return statistics.median(s)/1e6
+    print("nf=%3d  per-call=%.3fms"%(nf, t(base,nf,50)))
+    try:
+        open(p,'ab').close(); print('WRITABLE', p)
+    except OSError as e:
+        print('RO      ', p, e)
+# (1) scipy.sparse.random reference
+# (2) fast O(nnz) builder (the committed recipe)
+# sparsity stats
+# (3) time the kernel on each
+# scipy reference
+# variant A: fixed-count unsorted-dup (current committed builder)
+# variant B: fixed-count SORTED-within-row (vectorized sort)
+# variant C: BINOMIAL per-row counts (matches scipy density model), sorted-unique-ish columns
 2026-06-11T15:17:37Z REFUSED no_turbo=0 gov_cpu3=schedutil cpu7_online=1 freq_cpu3_khz=4099900 reason=no_turbo!=1 (turbo enabled or intel_pstate missing) argv=[no_turbo!=1 (turbo enabled or intel_pstate missing)]
 2026-06-11T15:17:37Z REFUSED no_turbo=0 gov_cpu3=schedutil cpu7_online=1 freq_cpu3_khz=4099844 reason=no_turbo!=1 (turbo enabled or intel_pstate missing) argv=[no_turbo!=1 (turbo enabled or intel_pstate missing)]
 2026-06-11T15:18:09Z REFUSED no_turbo=0 gov_cpu3=schedutil cpu7_online=1 freq_cpu3_khz=4100040 reason=no_turbo!=1 (turbo enabled or intel_pstate missing) argv=[localhost/motifbo-env:phase0 true]
@@ -5,14 +76,6 @@
 2026-06-11T15:25:45Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=0 freq_cpu3_khz=3599963 argv=[localhost/motifbo-env:phase0 sh -c echo in-container on $(cat /sys/fs/cgroup/cpuset.cpus.effective 2>/dev/null || echo unknown)]
 2026-06-11T15:25:45Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=0 freq_cpu3_khz=3599963
 2026-06-11T20:53:16Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=0 freq_cpu3_khz=3600028 argv=[-v ./src:/src:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase0 python -c 
-import json
-from motifbo.timing.runtime_ns import measure
-from motifbo.timing.divergence import build_divergence_report
-res = measure(module_path='/src/tests/fixtures/busy_kernel.py', kernel='kernel',
-              setup_code='args = (0.200,)', reps=10, warmup=3, cycles=True)
-rep = build_divergence_report(res['samples_ns'], res['cycles'], expected_ghz=3.6)
-print(json.dumps({k: rep[k] for k in ('schema','expected_ghz','median_eff_ghz','rel_dev','divergent','n_reps')}, indent=1))
-]
 2026-06-11T20:53:16Z CYCLES-SUBSAMPLE run (perf seccomp profile active)
 2026-06-11T20:53:19Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=0 freq_cpu3_khz=3600028
 2026-06-11T21:05:24Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=0 freq_cpu3_khz=3601377
@@ -123,13 +186,6 @@ print(json.dumps({k: rep[k] for k in ('schema','expected_ghz','median_eff_ghz','
 2026-06-26T04:26:48Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/archetypes/csr_mean_variance_axis0:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=5067a0f -e MOTIFBO_RIG_STATE=no_turbo=1,gov=performance,isolated=3,7,thp=madvise localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05 30 /out/G3_golden_endpoint.json]
 2026-06-26T04:27:53Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T04:28:27Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 bash -c 
-    echo '=== OPT-INVARIANCE: golden(-O2) output ===';
-    python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05;
-    echo '=== OPT-INVARIANCE: o3x8664(-O3) output ===';
-    python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/o3x8664/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05;
-    echo '=== G5 DETERMINISM: golden, 5 fresh setups ===';
-    python /probe/corpus/gate_runner.py determinism csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05 5;
-  ]
 2026-06-26T04:28:50Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T04:31:14Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/archetypes/csr_mean_variance_axis0:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=5067a0f -e MOTIFBO_RIG_STATE=no_turbo=1,gov=performance,isolated=3,7,thp=madvise localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05 30 /out/G3_golden_char_n9.json 9]
 2026-06-26T04:33:32Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/archetypes/csr_mean_variance_axis0:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=5067a0f -e MOTIFBO_RIG_STATE=no_turbo=1,gov=performance,isolated=3,7,thp=madvise localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=9700000,n_features=200,density=0.05 30 /out/G3_golden_char_n9.json 9]
@@ -141,152 +197,31 @@ print(json.dumps({k: rep[k] for k in ('schema','expected_ghz','median_eff_ghz','
 2026-06-26T04:40:47Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/archetypes/csr_mean_variance_axis0:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 python /probe/corpus/crit3_probe.py csr_mean_variance_axis0 /so/o3native/sparsefuncs_fast.so 8 9700000 200 0.05]
 2026-06-26T04:40:57Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T04:48:47Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 bash -c 
-    echo "### PAVA timed-recallable ###"
-    python /probe/corpus/gate_runner.py recallable _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=2000000
-    echo "### dbscan timed-recallable ###"
-    python /probe/corpus/gate_runner.py recallable dbscan_inner /so/_dbscan_inner/golden/_dbscan_inner.so n=200000,avg_deg=10
-  ]
 2026-06-26T04:48:48Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T04:50:02Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 bash -c 
-    python /probe/corpus/gate_runner.py recallable  _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=2000000
-    python /probe/corpus/gate_runner.py determinism _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=2000000 5
-  ]
 2026-06-26T04:50:03Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T04:50:03Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 bash -c 
-    python /probe/corpus/gate_runner.py recallable  dbscan_inner /so/_dbscan_inner/golden/_dbscan_inner.so n=200000,avg_deg=10
-    python /probe/corpus/gate_runner.py determinism dbscan_inner /so/_dbscan_inner/golden/_dbscan_inner.so n=200000,avg_deg=10 5
-  ]
 2026-06-26T04:50:05Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T04:54:55Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 python3 -c 
-import importlib.util, sys, time, hashlib, numpy as np
-sys.path.insert(0,"/probe/corpus")
-import sklearn.cluster                                  # loader pre-import (the _child fix)
-import corpus_drivers as cd
-s=importlib.util.spec_from_file_location("_k_means_lloyd","/so/_k_means_lloyd/golden/_k_means_lloyd.so")
-m=importlib.util.module_from_spec(s); s.loader.exec_module(m)
-fn=m.lloyd_iter_chunked_dense
-ns={}; exec(cd.UNITS["lloyd_iter_chunked_dense"]["setup"]({"n_samples":200000,"n_features":50,"n_clusters":50}), ns)
-args=tuple(ns["args"]); oi=cd.UNITS["lloyd_iter_chunked_dense"]["out_arg_indices"]
-def oh():
-    h=hashlib.sha256()
-    for i in oi:
-        a=np.ascontiguousarray(args[i]); h.update(str(a.dtype).encode()); h.update(a.tobytes())
-    return h.hexdigest()[:16]
-for _ in range(3): fn(*args)            # warmup
-ts=[]; hs=[]
-for _ in range(3):
-    t0=time.perf_counter_ns(); fn(*args); ts.append((time.perf_counter_ns()-t0)/1e6); hs.append(oh())
-print("call_times_ms=",[round(t,2) for t in ts]," ratio2/1=",round(ts[1]/ts[0],3))
-print("output_hashes=",hs," identical=",len(set(hs))==1)
-print("RE-CALLABLE (timed):", (len(set(hs))==1) and (ts[1]/ts[0]>0.5))
-]
 2026-06-26T04:54:56Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:29:47Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 bash -c 
-    for n in 1000000 5000000 10000000 20000000 40000000; do
-      python /probe/corpus/gate_runner.py scale-probe _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=$n 7
-    done]
 2026-06-26T21:30:16Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:31:12Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/cf4_recheck:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=9db9aff -e MOTIFBO_RIG_STATE=v1.4 localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=4700000 30 /out/pava_74ms_m40.json 40]
 2026-06-26T21:35:16Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:35:29Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/cf4_recheck:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=9db9aff -e MOTIFBO_RIG_STATE=v1.4 localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=30500000 30 /out/pava_485ms_m20.json 20]
 2026-06-26T21:44:48Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/cf4_recheck:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=9db9aff -e MOTIFBO_RIG_STATE=v1.4 localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=30500000 30 /out/pava_485ms_m20.json 20]
 2026-06-26T21:47:17Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 python3 -c 
-import numpy as np, importlib.util, statistics, time, json
-from scipy.sparse import random as sprand, csr_matrix
-n,nf,dens,seed=1_000_000,200,0.05,20260625
-# (1) scipy.sparse.random reference
-Xs=sprand(n,nf,density=dens,format="csr",dtype=np.float64,random_state=seed)
-rng=np.random.default_rng(seed); Xs.data[:]=rng.standard_normal(Xs.nnz)
-# (2) fast O(nnz) builder (the committed recipe)
-rng2=np.random.default_rng(seed); npr=round(nf*dens); nnz=n*npr
-data=rng2.standard_normal(nnz); idx=rng2.integers(0,nf,size=nnz,dtype=np.int32)
-indptr=np.arange(0,nnz+1,npr,dtype=np.int32)
-Xf=csr_matrix((data,idx,indptr),shape=(n,nf))
-w=rng2.uniform(0.5,2.0,n)
-# sparsity stats
-rc_s=np.diff(Xs.indptr); rc_f=np.diff(Xf.indptr)
-print("nnz: scipy=%d fast=%d  nrows=%d/%d"%(Xs.nnz,Xf.nnz,Xs.shape[0],Xf.shape[0]))
-print("per-row nnz: scipy mean=%.3f std=%.3f | fast mean=%.3f std=%.3f"%(rc_s.mean(),rc_s.std(),rc_f.mean(),rc_f.std()))
-print("col-id uniform: scipy minmax=(%d,%d) | fast minmax=(%d,%d)"%(Xs.indices.min(),Xs.indices.max(),Xf.indices.min(),Xf.indices.max()))
-# (3) time the kernel on each
-spec=importlib.util.spec_from_file_location("sparsefuncs_fast","/so/golden/sparsefuncs_fast.so")
-m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.csr_mean_variance_axis0
-def t(X,wt):
-    for _ in range(3): fn(X,wt)
-    s=[]
-    for _ in range(9):
-        t0=time.perf_counter_ns(); fn(X,wt); s.append(time.perf_counter_ns()-t0)
-    return statistics.median(s)/1e6
-ts=t(Xs,w); tf=t(Xf,w)
-print("kernel per-call: scipy-CSR=%.2fms  fast-CSR=%.2fms  ratio=%.4f (timing-equivalent if ~1.0)"%(ts,tf,tf/ts))
-]
 2026-06-26T21:47:30Z RUN-END rc=1 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:47:37Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:48:58Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 python3 -c 
-import numpy as np, importlib.util, statistics, time
-from scipy.sparse import random as sprand, csr_matrix
-n,nf,dens,seed=1_000_000,200,0.05,20260625
-spec=importlib.util.spec_from_file_location("sparsefuncs_fast","/so/golden/sparsefuncs_fast.so")
-m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.csr_mean_variance_axis0
-rng=np.random.default_rng(seed); w=rng.uniform(0.5,2.0,n)
-def t(X):
-    for _ in range(3): fn(X,w)
-    s=[time.perf_counter_ns() for _ in range(1)]; s=[]
-    for _ in range(9):
-        t0=time.perf_counter_ns(); fn(X,w); s.append(time.perf_counter_ns()-t0)
-    return statistics.median(s)/1e6
-# scipy reference
-Xs=sprand(n,nf,density=dens,format="csr",dtype=np.float64,random_state=seed); Xs.data[:]=rng.standard_normal(Xs.nnz)
-# variant A: fixed-count unsorted-dup (current committed builder)
-npr=round(nf*dens); nnz=n*npr; r2=np.random.default_rng(seed)
-dA=r2.standard_normal(nnz); iA=r2.integers(0,nf,size=nnz,dtype=np.int32); ip=np.arange(0,nnz+1,npr,dtype=np.int32)
-XA=csr_matrix((dA,iA.copy(),ip),shape=(n,nf))
-# variant B: fixed-count SORTED-within-row (vectorized sort)
-iB=np.sort(iA.reshape(n,npr),axis=1).ravel().astype(np.int32)
-XB=csr_matrix((dA,iB,ip),shape=(n,nf))
-print("scipy=%.2fms  fixedUnsorted(A)=%.2fms ratioA=%.4f  fixedSorted(B)=%.2fms ratioB=%.4f"%(
-    t(Xs), t(XA), t(XA)/t(Xs), t(XB), t(XB)/t(Xs)))
-]
 2026-06-26T21:49:13Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:49:45Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 python3 -c 
-import numpy as np, importlib.util, statistics, time
-from scipy.sparse import random as sprand, csr_matrix
-n,nf,dens,seed=1_000_000,200,0.05,20260625
-spec=importlib.util.spec_from_file_location("sparsefuncs_fast","/so/golden/sparsefuncs_fast.so")
-m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.csr_mean_variance_axis0
-rng=np.random.default_rng(seed); w=rng.uniform(0.5,2.0,n)
-def t(X):
-    for _ in range(3): fn(X,w)
-    s=[]
-    for _ in range(9):
-        t0=time.perf_counter_ns(); fn(X,w); s.append(time.perf_counter_ns()-t0)
-    return statistics.median(s)/1e6
-Xs=sprand(n,nf,density=dens,format="csr",dtype=np.float64,random_state=seed); Xs.data[:]=rng.standard_normal(Xs.nnz)
-# variant C: BINOMIAL per-row counts (matches scipy density model), sorted-unique-ish columns
-r=np.random.default_rng(seed)
-counts=r.binomial(nf,dens,size=n).astype(np.int32)
-indptr=np.zeros(n+1,dtype=np.int32); np.cumsum(counts,out=indptr[1:]); nnz=int(indptr[-1])
-data=r.standard_normal(nnz); idx=r.integers(0,nf,size=nnz,dtype=np.int32)
-XC=csr_matrix((data,idx,indptr),shape=(n,nf))
-rcS=np.diff(Xs.indptr); rcC=np.diff(XC.indptr)
-print("per-row nnz std: scipy=%.3f  variantC=%.3f"%(rcS.std(),rcC.std()))
-print("nnz: scipy=%d  variantC=%d"%(Xs.nnz,XC.nnz))
-print("scipy=%.2fms  variantC(binomial)=%.2fms ratioC=%.4f"%(t(Xs),t(XC),t(XC)/t(Xs)))
-]
 2026-06-26T21:50:00Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:51:00Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 bash -c 
-    for ns in 8000000 8400000 8800000; do
-      python /probe/corpus/gate_runner.py scale-probe csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=$ns,n_features=200,density=0.05 7
-    done]
 2026-06-26T21:51:22Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:51:36Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/archetypes/csr_mean_variance_axis0:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=9db9aff -e MOTIFBO_RIG_STATE=v1.4,binomial-builder localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 30 /out/G3_golden_endpoint.json]
 2026-06-26T21:52:41Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:52:58Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 bash -c 
-    echo '--- opt-inv golden(-O2) ---'; python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 | grep -oE '"output_sha256": "[a-f0-9]{12}|"input_fingerprint": "[a-f0-9]{12}';
-    echo '--- opt-inv o3x8664(-O3) ---'; python /probe/corpus/gate_runner.py output-hash csr_mean_variance_axis0 /so/o3x8664/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 | grep -oE '"output_sha256": "[a-f0-9]{12}';
-    echo '--- G5 determinism (5 fresh) ---'; python /probe/corpus/gate_runner.py determinism csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 5 | grep -oE '"all_identical": (true|false)';
-    echo '--- crit-3 @ golden scale, -O3 native ---'; python /probe/corpus/crit3_probe.py csr_mean_variance_axis0 /so/o3native/sparsefuncs_fast.so 8 8650000 200 0.05 | grep -oE 'KERNEL-SHARE.*%|per-call=[0-9.]*ms';
-  ]
 2026-06-26T21:53:35Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T21:54:57Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/cf4_recheck:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=ea424d9 -e MOTIFBO_RIG_STATE=v1.4 localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=30500000 30 /out/pava_485ms_m20.json 20]
 2026-06-26T22:05:21Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/cf4_recheck:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=ea424d9 -e MOTIFBO_RIG_STATE=v1.4 localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint _inplace_contiguous_isotonic_regression /so/_isotonic/golden/_isotonic.so n=30500000 30 /out/pava_485ms_m20.json 20]
@@ -294,23 +229,6 @@ print("scipy=%.2fms  variantC(binomial)=%.2fms ratioC=%.4f"%(t(Xs),t(XC),t(XC)/t
 2026-06-26T22:19:51Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint lloyd_iter_chunked_dense /so/_k_means_lloyd/golden/_k_means_lloyd.so n_samples=200000,n_features=50,n_clusters=50 30 /tmp/lloyd_smoke.json 3]
 2026-06-26T22:20:03Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T22:29:13Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -e PYTHONPATH=/src -e OMP_NUM_THREADS=1 localhost/motifbo-env:phase1 python3 -c 
-import importlib.util, sys, time, statistics, numpy as np
-sys.path.insert(0,"/probe/corpus"); import sklearn.cluster
-import corpus_drivers as cd
-spec=importlib.util.spec_from_file_location("_k_means_lloyd","/so/_k_means_lloyd/golden/_k_means_lloyd.so")
-m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.lloyd_iter_chunked_dense
-def t(ns,nf,nc):
-    e={}; exec(cd.UNITS["lloyd_iter_chunked_dense"]["setup"]({"n_samples":ns,"n_features":nf,"n_clusters":nc}),e)
-    a=tuple(e["args"])
-    for _ in range(3): fn(*a)
-    s=[]
-    for _ in range(9):
-        t0=time.perf_counter_ns(); fn(*a); s.append(time.perf_counter_ns()-t0)
-    return statistics.median(s)/1e6
-base=200000
-for nf in [5,25,50,100,200]:
-    print("nf=%3d  per-call=%.3fms"%(nf, t(base,nf,50)))
-]
 2026-06-26T22:29:20Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-06-26T22:36:55Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[-v ./src:/src:ro,Z -v ./scripts:/probe:ro,Z -v ./sandbox/corpus_so:/so:ro,Z -v ./results/characterization/archetypes/csr_mean_variance_axis0/endpoint_precision:/out:Z -e PYTHONPATH=/src -e PYTHONDONTWRITEBYTECODE=1 -e MOTIFBO_IMAGE_ID=d45e33b08bad -e MOTIFBO_GIT_REV=5d9af6c -e MOTIFBO_RIG_STATE=v1.4,binomial localhost/motifbo-env:phase1 python /probe/corpus/gate_runner.py endpoint csr_mean_variance_axis0 /so/golden/sparsefuncs_fast.so n_samples=8650000,n_features=200,density=0.05 30 /out/csr_endprec_m24.json 24]
 2026-06-26T22:44:57Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
@@ -2189,13 +2107,6 @@ for nf in [5,25,50,100,200]:
 2026-08-08T00:59:16Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-08T00:59:16Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.AAo4LBpUIE/proj/.cytune:/work -v /tmp/tmp.AAo4LBpUIE/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke probe]
 2026-08-08T00:59:20Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=x -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/claude-1000/-home-beimfedora-Documents-Motif-BO/e180841c-140e-4430-88ce-6075b2fffbd5/scratchpad/hacker/ws_d:/work localhost/motifbo-env:phase1 python3 -c 
-import os
-for p in ['/work/_evil_probe.txt','/work/bindbreak4/_so/kernel_651.so','/work/bindbreak4/_probe.txt']:
-    try:
-        open(p,'ab').close(); print('WRITABLE', p)
-    except OSError as e:
-        print('RO      ', p, e)
-]
 2026-08-08T00:59:20Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-08T00:59:21Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-08T00:59:36Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.AAo4LBpUIE/proj/.cytune:/work -v /tmp/tmp.AAo4LBpUIE/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 137,283,425,507,967,1267,1544]
@@ -4135,3 +4046,184 @@ for p in ['/work/_evil_probe.txt','/work/bindbreak4/_so/kernel_651.so','/work/bi
 2026-08-12T13:29:52Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
 2026-08-12T13:29:53Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.8c14ooSa6Y/lockws:/work -v /tmp/tmp.8c14ooSa6Y/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker endpoint /work/_kernels/smoke /work/smoke 288,507]
 2026-08-12T13:29:55Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:19:43Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:19:43Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:23:17Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:24:18Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:24:18Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:24:22Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:24:49Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:25:49Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:25:49Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T21:25:53Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:01:06Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:02:15Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:02:15Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:02:20Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:03:17Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:03:17Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:03:17Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:03:18Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:03:45Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/proj/.cytune:/work -v /tmp/tmp.9Lz5lFO74k/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker golden /work/_kernels/smoke /work/smoke 5.0]
+2026-08-12T23:03:46Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:03:46Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/proj/.cytune:/work -v /tmp/tmp.9Lz5lFO74k/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke probe]
+2026-08-12T23:03:50Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:04:05Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/proj/.cytune:/work -v /tmp/tmp.9Lz5lFO74k/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 137,283,425,507,967,1267,1544]
+2026-08-12T23:04:06Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:04:12Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/proj/.cytune:/work -v /tmp/tmp.9Lz5lFO74k/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 855]
+2026-08-12T23:04:13Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:04:14Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/proj/.cytune:/work -v /tmp/tmp.9Lz5lFO74k/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker endpoint /work/_kernels/smoke /work/smoke 288,786]
+2026-08-12T23:04:16Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:05:51Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:05:52Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/proj/.cytune:/work -v /tmp/tmp.9Lz5lFO74k/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker golden /work/_kernels/smoke /work/smoke 5.0 34994]
+2026-08-12T23:05:53Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:05:53Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/proj/.cytune:/work -v /tmp/tmp.9Lz5lFO74k/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke probe]
+2026-08-12T23:05:54Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:05:54Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:05:54Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:05:55Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:05:56Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:06:22Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/lockws:/work -v /tmp/tmp.9Lz5lFO74k/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker golden /work/_kernels/smoke /work/smoke 5.0]
+2026-08-12T23:06:23Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:06:23Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/lockws:/work -v /tmp/tmp.9Lz5lFO74k/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke probe]
+2026-08-12T23:06:27Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:06:37Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/lockws:/work -v /tmp/tmp.9Lz5lFO74k/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 137,283,425,507,967,1267,1544]
+2026-08-12T23:06:39Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:06:44Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/lockws:/work -v /tmp/tmp.9Lz5lFO74k/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 855]
+2026-08-12T23:06:45Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:06:46Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.9Lz5lFO74k/lockws:/work -v /tmp/tmp.9Lz5lFO74k/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker endpoint /work/_kernels/smoke /work/smoke 288,786]
+2026-08-12T23:06:48Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:16:37Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:16:37Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:16:38Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:16:38Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:17:03Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune:/work -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker golden /work/_kernels/smoke /work/smoke 5.0]
+2026-08-12T23:17:04Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:17:04Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune:/work -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke probe]
+2026-08-12T23:17:08Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:17:20Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune:/work -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 137,283,425,507,967,1267,1544]
+2026-08-12T23:17:22Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:17:28Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune:/work -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 855]
+2026-08-12T23:17:29Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:17:30Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune:/work -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker endpoint /work/_kernels/smoke /work/smoke 288]
+2026-08-12T23:17:31Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:18:55Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:18:56Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune:/work -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker golden /work/_kernels/smoke /work/smoke 5.0 35027]
+2026-08-12T23:18:58Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:18:58Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune:/work -v /tmp/tmp.HAzC4gx6Qv/proj/.cytune/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke probe]
+2026-08-12T23:19:00Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:19:01Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:19:01Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:19:02Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:19:03Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:19:29Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/lockws:/work -v /tmp/tmp.HAzC4gx6Qv/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker golden /work/_kernels/smoke /work/smoke 5.0]
+2026-08-12T23:19:31Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:19:31Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/lockws:/work -v /tmp/tmp.HAzC4gx6Qv/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke probe]
+2026-08-12T23:19:35Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:19:51Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/lockws:/work -v /tmp/tmp.HAzC4gx6Qv/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 137,283,425,507,967,1267,1544]
+2026-08-12T23:19:54Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:20:04Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/lockws:/work -v /tmp/tmp.HAzC4gx6Qv/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker measure /work/_kernels/smoke /work/smoke 855]
+2026-08-12T23:20:04Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:20:05Z RUN-START PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise argv=[--security-opt label=disable -e PYTHONPATH=/opt/cytune -e CYTUNE_IMAGE_DIGEST=sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 -v /home/beimfedora/Documents/Motif+BO/src/cytune:/opt/cytune/cytune:ro -v /tmp/tmp.HAzC4gx6Qv/lockws:/work -v /tmp/tmp.HAzC4gx6Qv/lockws/smoke/_so:/work/smoke/_so:ro sha256:d45e33b08bad0020bcf0d04eefe50c04e7e1f36e3ccb4d55daf655e9900295d2 python3 -m cytune.worker endpoint /work/_kernels/smoke /work/smoke 288,507]
+2026-08-12T23:20:07Z RUN-END rc=0 no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:27:23Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:28:20Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:28:20Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:28:24Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:35:02Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:36:06Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:36:06Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:36:10Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+XA=csr_matrix((dA,iA.copy(),ip),shape=(n,nf))
+XB=csr_matrix((dA,iB,ip),shape=(n,nf))
+XC=csr_matrix((data,idx,indptr),shape=(n,nf))
+Xf=csr_matrix((data,idx,indptr),shape=(n,nf))
+Xs=sprand(n,nf,density=dens,format="csr",dtype=np.float64,random_state=seed)
+Xs=sprand(n,nf,density=dens,format="csr",dtype=np.float64,random_state=seed); Xs.data[:]=rng.standard_normal(Xs.nnz)
+Xs=sprand(n,nf,density=dens,format="csr",dtype=np.float64,random_state=seed); Xs.data[:]=rng.standard_normal(Xs.nnz)
+]
+]
+]
+]
+]
+]
+]
+args=tuple(ns["args"]); oi=cd.UNITS["lloyd_iter_chunked_dense"]["out_arg_indices"]
+base=200000
+counts=r.binomial(nf,dens,size=n).astype(np.int32)
+dA=r2.standard_normal(nnz); iA=r2.integers(0,nf,size=nnz,dtype=np.int32); ip=np.arange(0,nnz+1,npr,dtype=np.int32)
+data=r.standard_normal(nnz); idx=r.integers(0,nf,size=nnz,dtype=np.int32)
+data=rng2.standard_normal(nnz); idx=rng2.integers(0,nf,size=nnz,dtype=np.int32)
+def oh():
+def t(X,wt):
+def t(X):
+def t(X):
+def t(ns,nf,nc):
+fn=m.lloyd_iter_chunked_dense
+for _ in range(3): fn(*args)            # warmup
+for _ in range(3):
+for nf in [5,25,50,100,200]:
+for p in ['/work/_evil_probe.txt','/work/bindbreak4/_so/kernel_651.so','/work/bindbreak4/_probe.txt']:
+from motifbo.timing.runtime_ns import measure
+from motifbo.timing.divergence import build_divergence_report
+from scipy.sparse import random as sprand, csr_matrix
+from scipy.sparse import random as sprand, csr_matrix
+from scipy.sparse import random as sprand, csr_matrix
+iB=np.sort(iA.reshape(n,npr),axis=1).ravel().astype(np.int32)
+import json
+import importlib.util, sys, time, hashlib, numpy as np
+import sklearn.cluster                                  # loader pre-import (the _child fix)
+import corpus_drivers as cd
+import numpy as np, importlib.util, statistics, time, json
+import numpy as np, importlib.util, statistics, time
+import numpy as np, importlib.util, statistics, time
+import importlib.util, sys, time, statistics, numpy as np
+import corpus_drivers as cd
+import os
+indptr=np.arange(0,nnz+1,npr,dtype=np.int32)
+indptr=np.zeros(n+1,dtype=np.int32); np.cumsum(counts,out=indptr[1:]); nnz=int(indptr[-1])
+m=importlib.util.module_from_spec(s); s.loader.exec_module(m)
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.csr_mean_variance_axis0
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.csr_mean_variance_axis0
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.csr_mean_variance_axis0
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); fn=m.lloyd_iter_chunked_dense
+n,nf,dens,seed=1_000_000,200,0.05,20260625
+n,nf,dens,seed=1_000_000,200,0.05,20260625
+n,nf,dens,seed=1_000_000,200,0.05,20260625
+npr=round(nf*dens); nnz=n*npr; r2=np.random.default_rng(seed)
+ns={}; exec(cd.UNITS["lloyd_iter_chunked_dense"]["setup"]({"n_samples":200000,"n_features":50,"n_clusters":50}), ns)
+print("RE-CALLABLE (timed):", (len(set(hs))==1) and (ts[1]/ts[0]>0.5))
+print("call_times_ms=",[round(t,2) for t in ts]," ratio2/1=",round(ts[1]/ts[0],3))
+print("col-id uniform: scipy minmax=(%d,%d) | fast minmax=(%d,%d)"%(Xs.indices.min(),Xs.indices.max(),Xf.indices.min(),Xf.indices.max()))
+print("kernel per-call: scipy-CSR=%.2fms  fast-CSR=%.2fms  ratio=%.4f (timing-equivalent if ~1.0)"%(ts,tf,tf/ts))
+print("nnz: scipy=%d fast=%d  nrows=%d/%d"%(Xs.nnz,Xf.nnz,Xs.shape[0],Xf.shape[0]))
+print("nnz: scipy=%d  variantC=%d"%(Xs.nnz,XC.nnz))
+print("output_hashes=",hs," identical=",len(set(hs))==1)
+print("per-row nnz: scipy mean=%.3f std=%.3f | fast mean=%.3f std=%.3f"%(rc_s.mean(),rc_s.std(),rc_f.mean(),rc_f.std()))
+print("per-row nnz std: scipy=%.3f  variantC=%.3f"%(rcS.std(),rcC.std()))
+print("scipy=%.2fms  fixedUnsorted(A)=%.2fms ratioA=%.4f  fixedSorted(B)=%.2fms ratioB=%.4f"%(
+print("scipy=%.2fms  variantC(binomial)=%.2fms ratioC=%.4f"%(t(Xs),t(XC),t(XC)/t(Xs)))
+print(json.dumps({k: rep[k] for k in ('schema','expected_ghz','median_eff_ghz','rel_dev','divergent','n_reps')}, indent=1))
+r=np.random.default_rng(seed)
+rcS=np.diff(Xs.indptr); rcC=np.diff(XC.indptr)
+rc_s=np.diff(Xs.indptr); rc_f=np.diff(Xf.indptr)
+rep = build_divergence_report(res['samples_ns'], res['cycles'], expected_ghz=3.6)
+res = measure(module_path='/src/tests/fixtures/busy_kernel.py', kernel='kernel',
+rng2=np.random.default_rng(seed); npr=round(nf*dens); nnz=n*npr
+rng=np.random.default_rng(seed); Xs.data[:]=rng.standard_normal(Xs.nnz)
+rng=np.random.default_rng(seed); w=rng.uniform(0.5,2.0,n)
+rng=np.random.default_rng(seed); w=rng.uniform(0.5,2.0,n)
+s=importlib.util.spec_from_file_location("_k_means_lloyd","/so/_k_means_lloyd/golden/_k_means_lloyd.so")
+spec=importlib.util.spec_from_file_location("_k_means_lloyd","/so/_k_means_lloyd/golden/_k_means_lloyd.so")
+spec=importlib.util.spec_from_file_location("sparsefuncs_fast","/so/golden/sparsefuncs_fast.so")
+spec=importlib.util.spec_from_file_location("sparsefuncs_fast","/so/golden/sparsefuncs_fast.so")
+spec=importlib.util.spec_from_file_location("sparsefuncs_fast","/so/golden/sparsefuncs_fast.so")
+sys.path.insert(0,"/probe/corpus")
+sys.path.insert(0,"/probe/corpus"); import sklearn.cluster
+ts=[]; hs=[]
+ts=t(Xs,w); tf=t(Xf,w)
+w=rng2.uniform(0.5,2.0,n)
+2026-08-12T23:39:01Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:40:01Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:40:01Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
+2026-08-12T23:40:05Z VERIFY-ONLY PASS no_turbo=1 gov_cpu3=performance cpu7_online=1 isolated=3,7 freq_cpu3_khz=3600000 thp=madvise
