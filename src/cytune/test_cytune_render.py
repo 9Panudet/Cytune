@@ -275,3 +275,54 @@ def test_the_attestation_covers_both_halves_of_the_trust_boundary():
     att = certify.ATTESTATION
     assert "owns the clock" in att["does_not_attest"] or "clock" in att["does_not_attest"]
     assert "module loader" in att["does_not_attest_artifact"]
+
+
+def test_d31_the_consent_note_only_speaks_about_flags_actually_opted_into():
+    """D31 — a false statement about who consented to changed FP semantics.
+
+    Found by a senior-power-user agent evaluating cytune for CI. The consent NOTE tested the
+    provenance of BOTH fp flags, so a `.cytune.toml` that merely mentions `allow_fast_math` gives
+    that key a file provenance — and typing `--allow-fp-contract` on the command line then printed
+    "that opt-in did NOT come from the command line you typed" about a flag just typed, while the
+    JSON recorded `allow_fp_contract: "command line"` in the same document. That is G7's own
+    precedent class (R2) reappearing on the consent block.
+    """
+    from cytune import certify as C
+
+    def render_with(prov, policy_kw):
+        from cytune.plan import EmissionPolicy
+        from cytune._vendor import theta
+        cid = theta.id_of((True, True, False, True, False, "-O2", "x86-64", "omit", ("off", "fast")))
+        ep = {str(cid): {"endpoint_ns": 50e6, "subs_ns": [50e6] * 3, "n_sub": 3, "K": 30},
+              str(theta.REFERENCE_ID): {"endpoint_ns": 100e6, "subs_ns": [100e6] * 3,
+                                        "n_sub": 3, "K": 30}}
+        cert = C.build_certificate(
+            name="d31", winner_id=cid, reference_id=theta.REFERENCE_ID, endpoint=ep,
+            oracle={"output_class": "float", "tolerance": {"rtol": 1e-9, "atol": 1e-12},
+                    "deterministic": True, "n_det_reps": 5, "golden_sha256": "abc"},
+            feasibility={"n_measured": 20, "n_infeasible": 0, "infeasible_fraction": 0.0,
+                         "reasons": {}},
+            route={"rule": "R4", "route": "tune", "engine": "DOE", "budget": 20, "why": "w"},
+            rig_mode="quiesced", rig_detail="verified",
+            budget={"probe": 17, "tuning": 3, "total_measured": 20},
+            sources={"table": "/w/t.jsonl", "workspace": "/w"},
+            allow_fast_math=False, emitted_gate={"ran": True, "clean": True, "verdict": "CLEAN",
+                                                 "config_id": cid},
+            policy=EmissionPolicy(**policy_kw), has_fp_work=True,
+            effective_config={"values": {}, "provenance": prov})
+        return C.render(cert), cert
+
+    NOTE = "did NOT come from the command line you typed"
+
+    # The defect: the OTHER flag has a file provenance; the one opted into was typed.
+    txt, cert = render_with({"allow_fp_contract": "command line",
+                             "allow_fast_math": "/proj/.cytune.toml"},
+                            {"allow_fp_contract": True})
+    assert NOTE not in txt, (
+        "the certificate claims a typed flag was not typed, while its own JSON says "
+        f"{cert['effective_config']['provenance']['allow_fp_contract']!r}")
+
+    # The note must still fire when the opt-in REALLY came from a file — otherwise the fix has
+    # simply deleted the warning instead of correcting it.
+    txt2, _ = render_with({"allow_fp_contract": "/proj/.cytune.toml"}, {"allow_fp_contract": True})
+    assert NOTE in txt2, "the warning no longer fires when the opt-in genuinely came from a file"
